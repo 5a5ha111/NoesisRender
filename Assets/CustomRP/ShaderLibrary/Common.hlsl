@@ -16,6 +16,9 @@
 #define UNITY_MATRIX_P glstate_matrix_projection
 
 
+#if defined(_SHADOW_MASK_ALWAYS) || defined(_SHADOW_MASK_DISTANCE)
+	#define SHADOWS_SHADOWMASK
+#endif
 
 //float3 TransformObjectToWorld(float3 positionOS) {
 //	return mul(unity_ObjectToWorld, float4(positionOS, 1.0)).xyz;
@@ -29,6 +32,18 @@ float Square (float v)
 {
 	return v * v;
 }
+
+float DistanceSquared(float3 pA, float3 pB) 
+{
+	return dot(pA - pB, pA - pB);
+}
+
+
+
+
+
+
+
 
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/UnityInstancing.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/SpaceTransforms.hlsl"

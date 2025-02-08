@@ -53,6 +53,24 @@ public class CustomShaderGUI : ShaderGUI
         }
     }
 
+    enum ShadowMode
+    {
+        On, Clip, Dither, RiemeresmaDither, Off
+    }
+
+    ShadowMode Shadows
+    {
+        set
+        {
+            if (SetProperty("_Shadows", (float)value))
+            {
+                SetKeyword("_SHADOWS_CLIP", value == ShadowMode.Clip);
+                SetKeyword("_SHADOWS_DITHER", value == ShadowMode.Dither);
+                SetKeyword("_SHADOWS_RIEMERESMA_DITHER", value == ShadowMode.RiemeresmaDither);
+            }
+        }
+    }
+
 
     public override void OnGUI(
         MaterialEditor materialEditor, MaterialProperty[] properties
@@ -80,69 +98,7 @@ public class CustomShaderGUI : ShaderGUI
             TransparentPreset();
         }
 
-
-        /*MaterialProperty baseMap = FindProperty("_BaseMap", properties);
-        MaterialProperty baseColor = FindProperty("_BaseColor", properties);
-        MaterialProperty cutoff = FindProperty("_Cutoff", properties);
-        MaterialProperty metallic = FindProperty("_Metallic", properties);
-        MaterialProperty smoothness = FindProperty("_Smoothness", properties);
-        MaterialProperty clipping = FindProperty("_Clipping", properties);
-        MaterialProperty srcBlend = FindProperty("_SrcBlend", properties);
-        MaterialProperty dstBlend = FindProperty("_DstBlend", properties);
-        MaterialProperty zWrite = FindProperty("_ZWrite", properties);
-        MaterialProperty premulAlpha = FindProperty("_PremulAlpha", properties);
-
-        materialEditor.TexturePropertySingleLine(new GUIContent("Texture"), baseMap, baseColor);
-
-        EditorGUILayout.Space();
-        materialEditor.ShaderProperty(cutoff, "Alpha Cutoff");
-        materialEditor.ShaderProperty(metallic, "Metallic");
-        materialEditor.ShaderProperty(smoothness, "Smoothness");
-
-        EditorGUILayout.Space();
-        materialEditor.ShaderProperty(clipping, "Alpha Clipping");
-        materialEditor.ShaderProperty(premulAlpha, "Premultiply Alpha");
-
-        EditorGUILayout.Space();
-        materialEditor.ShaderProperty(srcBlend, "Src Blend");
-        materialEditor.ShaderProperty(dstBlend, "Dst Blend");
-        materialEditor.ShaderProperty(zWrite, "Z Write");*/
-
-
-        if (EditorGUI.EndChangeCheck())
-        {
-            /*foreach (Material material in materialEditor.targets)
-            {
-                material.SetFloat("_Metallic", metallic.floatValue);
-                material.SetFloat("_Smoothness", smoothness.floatValue);
-            }*/
-            materialEditor.PropertiesChanged();
-        }
-
-        if (Selection.activeGameObject != null)
-        {
-            //Debug.Log(Selection.activeGameObject.name);
-
-            var Renderer = Selection.activeGameObject.GetComponent<Renderer>();
-            Renderer.sharedMaterial = (Material)materialEditor.target;
-            var sharedMat = Renderer.sharedMaterial;
-            /*MaterialPropertyBlock matBlock = new MaterialPropertyBlock();
-            
-            
-            matBlock.SetFloat("_Cutoff", cutoff.floatValue);
-            matBlock.SetFloat("_Metallic", metallic.floatValue);
-            matBlock.SetFloat("_Smoothness", smoothness.floatValue);
-            matBlock.SetFloat("_Clipping", clipping.floatValue);
-            matBlock.SetFloat("_PremulAlpha", premulAlpha.floatValue);
-            matBlock.SetFloat("_SrcBlend", srcBlend.floatValue);
-            matBlock.SetFloat("_DstBlend", dstBlend.floatValue);
-            matBlock.SetFloat("_ZWrite", zWrite.floatValue);*/
-
-
-            //Renderer.SetPropertyBlock(matBlock);
-            Renderer.SetPropertyBlock(null);
-
-        }
+        BakedEmission();
 
         foreach (MaterialProperty prop in properties)
         {
@@ -153,21 +109,77 @@ public class CustomShaderGUI : ShaderGUI
             else
             {
                 materialEditor.ShaderProperty(prop, prop.displayName);
-                /*if (prop.type == MaterialProperty.PropType.Float || prop.type == MaterialProperty.PropType.Range)
-                {
-                    matBlock.SetFloat(prop.name, prop.floatValue);
-                }
-                else if (prop.type == MaterialProperty.PropType.Color)
-                {
-                    matBlock.SetVector(prop.name, prop.colorValue);
-                }
-                else if (prop.type == MaterialProperty.PropType.Vector)
-                {
-                    matBlock.SetVector(prop.name, prop.vectorValue);
-                }*/
             }
         }
 
+
+        if (EditorGUI.EndChangeCheck())
+        {
+            SetShadowCasterPass();
+            CopyLightMappingProperties();
+            materialEditor.PropertiesChanged();
+
+            foreach (Material m in editor.targets)
+            {
+                m.globalIlluminationFlags &=
+                    ~MaterialGlobalIlluminationFlags.EmissiveIsBlack;
+            }
+        }
+
+        if (Selection.activeGameObject != null)
+        {
+            //Debug.Log(Selection.activeGameObject.name);
+
+            var Renderer = Selection.activeGameObject.GetComponent<Renderer>();
+            Renderer.sharedMaterial = (Material)materialEditor.target;
+            var sharedMat = Renderer.sharedMaterial;
+
+
+            Renderer.SetPropertyBlock(null);
+
+        }
+
+        
+
+    }
+
+    void SetShadowCasterPass()
+    {
+        MaterialProperty shadows = FindProperty("_Shadows", properties, false);
+        //Debug.Log("shadows value " + shadows.floatValue);
+        if (shadows == null || shadows.hasMixedValue)
+        {
+            return;
+        }
+        bool enabled = shadows.floatValue < (float)ShadowMode.Off;
+        //Debug.Log("shadows enabled " +  enabled);
+        foreach (Material m in materials)
+        {
+            m.SetShaderPassEnabled("ShadowCaster", enabled);
+        }
+    }
+
+    void BakedEmission()
+    {
+        editor.LightmapEmissionProperty();
+    }
+
+    void CopyLightMappingProperties()
+    {
+        MaterialProperty mainTex = FindProperty("_MainTex", properties, false);
+        MaterialProperty baseMap = FindProperty("_BaseMap", properties, false);
+        if (mainTex != null && baseMap != null)
+        {
+            mainTex.textureValue = baseMap.textureValue;
+            mainTex.textureScaleAndOffset = baseMap.textureScaleAndOffset;
+        }
+        MaterialProperty color = FindProperty("_Color", properties, false);
+        MaterialProperty baseColor =
+            FindProperty("_BaseColor", properties, false);
+        if (color != null && baseColor != null)
+        {
+            color.colorValue = baseColor.colorValue;
+        }
     }
 
 

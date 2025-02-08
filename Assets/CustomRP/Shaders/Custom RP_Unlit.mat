@@ -11,8 +11,10 @@ Material:
   m_Shader: {fileID: 4800000, guid: 6d338f7af88d137439842ee66e7ae787, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
+  m_ValidKeywords:
+  - _RECEIVE_SHADOWS
+  m_InvalidKeywords:
+  - _SHADOWS_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
@@ -32,6 +34,8 @@ Material:
     - _Clipping: 0
     - _Cutoff: 0.5
     - _DstBlend: 10
+    - _ReceiveShadows: 1
+    - _Shadows: 0
     - _SrcBlend: 5
     - _ZWrite: 0
     m_Colors:
