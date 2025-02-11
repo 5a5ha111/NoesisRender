@@ -27,6 +27,10 @@ Material:
         m_Texture: {fileID: 2800000, guid: 98af75fd77b4ae7468029ce4bee3c681, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _BlueNoiseTex:
+        m_Texture: {fileID: 2800000, guid: c352155894b8f344481741f6ccf2448f, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 2800000, guid: 98af75fd77b4ae7468029ce4bee3c681, type: 3}
         m_Scale: {x: 1, y: 1}

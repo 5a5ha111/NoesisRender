@@ -3,6 +3,7 @@ Shader "Unlit/TestBetterDither"
     Properties
     {
         _BaseMap ("Texture", 2D) = "white" {}
+        _BlueNoiseTex ("Texture", 2D) = "white" {}
     }
     SubShader
     {

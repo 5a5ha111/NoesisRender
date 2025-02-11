@@ -51,6 +51,13 @@ float r_dither(float2 co)
     return frac(dot(co, magic));
 }
 
+float r_dither(float2 co, float t)
+{
+	const float2 magic = float2(0.75487766624669276, 0.569840290998);
+    return frac(dot(co, magic) + t);
+}
+
+
 //note: from "NEXT GENERATION POST PROCESSING IN CALL OF DUTY: ADVANCED WARFARE"
 //      http://advances.realtimerendering.com/s2014/index.html
 // (copied from https://www.shadertoy.com/view/MslGR8)
@@ -78,19 +85,103 @@ float remapTri(float n)
 
 float3 ApplyColorQuantization(float3 color, float ditherValue, float steps)
 {
-    return round(color * steps + ditherValue) / steps;
+	if (steps == 1)
+    {
+        // Compute a threshold that is shifted by the dither.
+        float threshold = 0.5 + 0.5 * ditherValue;
+        return float3(
+            color.r < threshold ? 0.0 : 1.0,
+            color.g < threshold ? 0.0 : 1.0,
+            color.b < threshold ? 0.0 : 1.0
+        );
+    }
+    else
+    {
+    	/*float3 quantized = floor(color * steps + 0.5 + ditherValue * 0.5) / steps;
+        return saturate(quantized);*/
+
+		float ditherAmount = 0.5 / steps;
+		float3 quantized = floor( (color + ditherValue * ditherAmount) * steps + 0.5 ) / steps;
+        return saturate(quantized);
+
+    	//return round(color * steps + ditherValue) / steps;
+
+        // When steps > 1 we use a rounding approach. 
+        // (The division of dither by steps scales it to roughly one quantization step.)
+        //float3 quantized = floor(color * steps + 0.5 + ditherValue / steps) / steps;
+        // Clamp the result so that it stays in the [0,1] range.
+        //return saturate(quantized);
+    }
+
+    //return round(color * steps + ditherValue) / steps;
 }
+
+
+/*Texture2D<float4> blueNoiseTex;
+SamplerState samplerBlueNoiseTex;*/
+
+TEXTURE2D(_BlueNoiseTex);
+SAMPLER(sampler_BlueNoiseTex);
+
+float2 hash2D(float2 p) 
+{
+    return frac(sin(float2(dot(p, float2(127.1, 311.7)), 
+                    dot(p, float2(269.5, 183.3)))) * 43758.5453);
+}
+
+float hash1D(float2 p) 
+{
+    return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+}
+
+float BlueNoise(float2 pos, float t, float textureSize) 
+{
+    // Calculate adaptive parameters based on texture size
+    float BLOCK_SIZE = 1.0 / floor(sqrt(textureSize)); // Auto-tiling density
+    float PATCH_SCALE = 2.828 * BLOCK_SIZE; // 2*sqrt(2) * block size
+    
+    // Jittered grid calculations
+    float2 blockIdx = floor(pos / BLOCK_SIZE);
+    float2 jitter = hash2D(blockIdx + t) * BLOCK_SIZE * 0.5;
+    float2 origin = blockIdx * BLOCK_SIZE + jitter;
+    
+    // Local coordinates transformation
+    float2 localPos = pos - origin;
+    float angle = hash1D(blockIdx + t + 0.1) * 6.283185;
+    
+    // Rotation matrix
+    float2x2 rot = float2x2(
+        cos(angle), -sin(angle),
+        sin(angle), cos(angle)
+    );
+    
+    // Apply rotation and scaling
+    localPos = mul(rot, localPos) * PATCH_SCALE;
+    
+    // Texture sampling with size adaptation
+    float2 uv = (localPos / (BLOCK_SIZE * 2.828)) + 0.5;
+    uv *= BLOCK_SIZE * textureSize; // Scale to texture dimensions
+    
+    // Sample and validate
+    float noise = 0.0;
+    /*if (all(uv >= 0) && all(uv <= 1)) {
+        noise = _BlueNoiseTex.SampleLevel(sampler_BlueNoiseTex, uv, 0).r;
+    }*/
+    noise = _BlueNoiseTex.SampleLevel(sampler_BlueNoiseTex, uv, 0).r;
+    
+    return noise;
+}
+
+
 
 float3 ApplyColorQuantization(float3 color, float ditherValue, float ditherPower, float steps)
 {
     return round(color * steps + ditherValue * ditherPower) / steps;
 }
-
 float2 ApplyColorQuantization(float2 color, float ditherValue, float steps)
 {
     return round(color * steps + ditherValue) / steps;
 }
-
 float ApplyColorQuantization(float color, float ditherValue, float steps)
 {
     return round(color * steps + ditherValue) / steps;
@@ -128,13 +219,13 @@ float4 UnlitPassFragment(Varyings input) : SV_TARGET
 
 	float2 ndcUV = input.positionCS.xy / input.positionCS.w;
 	float2 clipPixelSize = abs(ddx(ndcUV) + ddy(ndcUV));
-	res.rg = clipPixelSize;
+	/*res.rg = clipPixelSize;
 	res.rg = input.positionCS.xy / _ScreenParams.xy;
 	res.rg = HilbertIndex(input.positionCS.xy) / (_ScreenParams.x * _ScreenParams.y);
 
 	float mask = 0.0;
 	float SHADES = 8.0;
-	float amount = input.baseUV.y;
+	float amount = input.baseUV.y;*/
 	/*uint hilbertIndex = HilbertIndex(input.positionCS.xy); // map pixel coords to hilbert curve index
 	uint m = OwenHash(ReverseBits(hilbertIndex), 0xe7843fbfu);   // owen-scramble hilbert index
 	m = OwenHash(ReverseBits(m), 0x8d8fb1e0u);   // map hilbert index to sobol sequence and owen-scramble
@@ -145,7 +236,7 @@ float4 UnlitPassFragment(Varyings input) : SV_TARGET
 
 	float4 baseMap = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.baseUV);
 	//amount = LinearToGamma_sRGB_Approx(baseMap.a).r;
-	amount = baseMap.a;
+	/*amount = baseMap.a;
 	amount = min(amount, 0.8);
 
 	res.rgb = RiemeresmaDither(input.positionCS.xy, SHADES, amount);  
@@ -159,7 +250,7 @@ float4 UnlitPassFragment(Varyings input) : SV_TARGET
 	else if (amount > hightBorder)
 	{
 		res.rgb *= smoothstep(hightBorder, 1, amount) + 1;
-	}
+	}*/
 
 	/*res.r = RiemeresmaDither(input.positionCS.xy, SHADES, input.baseUV.x);
 	res.g = RiemeresmaDither(input.positionCS.xy, SHADES, input.baseUV.y);
@@ -203,14 +294,17 @@ float4 UnlitPassFragment(Varyings input) : SV_TARGET
 
     float baseGradient = input.baseUV.x;
     float2 pixel =  _ScreenParams.xy;
-    float2 pos = ceil(input.baseUV.xy * pixel);
-    //float2 pos = input.positionCS.xy;
+    //float2 pos = ceil(input.baseUV.xy * pixel);
+    float2 pos = input.positionCS.xy;
     float steps = 1;
+
+    float time = _Time.y * 144;
+    time = 0;
 
     float dither;
     
 
-    float3 col = baseGradient;
+    float3 col = baseGradient /** 2 -0.25*/;
 
     if (input.baseUV.y <= 0.25 & input.baseUV.y < 0.125)
     {
@@ -219,10 +313,10 @@ float4 UnlitPassFragment(Varyings input) : SV_TARGET
 
     //col = smoothstep(0, 1, col);
 
-    else if (input.baseUV.y > 0.25 & input.baseUV.y < 0.5)
+    else if (input.baseUV.y > 0.25 & input.baseUV.y < 0.4)
     {
 	    //dither = Nth_weyl(pos, 0.5).x;
-	    dither = weyl_1d(pos.x + weyl_1d(pos.y) * _ScreenParams.y).x;
+	    dither = weyl_1d(pos.x + weyl_1d(frac(float(pos.y*245.9204))* _ScreenParams.y) * _ScreenParams.y).x;
 	    dither = remapTri(dither);
 
 	    //const float lsb = exp2(float(BIT_DEPTH)) - 1.0;
@@ -238,42 +332,56 @@ float4 UnlitPassFragment(Varyings input) : SV_TARGET
 	    }
 
 	    col = ApplyColorQuantization(col, dither, steps);
-	    col *= float3(0.5,1,1);
+	    col *= float3(1,0,0);
 	    //col = dither;
     }
-    else if (input.baseUV.y >= 0.5 & input.baseUV.y < 0.75)
+    else if (input.baseUV.y >= 0.4 & input.baseUV.y < 0.6)
     {
-    	dither = r_dither(pos);
-    	dither = remapTri(dither);
+    	dither = r_dither(pos, time) * 2 - 1;
+    	//dither = remapTri(dither);
     	//col -= dither;
 
-    	float threshold = 1 / (steps);
+    	/*float threshold = 1 / (steps);
 	    if (col.r < threshold)
 	    {
 	    	float endDither = dither * 0.5;
 	    	float factor = col.r / threshold;
 	    	dither = lerp(endDither, dither, factor);
-	    }
-    	col = ApplyColorQuantization(col, dither, steps);
+	    }*/
+    	col.rgb = ApplyColorQuantization(col, dither, steps);
     	col *= float3(1,0.5,1);
     }
-    else if (input.baseUV.y > 0.75 & input.baseUV.y < 0.85)
+    else if (input.baseUV.y > 0.6 & input.baseUV.y < 0.85)
     {
-    	dither = InterleavedGradientNoise(pos, 0);
-		dither = remapTri(dither);
+    	dither = InterleavedGradientNoise(pos, time) * 2 - 1;
+    	//dither += 1/9;
+		//dither = remapTri(dither);
+
+		/*float threshold = 1 / (steps);
+	    if (col.r < threshold)
+	    {
+	    	float endDither = dither * 0.5;
+	    	float factor = col.r / threshold;
+	    	dither = lerp(endDither, dither, factor);
+	    }*/
     	/*col += dither / lsb;
     	col = round(col * lsb) / lsb;*/
     	col = ApplyColorQuantization(col, dither, steps);
-    	col *= float3(1,1,0.5);
+    	col *= float3(0.5,1,1);
     }
     else if (input.baseUV.y > 0.85 & input.baseUV.y < 1.1)
     {
-    	dither = PlusShapedLDG(pos.x, pos.y);
+    	dither = ( PlusShapedLDG(pos.x, pos.y));
+    	float blueNoise = BlueNoise(pos, time, 16);
+    	dither -= blueNoise / 5.0;
+    	dither += 1.0/10.0;
+    	dither = dither * 2.0 - 1.0;
+    	//dither = _BlueNoiseTex.SampleLevel(sampler_BlueNoiseTex, input.baseUV, 0).r;
 		//dither = remapTri(dither);
     	/*col += dither / lsb;
     	col = round(col * lsb) / lsb;*/
     	//col = ApplyColorQuantization(col, dither, steps);
-    	if (col.r < dither)
+    	/*if (col.r < dither)
     	{
     		col = 0;
     	}
@@ -281,6 +389,8 @@ float4 UnlitPassFragment(Varyings input) : SV_TARGET
     	{
     		col = 1;
     	}
+*/
+    	col = ApplyColorQuantization(col, dither, steps);
     	//col = dither;
     	col *= float3(0.5,1,0.5);
     }
