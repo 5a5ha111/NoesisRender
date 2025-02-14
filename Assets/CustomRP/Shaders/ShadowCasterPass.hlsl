@@ -138,6 +138,8 @@ void ShadowCasterPassFragment (Varyings input)
 
 	float4 base = GetBase(input.baseUV);
 
+	ClipLOD(input.positionCS.xy, unity_LODFade.x);
+
 	#if defined(_SHADOWS_CLIP)
 		clip(base.a - GetSmoothness(input.baseUV));
 	#elif defined(_SHADOWS_DITHER)
@@ -171,13 +173,13 @@ void ShadowCasterPassFragment (Varyings input)
 			amount *= smoothstep(0, lowBorder, amount);
 		}*/
 
-		float res = RiemeresmaDither(pos, shades, pow(base.a, 1.5));
+		float res = RiemeresmaDither(pos, shades, pow(abs(base.a), 1.5));
 		float2 mydither2 = ComputeR2Dither(pos.x, pos.y);
 		mydither = max(mydither2.x, mydither2.y);
 		mydither = mydither2.x;
 		mydither2 = Nth_weyl(pos/2, _ShadowDither);
 		mydither = max(mydither2.x, mydither2.y);
-		mydither = pos.x % 0 == 1 ? mydither2.x : mydither2.y;
+		//mydither = pos.x % 0 == 1 ? mydither2.x : mydither2.y;
 		mydither = remapTri(mydither2.x);
 
 		mydither = InterleavedGradientNoise(pos);

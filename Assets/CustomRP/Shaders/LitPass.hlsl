@@ -11,6 +11,8 @@
 #include "../ShaderLibrary/GI.hlsl"
 #include "../ShaderLibrary/Lighting.hlsl"
 
+#include "../ShaderLibrary/CustomDither.hlsl"
+
 
 
 
@@ -87,6 +89,10 @@ float4 LitPassFragment(Varyings input) : SV_TARGET
 		clip(base.a - GetCutoff(input.baseUV));
 	#endif
 
+	#if defined(LOD_FADE_CROSSFADE)
+		ClipLOD(input.positionCS.xy, unity_LODFade.x);
+	#endif
+
 	//base.rgb = normalize(input.normalWS);
 	//return base;
 
@@ -99,6 +105,7 @@ float4 LitPassFragment(Varyings input) : SV_TARGET
 	surface.alpha = base.a;
 	surface.metallic = GetMetallic(input.baseUV);
 	surface.smoothness = GetSmoothness(input.baseUV);
+	surface.fresnelStrength = GetFresnel(input.baseUV);
 	// InterleavedGradientNoise is the easiest function from the Core RP Library, which generates a rotated tiled dither pattern given a screen-space XY position. It also requires a second argument which is used to animate it, which we don't need.
 	surface.dither = InterleavedGradientNoise(input.positionCS.xy, 0);
 
@@ -108,7 +115,7 @@ float4 LitPassFragment(Varyings input) : SV_TARGET
 		BRDF brdf = GetBRDF(surface);
 	#endif
 
-	GI gi = GetGI(GI_FRAGMENT_DATA(input), surface);
+	GI gi = GetGI(GI_FRAGMENT_DATA(input), surface, brdf);
 	float3 color = GetLighting(surface, brdf, gi);
 	color += GetEmission(input.baseUV);
 	return float4(color, surface.alpha);

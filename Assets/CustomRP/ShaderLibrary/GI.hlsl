@@ -3,6 +3,7 @@
 
 
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/EntityLighting.hlsl"
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/ImageBasedLighting.hlsl"
 
 
 
@@ -17,6 +18,13 @@ SAMPLER(samplerunity_ProbeVolumeSH);
 //Baked shadow mask
 TEXTURE2D(unity_ShadowMask);
 SAMPLER(samplerunity_ShadowMask);
+
+//reflections, skybox default 
+TEXTURECUBE(unity_SpecCube0);
+SAMPLER(samplerunity_SpecCube0);
+
+TEXTURECUBE(_BaseRefl);
+SAMPLER(sampler_BaseRefl);
 
 
 #if defined(LIGHTMAP_ON)
@@ -37,6 +45,7 @@ SAMPLER(samplerunity_ShadowMask);
 struct GI 
 {
 	float3 diffuse;
+	float3 specular;
 	ShadowMask shadowMask;
 };
 
@@ -118,11 +127,30 @@ float4 SampleBakedShadows (float2 lightMapUV, Surface surfaceWS)
 }
 
 
+// Saple environment reflections
+float3 SampleEnvironment (Surface surfaceWS, BRDF brdf) 
+{
+	float3 uvw = reflect(-surfaceWS.viewDirection, surfaceWS.normal);
+	float mip = PerceptualRoughnessToMipmapLevel(brdf.perceptualRoughness);
+	float4 environment = SAMPLE_TEXTURECUBE_LOD(
+		_BaseRefl, sampler_BaseRefl, uvw, mip
+	);
+	/*float4 environment = SAMPLE_TEXTURECUBE_LOD(
+		unity_SpecCube0, samplerunity_SpecCube0, uvw, 0.0
+	);*/
+	//return 0;
+	//return environment.rgb;
 
-GI GetGI (float2 lightMapUV, Surface surfaceWS) 
+	return DecodeHDREnvironment(environment, unity_SpecCube0_HDR);
+}
+
+
+
+GI GetGI (float2 lightMapUV, Surface surfaceWS, BRDF brdf) 
 {
 	GI gi;
 	gi.diffuse = SampleLightMap(lightMapUV) + SampleLightProbe(surfaceWS);
+	gi.specular = SampleEnvironment(surfaceWS, brdf);
 	
 	gi.shadowMask.always = false;
 	gi.shadowMask.distance = false;

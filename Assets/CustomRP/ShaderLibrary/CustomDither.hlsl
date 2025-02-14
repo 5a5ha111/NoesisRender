@@ -72,6 +72,33 @@ float RiemeresmaDither(uint2 coord)
 }
 
 
+// from "The Unreasonable Effectiveness of Quasirandom Sequences"
+// http://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
+float Rdither(float2 co)
+{
+    const float2 magic = float2(0.75487766624669276, 0.569840290998);
+    return frac(dot(co, magic));
+}
+
+float Rdither(float2 pos, float t)
+{
+    const float2 magic = float2(0.75487766624669276, 0.569840290998);
+    return frac(dot(pos, magic) + t);
+}
+
+
+
+void ClipLOD (float2 positionCS, float fade) 
+{
+    #if defined(LOD_FADE_CROSSFADE)
+        //float dither = (positionCS.y % 32) / 32;
+        //float dither = Rdither(positionCS);
+        float dither = InterleavedGradientNoise(positionCS.xy, 0);
+        clip(fade + (fade < 0.0 ? dither : -dither));
+    #endif
+}
+
+
 
 
 

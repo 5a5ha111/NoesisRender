@@ -4,12 +4,16 @@ Shader "Custom RP/Lit"
 	Properties 
 	{
 		_BaseMap("Texture", 2D) = "white" {}
+		_BaseRefl("Texture3d", Cube) = "white" {}
 		_BaseColor("Color", Color) = (0.5, 0.5, 0.5, 1.0)
 
 		_Cutoff ("Alpha Cutoff", Range(0.0, 1.0)) = 0.5
+
+		[NoScaleOffset] _MaskMap("Mask (MODS(Metallic, Occlusion, Detail and Smoothness))", 2D) = "white" {}
 		
 		_Metallic ("Metallic", Range(0, 1)) = 0
 		_Smoothness ("Smoothness", Range(0, 1)) = 0.5
+		_Fresnel ("Fresnel Strenght", Range(0, 1)) = 0.25
 
 		[NoScaleOffset] _EmissionMap("Emission", 2D) = "white" {}
 		[HDR] _EmissionColor("Emission", Color) = (0.0, 0.0, 0.0, 0.0)
@@ -63,6 +67,7 @@ Shader "Custom RP/Lit"
 			#pragma shader_feature _PREMULTIPLY_ALPHA
 			#pragma multi_compile _ LIGHTMAP_ON
 			#pragma multi_compile _ _SHADOW_MASK_ALWAYS _SHADOW_MASK_DISTANCE
+			#pragma multi_compile _ LOD_FADE_CROSSFADE
 
 			#pragma vertex LitPassVertex
 			#pragma fragment LitPassFragment
@@ -85,6 +90,7 @@ Shader "Custom RP/Lit"
 			#pragma target 3.5
 			#pragma shader_feature _CLIPPING
 			#pragma shader_feature _ _SHADOWS_CLIP _SHADOWS_DITHER _SHADOWS_RIEMERESMA_DITHER
+			#pragma multi_compile _ LOD_FADE_CROSSFADE
 			#pragma multi_compile_instancing
 			#pragma vertex ShadowCasterPassVertex
 			#pragma fragment ShadowCasterPassFragment

@@ -27,99 +27,6 @@ struct Varyings
 
 
 
-float2 Nth_weyl(float2 p0, int n) 
-{
-    //return fract(p0 + float(n)*vec2(0.754877669, 0.569840296));
-    return frac(p0 + float2(n*12664745, n*9560333)/exp2(24.0));	// integer mul to avoid round-off
-}
-
-float2 Weyl(int i)
-{
-	//return fract(float(n)*vec2(0.754877669, 0.569840296));
-    return frac(float2(i*float2(12664745, 9560333))/exp2(24.0)); // integer mul to avoid round-off
-}
-float weyl_1d(int n) 
-{
-    return frac(float(n*10368871)/exp2(24.));
-}
-
-// from "The Unreasonable Effectiveness of Quasirandom Sequences"
-// http://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
-float r_dither(float2 co)
-{
-	const float2 magic = float2(0.75487766624669276, 0.569840290998);
-    return frac(dot(co, magic));
-}
-
-float r_dither(float2 co, float t)
-{
-	const float2 magic = float2(0.75487766624669276, 0.569840290998);
-    return frac(dot(co, magic) + t);
-}
-
-
-//note: from "NEXT GENERATION POST PROCESSING IN CALL OF DUTY: ADVANCED WARFARE"
-//      http://advances.realtimerendering.com/s2014/index.html
-// (copied from https://www.shadertoy.com/view/MslGR8)
-// Same as Unity built-in
-float InterleavedGradientNoise(float2 uv )
-{
-    const float3 magic = float3( 0.06711056, 0.00583715, 52.9829189 );
-    return frac(magic.z * frac(dot(uv, magic.xy)));
-}
-
-
-// from: https://blog.demofox.org/2022/02/01/two-low-discrepancy-grids-plus-shaped-sampling-ldg-and-r2-ldg/
-// instead of having values 0/5, 1/5, 2/5, 3/5, 4/5, you could instead divide by 4 to get 0/4, 1/4, 2/4, 3/4, 4/4, which would average to 0.5 as well. You may very well want to do that situationally, depending on what you are using the numbers for. A reason NOT to do that though would be in situations where a value of 0 was the same as a value of 1, like if you were multiplying the value by 2*pi and using it as a rotation. In that situation, 0 degrees would occur twice as often as the other values and add bias that way, where if you were using it for a stochastic alpha test, it would not introduce bias to have both 0 and 1 values.
-float PlusShapedLDG(int pixelX, int pixelY)
-{
-    return fmod((float(pixelX)+3.0f*float(pixelY)+0.5f)/5.0f, 1.0f);
-}
-
-float remapTri(float n)
-{
-    float orig = n * 2.0 - 1.0;
-    n = orig * rsqrt(abs(orig));
-    return max(-1.0, n) - sign(orig);
-}
-
-float3 ApplyColorQuantization(float3 color, float ditherValue, float steps)
-{
-	if (steps == 1)
-    {
-        // Compute a threshold that is shifted by the dither.
-        float threshold = 0.5 + 0.5 * ditherValue;
-        return float3(
-            color.r < threshold ? 0.0 : 1.0,
-            color.g < threshold ? 0.0 : 1.0,
-            color.b < threshold ? 0.0 : 1.0
-        );
-    }
-    else
-    {
-    	/*float3 quantized = floor(color * steps + 0.5 + ditherValue * 0.5) / steps;
-        return saturate(quantized);*/
-
-		float ditherAmount = 0.5 / steps;
-		float3 quantized = floor( (color + ditherValue * ditherAmount) * steps + 0.5 ) / steps;
-        return saturate(quantized);
-
-    	//return round(color * steps + ditherValue) / steps;
-
-        // When steps > 1 we use a rounding approach. 
-        // (The division of dither by steps scales it to roughly one quantization step.)
-        //float3 quantized = floor(color * steps + 0.5 + ditherValue / steps) / steps;
-        // Clamp the result so that it stays in the [0,1] range.
-        //return saturate(quantized);
-    }
-
-    //return round(color * steps + ditherValue) / steps;
-}
-
-
-/*Texture2D<float4> blueNoiseTex;
-SamplerState samplerBlueNoiseTex;*/
-
 TEXTURE2D(_BlueNoiseTex);
 SAMPLER(sampler_BlueNoiseTex);
 
@@ -171,6 +78,165 @@ float BlueNoise(float2 pos, float t, float textureSize)
     
     return noise;
 }
+
+
+
+float2 Nth_weyl(float2 p0, int n) 
+{
+    //return fract(p0 + float(n)*vec2(0.754877669, 0.569840296));
+    return frac(p0 + float2(n*12664745, n*9560333)/exp2(24.0));	// integer mul to avoid round-off
+}
+
+float2 Weyl(int i)
+{
+	//return fract(float(n)*vec2(0.754877669, 0.569840296));
+    return frac(float2(i*float2(12664745, 9560333))/exp2(24.0)); // integer mul to avoid round-off
+}
+float weyl_1d(int n) 
+{
+    return frac(float(n*10368871)/exp2(24.));
+}
+
+// from "The Unreasonable Effectiveness of Quasirandom Sequences"
+// http://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
+/*float Rdither(float2 co)
+{
+	const float2 magic = float2(0.75487766624669276, 0.569840290998);
+    return frac(dot(co, magic));
+}
+
+float Rdither(float2 pos, float t)
+{
+	const float2 magic = float2(0.75487766624669276, 0.569840290998);
+    return frac(dot(pos, magic) + t);
+}*/
+
+
+//note: from "NEXT GENERATION POST PROCESSING IN CALL OF DUTY: ADVANCED WARFARE"
+//      http://advances.realtimerendering.com/s2014/index.html
+// (copied from https://www.shadertoy.com/view/MslGR8)
+// Same as Unity built-in
+float InterleavedGradientNoise(float2 uv )
+{
+    /*const float3 magic = float3( 0.06711056, 0.00583715, 52.9829189 );
+    return frac(magic.z * frac(dot(uv, magic.xy)));*/
+
+    const float3 magic = float3(0.06711056, 0.00583715, 52.9829189);
+
+	float uvXComponent = uv.x * magic.x;
+	float uvYComponent = uv.y * magic.y;
+
+	float sum = uvXComponent + uvYComponent;
+	float fractionalPart1 = frac(sum);
+
+	float scaledFractional = magic.z * fractionalPart1;
+	float classicNoise = frac(scaledFractional);
+	float simplifyedNoise = frac(uv.x * magic.z * magic.x + uv.y * magic.z * magic.y);
+
+	float2 newMagic = frac(float2(magic.z * magic.x, magic.z * magic.y));
+	simplifyedNoise = frac(uv.x * newMagic.x + uv.y * newMagic.y);
+	//return abs(classicNoise - simplifyedNoise);
+	//return simplifyedNoise;
+	return classicNoise;
+
+	//return frac(uv.x * magic.z * magic.x + uv.y * magic.z * magic.y);
+}
+
+float SimplifiedIGN(float2 uv)
+{
+	const float3 magic = float3(0.06711056, 0.00583715, 52.9829189);
+
+	float2 newMagic = frac(float2(magic.z * magic.x, magic.z * magic.y));
+	float simplifyedNoise = frac(uv.x * newMagic.x + uv.y * newMagic.y);
+	return simplifyedNoise;
+}
+
+
+static const uint FIXEDSCALE = (uint)exp2(24.0);
+static const float FIXED2NORM = 1.0 / exp2(24.0);
+
+float ign_fixed(int2 pixel, int frame)
+{
+    // A fixed-point inner modulus replaces precision loss with wraparound
+    uint2 base = (uint2)pixel * uint2(1125928, 97931) +
+                 (uint2)frame  * uint2(6291956, 547262);
+    uint inner = (base.x + base.y) % FIXEDSCALE;
+    return fmod((52.9829189 * FIXED2NORM) * (float)inner, 1.0);
+    //return fmod((52.9829189 * FIXED2NORM) * (float)inner, 1.0);
+}
+
+
+float IGN(int pixelX, int pixelY, int frame)
+{
+	const float3 magic = float3(0.06711056, 0.00583715, 52.9829189);
+	const float frameOffset = 5.588238f;
+    frame = frame % 64; // Periodically reset frame to avoid numerical issues
+    float x = float(pixelX) + frameOffset * float(frame);
+    float y = float(pixelY) + frameOffset * float(frame);
+    return frac(magic.z * frac(magic.x * x + magic.y * y));
+}
+
+
+// from: https://blog.demofox.org/2022/02/01/two-low-discrepancy-grids-plus-shaped-sampling-ldg-and-r2-ldg/
+// instead of having values 0/5, 1/5, 2/5, 3/5, 4/5, you could instead divide by 4 to get 0/4, 1/4, 2/4, 3/4, 4/4, which would average to 0.5 as well. You may very well want to do that situationally, depending on what you are using the numbers for. A reason NOT to do that though would be in situations where a value of 0 was the same as a value of 1, like if you were multiplying the value by 2*pi and using it as a rotation. In that situation, 0 degrees would occur twice as often as the other values and add bias that way, where if you were using it for a stochastic alpha test, it would not introduce bias to have both 0 and 1 values.
+float PlusShapedLDG(int pixelX, int pixelY)
+{
+    //return fmod((float(pixelX)+3.0f*float(pixelY)+0.5f)/5.0f, 1.0f);
+    return fmod(((float(pixelX) + 3 * float(pixelY))/5) + 1/10, 1);
+}
+
+float PlusShapedLDGRandom(int pixelX, int pixelY)
+{
+    //return fmod((float(pixelX)+3.0f*float(pixelY)+0.5f)/5.0f, 1.0f);
+    float blueNoise = BlueNoise(float2(pixelX, pixelY), 0, 16) / 5;
+    return fmod(((float(pixelX) + 3 * float(pixelY))/5) + blueNoise, 1);
+}
+
+float remapTri(float n)
+{
+    float orig = n * 2.0 - 1.0;
+    n = orig * rsqrt(abs(orig));
+    return max(-1.0, n) - sign(orig);
+}
+
+float3 ApplyColorQuantization(float3 color, float ditherValue, float steps)
+{
+	if (steps == 1)
+    {
+        // Compute a threshold that is shifted by the dither.
+        float threshold = 0.5 + 0.5 * ditherValue;
+        return float3(
+            color.r < threshold ? 0.0 : 1.0,
+            color.g < threshold ? 0.0 : 1.0,
+            color.b < threshold ? 0.0 : 1.0
+        );
+    }
+    else
+    {
+    	/*float3 quantized = floor(color * steps + 0.5 + ditherValue * 0.5) / steps;
+        return saturate(quantized);*/
+
+		float ditherAmount = 0.5 / steps;
+		float3 quantized = floor( (color + ditherValue * ditherAmount) * steps + 0.5 ) / steps;
+        return saturate(quantized);
+
+    	//return round(color * steps + ditherValue) / steps;
+
+        // When steps > 1 we use a rounding approach. 
+        // (The division of dither by steps scales it to roughly one quantization step.)
+        //float3 quantized = floor(color * steps + 0.5 + ditherValue / steps) / steps;
+        // Clamp the result so that it stays in the [0,1] range.
+        //return saturate(quantized);
+    }
+
+    //return round(color * steps + ditherValue) / steps;
+}
+
+
+/*Texture2D<float4> blueNoiseTex;
+SamplerState samplerBlueNoiseTex;*/
+
+
 
 
 
@@ -337,7 +403,7 @@ float4 UnlitPassFragment(Varyings input) : SV_TARGET
     }
     else if (input.baseUV.y >= 0.4 & input.baseUV.y < 0.6)
     {
-    	dither = r_dither(pos, time) * 2 - 1;
+    	dither = Rdither(pos, time) * 2 - 1;
     	//dither = remapTri(dither);
     	//col -= dither;
 
@@ -353,7 +419,7 @@ float4 UnlitPassFragment(Varyings input) : SV_TARGET
     }
     else if (input.baseUV.y > 0.6 & input.baseUV.y < 0.85)
     {
-    	dither = InterleavedGradientNoise(pos, time) * 2 - 1;
+    	dither = InterleavedGradientNoise(pos) * 2 - 1;
     	//dither += 1/9;
 		//dither = remapTri(dither);
 
@@ -371,11 +437,13 @@ float4 UnlitPassFragment(Varyings input) : SV_TARGET
     }
     else if (input.baseUV.y > 0.85 & input.baseUV.y < 1.1)
     {
-    	dither = ( PlusShapedLDG(pos.x, pos.y));
+    	//dither = ( PlusShapedLDG(pos.x, pos.y));
+    	dither = ( PlusShapedLDGRandom(pos.x, pos.y));
     	float blueNoise = BlueNoise(pos, time, 16);
-    	dither -= blueNoise / 5.0;
-    	dither += 1.0/10.0;
+    	//dither -= blueNoise / 5.0;
+    	//dither += 1.0/10.0;
     	dither = dither * 2.0 - 1.0;
+    	//dither += blueNoise * 2 - 1;
     	//dither = _BlueNoiseTex.SampleLevel(sampler_BlueNoiseTex, input.baseUV, 0).r;
 		//dither = remapTri(dither);
     	/*col += dither / lsb;
@@ -396,6 +464,37 @@ float4 UnlitPassFragment(Varyings input) : SV_TARGET
     }
     //int bytes = 4;
     //col = round(col * bytes) / bytes;
+
+    //dither = InterleavedGradientNoise(pos);
+    //float simpleDither = SimplifiedIGN(pos);
+    //dither = ign_fixed(int2(pos), 0);
+
+    //col = 0;
+    //col.r = dither;
+    //col.g = abs(dither - simpleDither); 
+    //col.b = simpleDither;
+
+    /*float halfway = (0.5 * _ScreenParams.x);
+
+    float frame = _Time.y * 10;
+    frame = 0;
+    float colF = float(pos.x < halfway ? 
+        ign_fixed(pos, frame) : 
+        InterleavedGradientNoise(pos, frame)
+    );
+
+    col = colF;
+
+	if (abs(pos.x - halfway) <= 1) 
+	{
+        col = float3(1.0, 0.0, 0.0);
+    }
+
+    if (pos.x < halfway)
+    {
+    	col *= float3(0.5, 1, 1);
+    }*/
+
 
     res.rgb = col;
 

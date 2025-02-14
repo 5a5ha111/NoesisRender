@@ -104,7 +104,7 @@ public class CustomShaderGUI : ShaderGUI
         {
             if (prop.type == MaterialProperty.PropType.Texture)
             {
-                materialEditor.TexturePropertySingleLine(new GUIContent(prop.displayName), prop);
+                materialEditor.TextureProperty(prop, prop.displayName);
             }
             else
             {
