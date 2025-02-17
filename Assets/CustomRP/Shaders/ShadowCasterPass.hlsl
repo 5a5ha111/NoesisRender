@@ -22,6 +22,7 @@ UNITY_INSTANCING_BUFFER_END(UnityPerMaterial)*/
 
 #define BIT_DEPTH 1
 float _ShadowDither;
+bool _ShadowPancaking;
 
 struct Attributes 
 {
@@ -115,14 +116,17 @@ Varyings ShadowCasterPassVertex (Attributes input)
 
 
 	// Fix shadow clipping due being closer than shadow camera near clip plane.
-	// We do this by taking the maximum of the clip space Z and W coordinates, or their minimum when UNITY_REVERSED_Z is defined. To use the correct sign for the W coordinate multiply it with UNITY_NEAR_CLIP_VALUE.
-	#if UNITY_REVERSED_Z
-		output.positionCS.z =
-			min(output.positionCS.z, output.positionCS.w * UNITY_NEAR_CLIP_VALUE);
-	#else
-		output.positionCS.z =
-			max(output.positionCS.z, output.positionCS.w * UNITY_NEAR_CLIP_VALUE);
-	#endif
+	// We do this by taking the maximum of the clip space Z and W coordinates, or their minimum when UNITY_REVERSED_Z is defined. To use the correct sign for the W coordinate multiply it with UNITY_NEAR_CLIP_VALUE. Use only for dir lights
+	if (_ShadowPancaking) 
+	{
+		#if UNITY_REVERSED_Z
+			output.positionCS.z =
+				min(output.positionCS.z, output.positionCS.w * UNITY_NEAR_CLIP_VALUE);
+		#else
+			output.positionCS.z =
+				max(output.positionCS.z, output.positionCS.w * UNITY_NEAR_CLIP_VALUE);
+		#endif
+	}
 
 	float4 baseST = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseMap_ST);
 	output.baseUV = input.baseUV * baseST.xy + baseST.zw;
@@ -136,12 +140,13 @@ void ShadowCasterPassFragment (Varyings input)
 	float4 baseColor = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor);
 	float4 base = baseMap * baseColor;*/
 
-	float4 base = GetBase(input.baseUV);
+	InputConfig config = GetInputConfig(input.baseUV, 0);
+	float4 base = GetBase(config);
 
 	ClipLOD(input.positionCS.xy, unity_LODFade.x);
 
 	#if defined(_SHADOWS_CLIP)
-		clip(base.a - GetSmoothness(input.baseUV));
+		clip(base.a - GetSmoothness(config));
 	#elif defined(_SHADOWS_DITHER)
 		//float2 pos = input.positionCS.xy;
 		//float2 pos = frac(input.positionWS.xz) * 10000;

@@ -2,22 +2,28 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-public class CustomRenderPipeline : RenderPipeline 
+public partial class CustomRenderPipeline : RenderPipeline 
 {
 
-    bool useDynamicBatching, useGPUInstancing;
+    bool useDynamicBatching, useGPUInstancing, useLightsPerObject;
     ShadowSettings shadowSettings;
+    PostFXSettings postFXSettings;
 
     public CustomRenderPipeline (
-		bool useDynamicBatching, bool useGPUInstancing, bool useSRPBatcher,
-        ShadowSettings shadowSettings
+		bool useDynamicBatching, bool useGPUInstancing, bool useSRPBatcher, bool useLightsPerObject, 
+        ShadowSettings shadowSettings,
+        PostFXSettings postFXSettings
     ) {
 		this.useDynamicBatching = useDynamicBatching;
 		this.useGPUInstancing = useGPUInstancing;
-		GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatcher;
+        this.useLightsPerObject = useLightsPerObject;
+        GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatcher;
         this.shadowSettings = shadowSettings;
+        this.postFXSettings = postFXSettings;
 
         GraphicsSettings.lightsUseLinearIntensity = true;
+
+        InitializeForEditor();
     }
 
     CameraRenderer renderer = new CameraRenderer();
@@ -31,8 +37,9 @@ public class CustomRenderPipeline : RenderPipeline
     {
         for (int i = 0; i < cameras.Count; i++)
         {
-            renderer.Render(context, cameras[i], useDynamicBatching, useGPUInstancing,
-                shadowSettings);
+            renderer.Render(context, cameras[i], useDynamicBatching, useGPUInstancing, useLightsPerObject,
+                shadowSettings, postFXSettings
+            );
         }
     }
 }

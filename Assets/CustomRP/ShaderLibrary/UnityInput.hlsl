@@ -23,6 +23,10 @@ CBUFFER_START(UnityPerDraw)
 	float4 unity_SHC;
 
 	float4 unity_ProbeVolumeParams;
+
+	real4 unity_LightData;
+	real4 unity_LightIndices[2];
+	
 	float4x4 unity_ProbeVolumeWorldToObject;
 	float4 unity_ProbeVolumeSizeInv;
 	float4 unity_ProbeVolumeMin;
@@ -37,6 +41,7 @@ float4x4 glstate_matrix_projection;
 float3 _WorldSpaceCameraPos;
 float4 _ScreenParams;
 float4 _Time;
+float4 _ProjectionParams;
 
 
 

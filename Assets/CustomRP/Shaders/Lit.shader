@@ -4,14 +4,27 @@ Shader "Custom RP/Lit"
 	Properties 
 	{
 		_BaseMap("Texture", 2D) = "white" {}
-		_BaseRefl("Texture3d", Cube) = "white" {}
 		_BaseColor("Color", Color) = (0.5, 0.5, 0.5, 1.0)
+		_BaseRefl("ReflectionCubemap (for SPR batcher compatability)", Cube) = "white" {}
 
 		_Cutoff ("Alpha Cutoff", Range(0.0, 1.0)) = 0.5
 
+		[Toggle(_MASK_MAP)] _MaskMapToggle ("Mask Map", Float) = 0
 		[NoScaleOffset] _MaskMap("Mask (MODS(Metallic, Occlusion, Detail and Smoothness))", 2D) = "white" {}
+		[Toggle(_DETAIL_MAP)] _DetailMapToggle ("Detail Maps", Float) = 0
+		_DetailMap("Details", 2D) = "linearGrey" {}
+		_DetailAlbedo("Detail Albedo", Range(0, 1)) = 1
+		_DetailSmoothness("Detail Smoothness", Range(0, 1)) = 1
+
+		[NoScaleOffset] _DetailNormalMap("Detail Normals", 2D) = "bump" {}
+		_DetailNormalScale("Detail Normal Scale", Range(0, 1)) = 1
+
+		[Toggle(_NORMAL_MAP)] _NormalMapToggle ("Normal Map", Float) = 0
+		[NoScaleOffset] _NormalMap("Normals", 2D) = "bump" {}
+		_NormalScale("Normal Scale", Range(0, 1)) = 1
 		
 		_Metallic ("Metallic", Range(0, 1)) = 0
+		_Occlusion ("Occlusion", Range(0, 1)) = 1
 		_Smoothness ("Smoothness", Range(0, 1)) = 0.5
 		_Fresnel ("Fresnel Strenght", Range(0, 1)) = 0.25
 
@@ -68,6 +81,15 @@ Shader "Custom RP/Lit"
 			#pragma multi_compile _ LIGHTMAP_ON
 			#pragma multi_compile _ _SHADOW_MASK_ALWAYS _SHADOW_MASK_DISTANCE
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
+			#pragma multi_compile _ _LIGHTS_PER_OBJECT
+
+			// Other light shadows
+			#pragma multi_compile _ _OTHER_PCF3 _OTHER_PCF5 _OTHER_PCF7
+
+
+			#pragma shader_feature _MASK_MAP
+			#pragma shader_feature _DETAIL_MAP
+			#pragma shader_feature _NORMAL_MAP
 
 			#pragma vertex LitPassVertex
 			#pragma fragment LitPassFragment

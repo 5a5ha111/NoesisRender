@@ -61,4 +61,18 @@ public class ShadowSettings
 
         cascadeFade = 0.1f
     };
+
+
+    [System.Serializable] public struct Other
+    {
+        public MapSize atlasSize;
+
+        public FilterMode filter;
+    }
+
+    public Other other = new Other
+    {
+        atlasSize = MapSize._1024,
+        filter = FilterMode.PCF2x2
+    };
 }
