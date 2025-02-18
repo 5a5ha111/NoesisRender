@@ -98,6 +98,17 @@ void ClipLOD (float2 positionCS, float fade)
     #endif
 }
 
+float hash1D(float2 p) 
+{
+    return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+}
+
+float HashBasedTriangularDither(float2 uv)
+{
+    float r = hash1D(uv) + hash1D(uv + (float2)1.1) - 0.5;
+    return r;
+}
+
 
 
 

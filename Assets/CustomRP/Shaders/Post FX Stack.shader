@@ -48,18 +48,28 @@ Shader "Hidden/Custom RP/Post FX Stack"
 
 		Pass 
 		{
-			Name "Bloom Combine"
+			Name "Bloom Add"
 			
 			HLSLPROGRAM
 				#pragma target 3.5
 				#pragma vertex DefaultPassVertex
-				#pragma fragment BloomCombinePassFragment
+				#pragma fragment BloomAddPassFragment
+			ENDHLSL
+		}
+		Pass 
+		{
+			Name "Bloom Scatter"
+			
+			HLSLPROGRAM
+				#pragma target 3.5
+				#pragma vertex DefaultPassVertex
+				#pragma fragment BloomScatterPassFragment
 			ENDHLSL
 		}
 
 		Pass 
 		{
-			Name "Bloom PrefilterPass"
+			Name "Bloom Prefilter"
 			
 			HLSLPROGRAM
 				#pragma target 3.5
@@ -68,5 +78,103 @@ Shader "Hidden/Custom RP/Post FX Stack"
 			ENDHLSL
 		}
 
+		Pass 
+		{
+			Name "Bloom PrefilterForeflies"
+			
+			HLSLPROGRAM
+				#pragma target 3.5
+				#pragma vertex DefaultPassVertex
+				#pragma fragment BloomPrefilterFirefliesFragment
+			ENDHLSL
+		}
+
+
+		Pass 
+		{
+			Name "Bloom BloomScatterFinal"
+			
+			HLSLPROGRAM
+				#pragma target 3.5
+				#pragma vertex DefaultPassVertex
+				#pragma fragment BloomScatterFinalPassFragment
+			ENDHLSL
+		}
+
+
+
+		Pass 
+		{
+			Name " No ToneMapping"
+			
+			HLSLPROGRAM
+				#pragma target 3.5
+				#pragma vertex DefaultPassVertex
+				#pragma fragment ToneMappingNonePassFragment
+			ENDHLSL
+		}
+		Pass 
+		{
+			Name "ToneMapping Neutral"
+			
+			HLSLPROGRAM
+				#pragma target 3.5
+				#pragma vertex DefaultPassVertex
+				#pragma fragment ToneMappingNeutralPassFragment
+			ENDHLSL
+		}
+		Pass 
+		{
+			Name "ToneMapping Reinhard"
+			
+			HLSLPROGRAM
+				#pragma target 3.5
+				#pragma vertex DefaultPassVertex
+				#pragma fragment ToneMappingReinhardPassFragment
+			ENDHLSL
+		}
+		Pass 
+		{
+			Name "ToneMapping ACES"
+			
+			HLSLPROGRAM
+				#pragma target 3.5
+				#pragma vertex DefaultPassVertex
+				#pragma fragment ToneMappingACESPassFragment
+			ENDHLSL
+		}
+		Pass 
+		{
+			Name "ToneMapping GT"
+			
+			HLSLPROGRAM
+				#pragma target 3.5
+				#pragma vertex DefaultPassVertex
+				#pragma fragment ToneMappingGTPassFragment
+			ENDHLSL
+		}
+		Pass 
+		{
+			Name "ToneMapping Uncharted"
+			
+			HLSLPROGRAM
+				#pragma target 3.5
+				#pragma vertex DefaultPassVertex
+				#pragma fragment ToneMappingUncharted2PassFragment
+			ENDHLSL
+		}
+
+
+
+		Pass 
+		{
+			Name "Apply color grading LUT texture"
+			
+			HLSLPROGRAM
+				#pragma target 3.5
+				#pragma vertex DefaultPassVertex
+				#pragma fragment FinalLUTPassFragment
+			ENDHLSL
+		}
 	}
 }

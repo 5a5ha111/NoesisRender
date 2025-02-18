@@ -36,10 +36,6 @@ float2 hash2D(float2 p)
                     dot(p, float2(269.5, 183.3)))) * 43758.5453);
 }
 
-float hash1D(float2 p) 
-{
-    return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
-}
 
 float BlueNoise(float2 pos, float t, float textureSize) 
 {
@@ -198,6 +194,8 @@ float remapTri(float n)
     n = orig * rsqrt(abs(orig));
     return max(-1.0, n) - sign(orig);
 }
+
+
 
 float3 ApplyColorQuantization(float3 color, float ditherValue, float steps)
 {
@@ -382,8 +380,10 @@ float4 UnlitPassFragment(Varyings input) : SV_TARGET
     else if (input.baseUV.y > 0.25 & input.baseUV.y < 0.4)
     {
 	    //dither = Nth_weyl(pos, 0.5).x;
-	    dither = weyl_1d(pos.x + weyl_1d(frac(float(pos.y*245.9204))* _ScreenParams.y) * _ScreenParams.y).x;
-	    dither = remapTri(dither);
+	    /*dither = weyl_1d(pos.x + weyl_1d(frac(float(pos.y*245.9204))* _ScreenParams.y) * _ScreenParams.y).x;
+	    dither = remapTri(dither);*/
+
+	    dither = HashBasedTriangularDither(pos);
 
 	    //const float lsb = exp2(float(BIT_DEPTH)) - 1.0;
 	    /*col += dither / lsb;
