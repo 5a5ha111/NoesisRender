@@ -20,12 +20,14 @@ Shader "Custom RP/Unlit"
 		HLSLINCLUDE
 		#include "../ShaderLibrary/Common.hlsl"
 		#include "UnlitInput.hlsl"
+
+		
 		ENDHLSL
 		
 		Pass 
 		{
 
-			Blend [_SrcBlend] [_DstBlend]
+			Blend [_SrcBlend] [_DstBlend], One OneMinusSrcAlpha
 			ZWrite [_ZWrite]
 
 			HLSLPROGRAM

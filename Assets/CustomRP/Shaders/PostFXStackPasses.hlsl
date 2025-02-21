@@ -118,8 +118,8 @@ float4 BloomAddPassFragment (Varyings input) : SV_TARGET
 	{
 		lowRes = GetSource(input.screenUV).rgb;
 	}
-	float3 highRes = GetSource2(input.screenUV).rgb;
-	return float4(lowRes * _BloomIntensity + highRes, 1.0);
+	float4 highRes = GetSource2(input.screenUV);
+	return float4(lowRes * _BloomIntensity + highRes.rgb, highRes.a);
 }
 float4 BloomScatterPassFragment (Varyings input) : SV_TARGET 
 {
@@ -179,15 +179,17 @@ float4 BloomPrefilterFirefliesFragment (Varyings input) : SV_TARGET
 float4 BloomScatterFinalPassFragment (Varyings input) : SV_TARGET 
 {
 	float3 lowRes;
-	if (_BloomBicubicUpsampling) {
+	if (_BloomBicubicUpsampling) 
+	{
 		lowRes = GetSourceBicubic(input.screenUV).rgb;
 	}
-	else {
+	else 
+	{
 		lowRes = GetSource(input.screenUV).rgb;
 	}
-	float3 highRes = GetSource2(input.screenUV).rgb;
-	lowRes += highRes - ApplyBloomThreshold(highRes);
-	return float4(lerp(highRes, lowRes, _BloomIntensity), 1.0);
+	float4 highRes = GetSource2(input.screenUV);
+	lowRes += highRes.rgb - ApplyBloomThreshold(highRes);
+	return float4(lerp(highRes.rgb, lowRes, _BloomIntensity), highRes.a);
 }
 
 
@@ -287,6 +289,34 @@ float3 ColorGrade (float3 color, bool useACES = false)
 }
 
 
+// Apply dither
+float3 ApplyDither(float3 color, float2 uv)
+{
+
+	float luminance = Luminance(color);
+	float dither = InterleavedGradientNoise(uv * _ScreenParams.xy, _Time.y * 144);
+
+	#if defined(_DITHER_HIGH_QUALITY) 
+		// Fade dither to black when color is dark
+		const float minColorStep = 1.0 / 255.0;
+		if (luminance < minColorStep * 2.0)
+	    {
+	    	float endDither = 0;
+	    	float factor = luminance / (minColorStep * 2.0);
+	    	dither = lerp(endDither, dither, factor);
+	    }
+	    dither = ( (dither * 2.0 - 1.0) / 255.0 ) / 2.0;
+	    color.rgb += dither;
+		//color.g += dither;
+	#else
+	 	dither = ( (dither * 2.0 - 1.0) / 255.0 ) / 2.0;
+		color.rb += dither;
+		color.g -= dither;
+	#endif
+	return color;
+}
+
+
 
 
 // Lut functions
@@ -307,8 +337,11 @@ float4 FinalLUTPassFragment (Varyings input) : SV_TARGET
 {
 	float4 color = GetSource(input.screenUV);
 	color.rgb = ApplyColorGradingLUT(color.rgb);
-	//color += (HashBasedTriangularDither(input.screenUV) / 255);
-	color += ((InterleavedGradientNoise(input.screenUV * _ScreenParams.xy, _Time.y) * 2 - 1) / 255);
+
+	#if defined(_DITHER)
+		color.rgb = ApplyDither(color.rgb, input.screenUV.xy);
+	#endif
+
 	return color;
 }
 

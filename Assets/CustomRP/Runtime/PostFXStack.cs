@@ -26,10 +26,15 @@ public partial class PostFXStack
         ToneMappingGranTurismo,
         ToneMappingUncharted,
 
+        /// <summary>
+        /// Final pass
+        /// </summary>
         ApplyLut
     }
 
     const string bufferName = "Post FX";
+    const string ditherKeyword = "_DITHER";
+    const string ditherHQKeyword = "_DITHER_HIGH_QUALITY";
     const int maxBloomPyramidLevels = 16;
     static Rect fullViewRect = new Rect(0f, 0f, 1f, 1f);
 
@@ -63,6 +68,11 @@ public partial class PostFXStack
         smhRangeId = Shader.PropertyToID("_SMHRange");
 
 
+    int
+        finalSrcBlendId = Shader.PropertyToID("_FinalSrcBlend"),
+        finalDstBlendId = Shader.PropertyToID("_FinalDstBlend");
+
+
     CommandBuffer buffer = new CommandBuffer
     {
         name = bufferName
@@ -74,9 +84,10 @@ public partial class PostFXStack
     PostFXSettings settings;
     bool useHDR;
     int colorLUTResolution;
+    CameraSettings.FinalBlendMode finalBlendMode;
 
 
-    public bool IsActive => settings != null;
+    public bool IsActive => settings != null && settings.Enabled;
 
 
     public PostFXStack()
@@ -91,7 +102,7 @@ public partial class PostFXStack
 
     public void Setup(
         ScriptableRenderContext context, Camera camera, PostFXSettings settings,
-        bool useHDR, int colorLUTResolution
+        bool useHDR, int colorLUTResolution, CameraSettings.FinalBlendMode finalBlendMode
     )
     {
         this.context = context;
@@ -100,21 +111,28 @@ public partial class PostFXStack
             camera.cameraType <= CameraType.SceneView ? settings : null;
         this.useHDR = useHDR;
         this.colorLUTResolution = colorLUTResolution;
+        this.finalBlendMode = finalBlendMode;
         ApplySceneViewState();
     }
 
     public void Render(int sourceId)
     {
         //Draw(sourceId, BuiltinRenderTextureType.CameraTarget, Pass.Copy); // copy
-
-        if (DoBloom(sourceId))
+        if (settings.Enabled && settings.Material != null)
         {
-            DoColorGradingAndToneMapping(bloomResultId);
-            buffer.ReleaseTemporaryRT(bloomResultId);
+            if (DoBloom(sourceId))
+            {
+                DoColorGradingAndToneMapping(bloomResultId);
+                buffer.ReleaseTemporaryRT(bloomResultId);
+            }
+            else
+            {
+                DoColorGradingAndToneMapping(sourceId);
+            }
         }
         else
         {
-            DoColorGradingAndToneMapping(sourceId);
+            buffer.Blit(sourceId, BuiltinRenderTextureType.CameraTarget);
         }
         context.ExecuteCommandBuffer(buffer);
         buffer.Clear();
@@ -301,13 +319,41 @@ public partial class PostFXStack
             smh.shadowsStart, smh.shadowsEnd, smh.highlightsStart, smh.highLightsEnd
         ));
     }
+    void ConfigureDither()
+    {
+        if (settings.Material != null)
+        {
+            var mat = settings.Material;
+            if (settings.dither.mode == 0)
+            {
+                mat.DisableKeyword(ditherKeyword);
+            }
+            else
+            {
+                mat.EnableKeyword(ditherKeyword);
+                if (settings.dither.mode == Dither.Mode.HighQuality)
+                {
+                    mat.EnableKeyword(ditherHQKeyword);
+                }
+                else
+                {
+                    mat.DisableKeyword(ditherHQKeyword);
+                }
+            }
+        }
+    }
 
     void DrawFinal(RenderTargetIdentifier from)
     {
+        buffer.SetGlobalFloat(finalSrcBlendId, (float)finalBlendMode.source);
+        buffer.SetGlobalFloat(finalDstBlendId, (float)finalBlendMode.destination);
+
         buffer.SetGlobalTexture(fxSourceId, from);
         buffer.SetRenderTarget(
             BuiltinRenderTextureType.CameraTarget,
-            camera.rect == fullViewRect ? RenderBufferLoadAction.DontCare : RenderBufferLoadAction.Load, 
+            //camera.rect == fullViewRect ? RenderBufferLoadAction.DontCare : RenderBufferLoadAction.Load, 
+            //RenderBufferLoadAction.Load, 
+            finalBlendMode.destination == BlendMode.Zero && camera.rect == fullViewRect ? RenderBufferLoadAction.DontCare : RenderBufferLoadAction.Load,
             RenderBufferStoreAction.Store
         );
         buffer.SetViewport(camera.pixelRect);
@@ -323,6 +369,7 @@ public partial class PostFXStack
         ConfigureSplitToning();
         ConfigureChannelMixer();
         ConfigureShadowsMidtonesHighlights();
+        ConfigureDither();
 
         int lutHeight = colorLUTResolution;
         int lutWidth = lutHeight * lutHeight;

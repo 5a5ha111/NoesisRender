@@ -29,6 +29,13 @@ float3 GetLighting(Surface surface, BRDF brdf, Light light)
 }*/
 
 
+// Returns whether the masks of a surface and light overlap. This is done by checking whether the bitwise-AND of the bit masks is nonzero.
+bool RenderingLayersOverlap (Surface surface, Light light) 
+{
+	return (surface.renderingLayerMask & light.renderingLayerMask) != 0;
+}
+
+
 float3 GetLighting (Surface surfaceWS, BRDF brdf, GI gi) 
 {
 	ShadowData shadowData = GetShadowData(surfaceWS);
@@ -38,7 +45,10 @@ float3 GetLighting (Surface surfaceWS, BRDF brdf, GI gi)
 	for (int i = 0; i < GetDirectionalLightCount(); i++) 
 	{
 		Light light = GetDirectionalLight(i, surfaceWS, shadowData);
-		color += GetLighting(surfaceWS, brdf, light);
+		if (RenderingLayersOverlap(surfaceWS, light)) 
+		{
+			color += GetLighting(surfaceWS, brdf, light);
+		}
 	}
 	
 	#if defined(_LIGHTS_PER_OBJECT)
@@ -46,13 +56,19 @@ float3 GetLighting (Surface surfaceWS, BRDF brdf, GI gi)
 		{
 			int lightIndex = unity_LightIndices[(uint)j / 4][(uint)j % 4];
 			Light light = GetOtherLight(lightIndex, surfaceWS, shadowData);
-			color += GetLighting(surfaceWS, brdf, light);
+			if (RenderingLayersOverlap(surfaceWS, light)) 
+			{
+				color += GetLighting(surfaceWS, brdf, light);
+			}
 		}
 	#else
 		for (int j = 0; j < GetOtherLightCount(); j++) 
 		{
 			Light light = GetOtherLight(j, surfaceWS, shadowData);
-			color += GetLighting(surfaceWS, brdf, light);
+			if (RenderingLayersOverlap(surfaceWS, light)) 
+			{
+				color += GetLighting(surfaceWS, brdf, light);
+			}
 		}
 	#endif
 	//return gi.shadowMask.shadows.rgb; //Debug GI

@@ -349,7 +349,10 @@ public class Shadows
             new ShadowDrawingSettings(
                 cullingResults, light.visibleLightIndex,
                 BatchCullingProjectionType.Orthographic
-            );
+            )
+            {
+                useRenderingLayerMaskTest = true
+            };
         int cascadeCount = settings.directional.cascadeCount;
         int tileOffset = index * cascadeCount;
         Vector3 ratios = settings.directional.CascadeRatios;

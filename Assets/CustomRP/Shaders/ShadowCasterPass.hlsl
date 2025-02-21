@@ -92,13 +92,6 @@ float InterleavedGradientNoise(float2 uv )
     return frac(magic.z * frac(dot(uv, magic.xy)));
 }
 
-float remapTri(float n)
-{
-    float orig = n * 2.0 - 1.0;
-    n = orig * rsqrt(abs(orig));
-    return max(-1.0, n) - sign(orig);
-}
-
 float ApplyColorQuantization(float color, float ditherValue, float steps)
 {
     return round(color * steps + ditherValue) / steps;

@@ -10,6 +10,10 @@ Shader "Hidden/Custom RP/Post FX Stack"
 		HLSLINCLUDE
 			#include "../ShaderLibrary/Common.hlsl"
 			#include "PostFXStackPasses.hlsl"
+
+			#pragma shader_feature _DITHER
+			#pragma shader_feature _DITHER_HIGH_QUALITY
+
 		ENDHLSL
 
 		Pass 
@@ -170,6 +174,8 @@ Shader "Hidden/Custom RP/Post FX Stack"
 		{
 			Name "Apply color grading LUT texture"
 			
+			Blend [_FinalSrcBlend] [_FinalDstBlend]
+
 			HLSLPROGRAM
 				#pragma target 3.5
 				#pragma vertex DefaultPassVertex

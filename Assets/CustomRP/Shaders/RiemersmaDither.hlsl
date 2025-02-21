@@ -188,12 +188,6 @@ float PlusShapedLDGRandom(int pixelX, int pixelY)
     return fmod(((float(pixelX) + 3 * float(pixelY))/5) + blueNoise, 1);
 }
 
-float remapTri(float n)
-{
-    float orig = n * 2.0 - 1.0;
-    n = orig * rsqrt(abs(orig));
-    return max(-1.0, n) - sign(orig);
-}
 
 
 
@@ -384,18 +378,19 @@ float4 UnlitPassFragment(Varyings input) : SV_TARGET
 	    dither = remapTri(dither);*/
 
 	    dither = HashBasedTriangularDither(pos);
+	    dither = remapTri(dither);
 
 	    //const float lsb = exp2(float(BIT_DEPTH)) - 1.0;
 	    /*col += dither / lsb;
 	    col = round(col * lsb) / lsb;*/
 
-	    float threshold = 1 / (steps);
+	    /*float threshold = 1 / (steps);
 	    if (col.r < threshold)
 	    {
 	    	float endDither = dither * 0.5;
 	    	float factor = col.r / threshold;
 	    	dither = lerp(endDither, dither, factor);
-	    }
+	    }*/
 
 	    col = ApplyColorQuantization(col, dither, steps);
 	    col *= float3(1,0,0);

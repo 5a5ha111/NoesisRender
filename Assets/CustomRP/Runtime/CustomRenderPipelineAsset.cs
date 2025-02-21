@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 [CreateAssetMenu(menuName = "Rendering/Custom Render Pipeline")]
-public class CustomRenderPipelineAsset : RenderPipelineAsset 
+public partial class CustomRenderPipelineAsset : RenderPipelineAsset 
 {
 
     [SerializeField]
@@ -12,9 +12,15 @@ public class CustomRenderPipelineAsset : RenderPipelineAsset
 
     [SerializeField] bool allowHDR = true;
 
+    [Space]
+    [Space]
+    [SerializeField] ShadowSettings shadows = default;
 
-    [Space][SerializeField] ShadowSettings shadows = default;
 
+    [Space]
+    [Space]
+    [Space]
+    [Space]
     [SerializeField] PostFXSettings postFXSettings = default;
 
     public enum ColorLUTResolution { _16 = 16, _32 = 32, _64 = 64 }

@@ -43,6 +43,12 @@ float ReshapeUniformToTriangle(float v)
     v = sign(v) * (1.0 - sqrt(max(0.0, 1.0 - abs(v)))); // [-1, 1], max prevents NaNs
     return v + 0.5; // [-0.5, 1.5]
 }
+float remapTri(float n)
+{
+    float orig = n * 2.0 - 1.0;
+    n = orig * rsqrt(abs(orig));
+    return max(-1.0, n) - sign(orig);
+}
 
 // Use hilbert curve for error diffusion. Produce more stable random pattern. From https://www.compuphase.com/riemer.htm and https://www.shadertoy.com/view/ssBBW1
 float RiemeresmaDither(uint2 coord, uint shades, float amount)

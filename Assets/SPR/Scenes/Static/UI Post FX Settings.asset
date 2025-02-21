@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f120b4e6d94bf634888ac5f03f2f1298, type: 3}
-  m_Name: Test Post FX Settings
+  m_Name: UI Post FX Settings
   m_EditorClassIdentifier: 
   shader: {fileID: 4800000, guid: e55a176c11dcef341959e09b286d2d94, type: 3}
   enabled: 1
@@ -18,12 +18,12 @@ MonoBehaviour:
     maxIterations: 1
     downscaleLimit: 1
     bicubicUpsampling: 1
-    threshold: 1.1
+    threshold: 1
     thresholdKnee: 0
     intensity: 1
     fadeFireflies: 1
     mode: 1
-    scatter: 0.05
+    scatter: 0.7
   colorAdjustments:
     postExposure: 0
     contrast: 0
@@ -39,17 +39,17 @@ MonoBehaviour:
     balance: 0
   channelMixer:
     red: {x: 1, y: 0, z: 0}
-    green: {x: 0, y: 1, z: 0.2}
+    green: {x: 0, y: 1, z: 0}
     blue: {x: 0, y: 0, z: 1}
   shadowsMidtonesHighlights:
     shadows: {r: 1, g: 1, b: 1, a: 1}
     midtones: {r: 1, g: 1, b: 1, a: 1}
     highlights: {r: 1, g: 1, b: 1, a: 1}
     shadowsStart: 0
-    shadowsEnd: 0.1
+    shadowsEnd: 0.3
     highlightsStart: 0.55
     highLightsEnd: 1
   toneMapping:
-    mode: 4
+    mode: 3
   dither:
-    mode: 2
+    mode: 1

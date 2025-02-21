@@ -2,12 +2,14 @@ using System;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Rendering/Custom Post FX Settings")]
-public class PostFXSettings : ScriptableObject 
+public class PostFXSettings : ScriptableObject
 {
     [SerializeField] Shader shader = default;
 
     [NonSerialized] Material material;
 
+    [SerializeField] bool enabled = true;
+    public bool Enabled { get { return enabled; } }
 
     [Serializable] public struct BloomSettings
     {
@@ -112,6 +114,14 @@ public class PostFXSettings : ScriptableObject
         public Mode mode;
     }
     [SerializeField] ToneMappingSettings toneMapping = default;
+
+
+    [Serializable] public struct Dither
+    {
+        public enum Mode { Disabled = 0, On = 1, HighQuality = 2 }
+        public Mode mode;
+    }
+    [SerializeField] public Dither dither = new Dither { mode = Dither.Mode.HighQuality };
 
 
 

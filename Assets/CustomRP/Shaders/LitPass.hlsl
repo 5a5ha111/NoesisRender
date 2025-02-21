@@ -118,7 +118,7 @@ float4 LitPassFragment(Varyings input) : SV_TARGET
 	//base.rgb = normalize(input.normalWS);
 	//return base;
 
-	Surface surface;
+	Surface surface = (Surface)0;
 	surface.position = input.positionWS;
 	#if defined(_NORMAL_MAP)
 		surface.normal = NormalTangentToWorld(
@@ -141,6 +141,7 @@ float4 LitPassFragment(Varyings input) : SV_TARGET
 	surface.fresnelStrength = GetFresnel(config);
 	// InterleavedGradientNoise is the easiest function from the Core RP Library, which generates a rotated tiled dither pattern given a screen-space XY position. It also requires a second argument which is used to animate it, which we don't need.
 	surface.dither = InterleavedGradientNoise(input.positionCS.xy, 0);
+	surface.renderingLayerMask = asuint(unity_RenderingLayer.x);
 
 	#if defined(_PREMULTIPLY_ALPHA)
 		BRDF brdf = GetBRDF(surface, true);
@@ -151,7 +152,7 @@ float4 LitPassFragment(Varyings input) : SV_TARGET
 	GI gi = GetGI(GI_FRAGMENT_DATA(input), surface, brdf);
 	float3 color = GetLighting(surface, brdf, gi);
 	color += GetEmission(config);
-	return float4(color, surface.alpha);
+	return float4(color, GetFinalAlpha(surface.alpha));
 	//return float4(gi.diffuse, 1);
 }
 #endif
