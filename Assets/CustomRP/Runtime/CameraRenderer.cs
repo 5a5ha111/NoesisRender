@@ -133,6 +133,9 @@ public partial class CameraRenderer
             bufferSize.y = camera.pixelHeight;
         }
 
+        // We can directly modify the buffer settings struct field because it contains a copy of the RP settings struct, not a reference to the original.
+        cameraBufferSettings.fxaa.enabled &= cameraSettings.allowFXAA;
+
 
         buffer.BeginSample(SampleName);
 
@@ -143,10 +146,15 @@ public partial class CameraRenderer
         ));
 
         ExecuteBuffer();
+        
         lighting.Setup(context, cullingResults, shadowSettings, useLightsPerObject,
             cameraSettings.maskLights ? cameraSettings.renderingLayerMask : -1);
-        postFXStack.Setup(context, camera, bufferSize, cameraBufferSettings.bicubicRescaling, postFXSettings, useHDR, colorLUTResolution,
+        
+        postFXStack.Setup(context, camera, bufferSize, cameraBufferSettings.bicubicRescaling,
+            cameraBufferSettings.fxaa,
+            postFXSettings, cameraSettings.keepAlpha, useHDR, colorLUTResolution,
             cameraSettings.finalBlendMode);
+        
         buffer.EndSample(SampleName);
         Setup();
         DrawVisibleGeometry(useDynamicBatching, useGPUInstancing, useLightsPerObject,

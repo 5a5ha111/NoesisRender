@@ -48,7 +48,8 @@ struct Varyings
 // Helpers
 float4 _PostFXSource_TexelSize;
 
-float4 GetSourceTexelSize () {
+float4 GetSourceTexelSize () 
+{
 	return _PostFXSource_TexelSize;
 }
 
@@ -344,6 +345,16 @@ float4 FinalLUTPassFragment (Varyings input) : SV_TARGET
 
 	return color;
 }
+float4 ApplyColorGradingWithLumaPassFragment (Varyings input) : SV_TARGET 
+{
+	float4 color = GetSource(input.screenUV);
+	color.rgb = ApplyColorGradingLUT(color.rgb);
+	#if defined(_DITHER)
+		color.rgb = ApplyDither(color.rgb, input.screenUV.xy);
+	#endif
+	color.a = sqrt(Luminance(color.rgb));
+	return color;
+}
 float4 FinalPassFragmentRescale (Varyings input) : SV_TARGET 
 {
 	if (_CopyBicubic) 
@@ -417,11 +428,12 @@ float W_f(float x,float e0,float e1)
 }
 float H_f(float x, float e0, float e1) 
 {
+	const float epsilon = 0.0001;
 	if (x <= e0)
 		return 0;
 	if (x >= e1)
 		return 1;
-	return (x - e0) / (e1 - e0);
+	return (x - e0) / max(e1 - e0, epsilon);
 }
 
 float GranTurismoTonemapper(float x) 

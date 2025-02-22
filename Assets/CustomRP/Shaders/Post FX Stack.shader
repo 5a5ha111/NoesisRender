@@ -183,7 +183,17 @@ Shader "Hidden/Custom RP/Post FX Stack"
 				#pragma fragment FinalLUTPassFragment
 			ENDHLSL
 		}
+		// Apply LUT and store LUMA in alpha channel
+		Pass 
+		{
+			Name "Apply Color Grading With Luma"
 
+			HLSLPROGRAM
+				#pragma target 3.5
+				#pragma vertex DefaultPassVertex
+				#pragma fragment ApplyColorGradingWithLumaPassFragment
+			ENDHLSL
+		}
 		// If there is renderscale != 1, it is a final pass
 		Pass 
 		{
@@ -195,6 +205,40 @@ Shader "Hidden/Custom RP/Post FX Stack"
 				#pragma target 3.5
 				#pragma vertex DefaultPassVertex
 				#pragma fragment FinalPassFragmentRescale
+			ENDHLSL
+		}
+
+
+
+		Pass 
+		{
+			Name "FXAA"
+
+			Blend [_FinalSrcBlend] [_FinalDstBlend]
+			
+			HLSLPROGRAM
+				#pragma target 3.5
+				#pragma vertex DefaultPassVertex
+				#pragma fragment FXAAPassFragment
+				#define FXAA_NINE_SAMPLES
+				#pragma multi_compile _ FXAA_QUALITY_MEDIUM FXAA_QUALITY_LOW
+				#include "FXAAPass.hlsl"
+			ENDHLSL
+		}
+		Pass 
+		{
+			Name "FXAA With Luma"
+
+			Blend [_FinalSrcBlend] [_FinalDstBlend]
+			
+			HLSLPROGRAM
+				#pragma target 3.5
+				#pragma vertex DefaultPassVertex
+				#pragma fragment FXAAPassFragment
+				#define FXAA_ALPHA_CONTAINS_LUMA
+				#define FXAA_NINE_SAMPLES
+				#pragma multi_compile _ FXAA_QUALITY_MEDIUM FXAA_QUALITY_LOW
+				#include "FXAAPass.hlsl"
 			ENDHLSL
 		}
 	}
