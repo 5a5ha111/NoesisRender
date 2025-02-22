@@ -15,29 +15,72 @@ public partial class CameraRenderer
         name = bufferName
     };
     Lighting lighting = new Lighting();
+    Material material;
+    Texture2D missingTexture;
+
 
     PostFXStack postFXStack = new PostFXStack();
-    bool useHDR;
+    bool useHDR, useScaledRendering;
+    CameraBufferSettings cameraBufferSettings;
+    bool useColorTexture, useDepthTexture, useIntermediateBuffer;
+    Vector2Int bufferSize;
 
 
     const string bufferName = "Render Camera";
     static ShaderTagId
         unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit"),
         litShaderTagId = new ShaderTagId("CustomLit");
-    static int frameBufferId = Shader.PropertyToID("_CameraFrameBuffer");
+
+    // Camera frame buffer are always stored in separeta buffers, known as frame buffer attachments.
+    //static int frameBufferId = Shader.PropertyToID("_CameraFrameBuffer");
+    static int
+        bufferSizeId = Shader.PropertyToID("_CameraBufferSize"),
+        colorAttachmentId = Shader.PropertyToID("_CameraColorAttachment"),
+        colorTextureId = Shader.PropertyToID("_CameraColorTexture"), // Camera color copy for distirtion based effects
+        depthAttachmentId = Shader.PropertyToID("_CameraDepthAttachment"),
+		depthTextureId = Shader.PropertyToID("_CameraDepthTexture"), // Depth copy
+        sourceTextureId = Shader.PropertyToID("_SourceTexture"),
+        srcBlendId = Shader.PropertyToID("_CameraSrcBlend"),
+        dstBlendId = Shader.PropertyToID("_CameraDstBlend");
     static CameraSettings defaultCameraSettings = new CameraSettings();
+
+    static bool copyTextureSupported = SystemInfo.copyTextureSupport > CopyTextureSupport.None;
+    static Rect fullViewRect = new Rect(0f, 0f, 1f, 1f);
+
+
+    public const float renderScaleMin = 0.1f;
+    /// <summary>
+    /// I using single downsample step in SSAA, so render scale > 2 doesnt make sense. 
+    /// </summary>
+    public const float renderScaleMax = 2f;
+
+
+    public CameraRenderer(Shader shader)
+    {
+        material = CoreUtils.CreateEngineMaterial(shader);
+        missingTexture = new Texture2D(1, 1)
+        {
+            hideFlags = HideFlags.HideAndDontSave,
+            name = "MissingDepthOrColorTexture"
+        };
+        missingTexture.SetPixel(0, 0, Color.white * 0.5f);
+        missingTexture.Apply(true, true);
+    }
 
 
     public void Render(ScriptableRenderContext context, Camera camera,
         bool useDynamicBatching, bool useGPUInstancing, bool useLightsPerObject,
-        bool allowHDR,
+        CameraBufferSettings cameraBufferSettings,
         ShadowSettings shadowSettings, PostFXSettings postFXSettings,
         int colorLUTResolution
     )
     {
         this.context = context;
         this.camera = camera;
-        useHDR = allowHDR && camera.allowHDR;
+        this.cameraBufferSettings = cameraBufferSettings;
+        useHDR = cameraBufferSettings.allowHDR && camera.allowHDR;
+        useDepthTexture = true;
+
 
         var crpCamera = camera.GetComponent<CustomRenderPipelineCamera>();
         CameraSettings cameraSettings = crpCamera ? crpCamera.Settings : defaultCameraSettings;
@@ -46,19 +89,63 @@ public partial class CameraRenderer
             postFXSettings = cameraSettings.postFXSettings;
         }
 
+        if (camera.cameraType == CameraType.Reflection)
+        {
+            useColorTexture = cameraBufferSettings.copyColorReflection;
+            useDepthTexture = cameraBufferSettings.copyDepthReflection;
+        }
+        else
+        {
+            useColorTexture = cameraBufferSettings.copyColor && cameraSettings.copyColor;
+            useDepthTexture = cameraBufferSettings.copyDepth && cameraSettings.copyDepth;
+        }
+
         PrepareBuffer();
-        PrepareForSceneWindow(); // Handle UI in Scene camera
+        PrepareForSceneWindow(); // Handle Scene camera
+        float renderScale = cameraSettings.GetRenderScale(cameraBufferSettings.renderScale);
+        // Very slight deviations from 1 will have neither visual nor performance differences that matter. So let's only use scaled rendering if there is at least a 1% difference.
+        useScaledRendering = renderScale < 0.99f || renderScale > 1.01f;
 
         if (!Cull(shadowSettings.maxDistance)) // Avoiding errors due to incorrect camera settings
         {
             return;
         }
 
+        if (useScaledRendering)
+        {
+            // prevent too small or large render scale
+            renderScale = Mathf.Clamp(renderScale, renderScaleMin, renderScaleMax); 
+            bufferSize.x = (int)(camera.pixelWidth * renderScale);
+            bufferSize.y = (int)(camera.pixelHeight * renderScale);
+
+            if (bufferSize.x < 1)
+            {
+                bufferSize.x = 1;
+            }
+            if (bufferSize.y < 1)
+            {
+                bufferSize.y = 1;
+            }
+        }
+        else
+        {
+            bufferSize.x = camera.pixelWidth;
+            bufferSize.y = camera.pixelHeight;
+        }
+
+
         buffer.BeginSample(SampleName);
+
+        // Set scaled screen size for shaders, same as URP
+        buffer.SetGlobalVector(bufferSizeId, new Vector4(
+            bufferSize.x, bufferSize.y,
+            1f / bufferSize.x, 1f / bufferSize.y
+        ));
+
         ExecuteBuffer();
         lighting.Setup(context, cullingResults, shadowSettings, useLightsPerObject,
             cameraSettings.maskLights ? cameraSettings.renderingLayerMask : -1);
-        postFXStack.Setup(context, camera, postFXSettings, useHDR, colorLUTResolution,
+        postFXStack.Setup(context, camera, bufferSize, cameraBufferSettings.bicubicRescaling, postFXSettings, useHDR, colorLUTResolution,
             cameraSettings.finalBlendMode);
         buffer.EndSample(SampleName);
         Setup();
@@ -69,7 +156,12 @@ public partial class CameraRenderer
         DrawGizmosBeforeFX();
         if (postFXStack.IsActive)
         {
-            postFXStack.Render(frameBufferId);
+            postFXStack.Render(colorAttachmentId);
+        }
+        else if (useIntermediateBuffer)
+        {
+            DrawFinal(cameraSettings.finalBlendMode);
+            ExecuteBuffer();
         }
         DrawGizmosAfterFX();
 
@@ -83,19 +175,31 @@ public partial class CameraRenderer
         context.SetupCameraProperties(camera);
         CameraClearFlags flags = camera.clearFlags;
 
-        if (postFXStack.IsActive)
+        useIntermediateBuffer = useScaledRendering || useColorTexture || useDepthTexture || postFXStack.IsActive;
+
+        if (useIntermediateBuffer)
         {
             if (flags > CameraClearFlags.Color)
             {
                 flags = CameraClearFlags.Color;
             }
+
+            // Get color buffer
             buffer.GetTemporaryRT(
-                frameBufferId, camera.pixelWidth, camera.pixelHeight,
-                32, FilterMode.Bilinear, 
+                colorAttachmentId, bufferSize.x, bufferSize.y,
+                0, FilterMode.Bilinear, 
                 useHDR ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default
             );
+            //Get depth buffer 
+            buffer.GetTemporaryRT(
+                depthAttachmentId, bufferSize.x, bufferSize.y,
+                32, FilterMode.Point, RenderTextureFormat.Depth
+            );
+
             buffer.SetRenderTarget(
-                frameBufferId,
+                colorAttachmentId,
+                RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store,
+                depthAttachmentId,
                 RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store
             );
         }
@@ -107,16 +211,33 @@ public partial class CameraRenderer
                 camera.backgroundColor.linear : Color.clear
         );
         buffer.BeginSample(SampleName);
+        buffer.SetGlobalTexture(depthTextureId, missingTexture);
+        buffer.SetGlobalTexture(colorTextureId, missingTexture);
         ExecuteBuffer();
     }
 
     void Cleanup()
     {
         lighting.Cleanup();
-        if (postFXStack.IsActive)
+        if (useIntermediateBuffer)
         {
-            buffer.ReleaseTemporaryRT(frameBufferId);
+            buffer.ReleaseTemporaryRT(colorAttachmentId);
+            buffer.ReleaseTemporaryRT(depthAttachmentId);
         }
+
+        if (useColorTexture)
+        {
+            buffer.ReleaseTemporaryRT(colorTextureId);
+        }
+        if (useDepthTexture)
+        {
+            buffer.ReleaseTemporaryRT(depthTextureId);
+        }
+    }
+    public void Dispose()
+    {
+        CoreUtils.Destroy(material);
+        CoreUtils.Destroy(missingTexture);
     }
 
     void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing, bool useLightsPerObject,
@@ -153,6 +274,10 @@ public partial class CameraRenderer
         );
 
         context.DrawSkybox(camera);
+        if (useColorTexture || useDepthTexture)
+        {
+            CopyAttachments();
+        }
 
         sortingSettings.criteria = SortingCriteria.CommonTransparent;
         drawingSettings.sortingSettings = sortingSettings;
@@ -163,7 +288,86 @@ public partial class CameraRenderer
         );
     }
 
-    
+    void CopyAttachments()
+    {
+        if (useColorTexture)
+        {
+            buffer.GetTemporaryRT(
+                colorTextureId, bufferSize.x, bufferSize.y,
+                0, FilterMode.Bilinear, useHDR ?
+                    RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default
+            );
+            if (copyTextureSupported)
+            {
+                buffer.CopyTexture(colorAttachmentId, colorTextureId);
+            }
+            else
+            {
+                Draw(colorAttachmentId, colorTextureId);
+            }
+        }
+        if (useDepthTexture)
+        {
+            buffer.GetTemporaryRT(
+                depthTextureId, bufferSize.x, bufferSize.y,
+                32, FilterMode.Point, RenderTextureFormat.Depth
+            );
+            if (copyTextureSupported)
+            {
+                buffer.CopyTexture(depthAttachmentId, depthTextureId);
+            }
+            else
+            { 
+                Draw(depthAttachmentId, depthTextureId, true);
+            }
+        }
+
+        if (!copyTextureSupported)
+        {
+            // Draw() changes render target, so we need to change it back
+            buffer.SetRenderTarget(
+                colorAttachmentId,
+                RenderBufferLoadAction.Load, RenderBufferStoreAction.Store,
+                depthAttachmentId,
+                RenderBufferLoadAction.Load, RenderBufferStoreAction.Store
+            );
+        }
+        ExecuteBuffer();
+    }
+    void Draw(RenderTargetIdentifier from, RenderTargetIdentifier to, bool isDepth = false)
+    {
+        buffer.SetGlobalTexture(sourceTextureId, from);
+        buffer.SetRenderTarget(
+            to, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store
+        );
+        buffer.DrawProcedural(
+            Matrix4x4.identity, material, isDepth ? 1 : 0, MeshTopology.Triangles, 3
+        );
+    }
+    /// <summary>
+    /// For support multi-camera (i.g. splitscreem) color and depth buffers without post fx stack we need this method
+    /// </summary>
+    /// <param name="finalBlendMode"></param>
+    void DrawFinal(CameraSettings.FinalBlendMode finalBlendMode)
+    {
+        buffer.SetGlobalFloat(srcBlendId, (float)finalBlendMode.source);
+        buffer.SetGlobalFloat(dstBlendId, (float)finalBlendMode.destination);
+        buffer.SetGlobalTexture(sourceTextureId, colorAttachmentId);
+        buffer.SetRenderTarget(
+            BuiltinRenderTextureType.CameraTarget,
+            finalBlendMode.destination == BlendMode.Zero && camera.rect == fullViewRect ?
+                RenderBufferLoadAction.DontCare : RenderBufferLoadAction.Load,
+            RenderBufferStoreAction.Store
+        );
+        buffer.SetViewport(camera.pixelRect);
+        buffer.DrawProcedural(
+            Matrix4x4.identity, material, 0, MeshTopology.Triangles, 3
+        );
+        buffer.SetGlobalFloat(srcBlendId, 1f);
+        buffer.SetGlobalFloat(dstBlendId, 0f);
+    }
+
+
 
     void Submit()
     {

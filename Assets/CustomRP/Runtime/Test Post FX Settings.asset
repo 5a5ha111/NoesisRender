@@ -15,7 +15,8 @@ MonoBehaviour:
   shader: {fileID: 4800000, guid: e55a176c11dcef341959e09b286d2d94, type: 3}
   enabled: 1
   bloom:
-    maxIterations: 1
+    ignoreRenderScale: 1
+    maxIterations: 16
     downscaleLimit: 1
     bicubicUpsampling: 1
     threshold: 1.1
@@ -34,7 +35,7 @@ MonoBehaviour:
     temperature: 0
     tint: 0
   splitToning:
-    shadows: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    shadows: {r: 0.5019608, g: 0.5019608, b: 0.5019608, a: 1}
     highlights: {r: 0.5, g: 0.5, b: 0.5, a: 1}
     balance: 0
   channelMixer:
@@ -50,6 +51,6 @@ MonoBehaviour:
     highlightsStart: 0.55
     highLightsEnd: 1
   toneMapping:
-    mode: 4
+    mode: 5
   dither:
     mode: 2

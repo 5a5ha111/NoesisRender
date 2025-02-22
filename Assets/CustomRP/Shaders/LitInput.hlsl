@@ -42,14 +42,16 @@ UNITY_INSTANCING_BUFFER_END(UnityPerMaterial)
 // Incapsulate uv
 struct InputConfig 
 {
+	Fragment fragment;
 	float2 baseUV;
 	float2 detailUV;
 	bool useMask;
 	bool useDetail;
 };
-InputConfig GetInputConfig(float2 baseUV, float2 detailUV = 0.0) 
+InputConfig GetInputConfig(float4 positionSS, float2 baseUV, float2 detailUV = 0.0) 
 {
 	InputConfig c;
+	c.fragment = GetFragment(positionSS);
 	c.baseUV = baseUV;
 	c.detailUV = detailUV;
 	c.useMask = false;

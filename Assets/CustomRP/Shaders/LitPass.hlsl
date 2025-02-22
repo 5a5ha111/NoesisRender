@@ -41,7 +41,7 @@ struct Attributes
 
 struct Varyings 
 {
-	float4 positionCS : SV_POSITION;
+	float4 positionCS_SS : SV_POSITION;
 	float3 positionWS : VAR_POSITION;
 	float2 baseUV : VAR_BASE_UV;
 	#if defined(_DETAIL_MAP)
@@ -72,7 +72,7 @@ Varyings LitPassVertex(Attributes input)
 	UNITY_TRANSFER_INSTANCE_ID(input, output);
 	TRANSFER_GI_DATA(input, output);
 	output.positionWS = TransformObjectToWorld(input.positionOS);
-	output.positionCS = TransformWorldToHClip(output.positionWS);
+	output.positionCS_SS = TransformWorldToHClip(output.positionWS);
 
 	float4 baseST = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseMap_ST);
 	//output.baseUV = input.baseUV * baseST.xy + baseST.zw;
@@ -95,7 +95,7 @@ float4 LitPassFragment(Varyings input) : SV_TARGET
 	float4 baseColor = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor);
 	float4 base = baseMap * baseColor;*/
 
-	InputConfig config = GetInputConfig(input.baseUV);
+	InputConfig config = GetInputConfig(input.positionCS_SS, input.baseUV);
 	#if defined(_MASK_MAP)
 		config.useMask = true;
 	#endif
@@ -112,7 +112,8 @@ float4 LitPassFragment(Varyings input) : SV_TARGET
 	#endif
 
 	#if defined(LOD_FADE_CROSSFADE)
-		ClipLOD(input.positionCS.xy, unity_LODFade.x);
+		//ClipLOD(input.positionCS.xy, unity_LODFade.x);
+		ClipLOD(config.fragment, unity_LODFade.x);
 	#endif
 
 	//base.rgb = normalize(input.normalWS);
@@ -140,7 +141,7 @@ float4 LitPassFragment(Varyings input) : SV_TARGET
 	surface.smoothness = GetSmoothness(config);
 	surface.fresnelStrength = GetFresnel(config);
 	// InterleavedGradientNoise is the easiest function from the Core RP Library, which generates a rotated tiled dither pattern given a screen-space XY position. It also requires a second argument which is used to animate it, which we don't need.
-	surface.dither = InterleavedGradientNoise(input.positionCS.xy, 0);
+	surface.dither = InterleavedGradientNoise(config.fragment.positionSS.xy, 0);
 	surface.renderingLayerMask = asuint(unity_RenderingLayer.x);
 
 	#if defined(_PREMULTIPLY_ALPHA)

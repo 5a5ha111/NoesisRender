@@ -2,6 +2,7 @@
 #define CUSTOM_DITHER
 
 
+#include "../ShaderLibrary/Common.hlsl"
 
 
 uint HilbertIndex(uint2 p) 
@@ -94,12 +95,12 @@ float Rdither(float2 pos, float t)
 
 
 
-void ClipLOD (float2 positionCS, float fade) 
+void ClipLOD (Fragment fragment, float fade) 
 {
     #if defined(LOD_FADE_CROSSFADE)
         //float dither = (positionCS.y % 32) / 32;
         //float dither = Rdither(positionCS);
-        float dither = InterleavedGradientNoise(positionCS.xy, /*_Time.w * 1*/0);
+        float dither = InterleavedGradientNoise(fragment.positionSS.xy, /*_Time.w * 1*/0);
         clip(fade + (fade < 0.0 ? dither : -dither));
     #endif
 }

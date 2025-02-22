@@ -12,6 +12,7 @@ Shader "Custom RP/Unlit"
 		[Enum(Off, 0, On, 1)] _ZWrite ("Z Write", Float) = 1
 		[KeywordEnum(On, Clip, Dither, Off)] _Shadows ("Shadows", Float) = 0
 		[Toggle(_RECEIVE_SHADOWS)] _ReceiveShadows ("Receive Shadows", Float) = 1
+		[Toggle(_VERTEX_COLORS)] _VertexColors ("Vertex Colors", Float) = 0
 	}
 	
 	SubShader 
@@ -21,7 +22,7 @@ Shader "Custom RP/Unlit"
 		#include "../ShaderLibrary/Common.hlsl"
 		#include "UnlitInput.hlsl"
 
-		
+
 		ENDHLSL
 		
 		Pass 
@@ -39,6 +40,8 @@ Shader "Custom RP/Unlit"
 
 			#pragma shader_feature _CLIPPING
 			#pragma shader_feature _RECEIVE_SHADOWS
+
+			#pragma shader_feature _VERTEX_COLORS
 
 			#include "UnlitPass.hlsl"
 

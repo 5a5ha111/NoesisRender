@@ -11,15 +11,12 @@
 
 TEXTURE2D(_PostFXSource);
 TEXTURE2D(_PostFXSource2);
-SAMPLER(sampler_linear_clamp);
 
 
 // Bloom
 bool _BloomBicubicUpsampling;
 float _BloomIntensity;
 float4 _BloomThreshold;
-
-
 
 // Color grading
 float4 _ColorAdjustments;
@@ -29,9 +26,13 @@ float4 _SplitToningShadows, _SplitToningHighlights;
 float4 _ChannelMixerRed, _ChannelMixerGreen, _ChannelMixerBlue;
 float4 _SMHShadows, _SMHMidtones, _SMHHighlights, _SMHRange;
 
+// LUT
 float4 _ColorGradingLUTParameters;
 bool _ColorGradingLUTInLogC;
 TEXTURE2D(_ColorGradingLUT);
+
+// Rescale
+bool _CopyBicubic;
 
 
 
@@ -188,7 +189,7 @@ float4 BloomScatterFinalPassFragment (Varyings input) : SV_TARGET
 		lowRes = GetSource(input.screenUV).rgb;
 	}
 	float4 highRes = GetSource2(input.screenUV);
-	lowRes += highRes.rgb - ApplyBloomThreshold(highRes);
+	lowRes += highRes.rgb - ApplyBloomThreshold(highRes.rgb);
 	return float4(lerp(highRes.rgb, lowRes, _BloomIntensity), highRes.a);
 }
 
@@ -292,24 +293,23 @@ float3 ColorGrade (float3 color, bool useACES = false)
 // Apply dither
 float3 ApplyDither(float3 color, float2 uv)
 {
-
+	const float minColorStep = 1.0 / 255.0;
 	float luminance = Luminance(color);
 	float dither = InterleavedGradientNoise(uv * _ScreenParams.xy, _Time.y * 144);
 
 	#if defined(_DITHER_HIGH_QUALITY) 
 		// Fade dither to black when color is dark
-		const float minColorStep = 1.0 / 255.0;
 		if (luminance < minColorStep * 2.0)
 	    {
 	    	float endDither = 0;
 	    	float factor = luminance / (minColorStep * 2.0);
 	    	dither = lerp(endDither, dither, factor);
 	    }
-	    dither = ( (dither * 2.0 - 1.0) / 255.0 ) / 2.0;
+	    dither = ( (dither * 2.0 - 1.0) * minColorStep ) / 2.0;
 	    color.rgb += dither;
 		//color.g += dither;
 	#else
-	 	dither = ( (dither * 2.0 - 1.0) / 255.0 ) / 2.0;
+	 	dither = ( (dither * 2.0 - 1.0) * minColorStep ) / 2.0;
 		color.rb += dither;
 		color.g -= dither;
 	#endif
@@ -344,6 +344,18 @@ float4 FinalLUTPassFragment (Varyings input) : SV_TARGET
 
 	return color;
 }
+float4 FinalPassFragmentRescale (Varyings input) : SV_TARGET 
+{
+	if (_CopyBicubic) 
+	{
+		return GetSourceBicubic(input.screenUV);
+	}
+	else 
+	{
+		return GetSource(input.screenUV);
+	}
+}
+
 
 
 
@@ -481,7 +493,7 @@ float3 ToneMappingUncharted2PassFragment(Varyings input) : SV_TARGET
     
     // Normalize the tone-mapped color by a white scale value.
     // Here 11.2 is used as the white point; adjust it to fit your scene.
-    float whiteScale = Uncharted2Tonemap(11.2);
+    float3 whiteScale = Uncharted2Tonemap(11.2);
     color /= whiteScale;
     
     // Apply gamma correction (assuming a gamma of 2.2)

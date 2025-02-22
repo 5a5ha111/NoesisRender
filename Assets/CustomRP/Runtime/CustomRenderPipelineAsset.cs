@@ -10,7 +10,12 @@ public partial class CustomRenderPipelineAsset : RenderPipelineAsset
     bool useDynamicBatching = true, useGPUInstancing = true, useSRPBatcher = true,
         useLightsPerObject = true;
 
-    [SerializeField] bool allowHDR = true;
+    //bool allowHDR = true;
+    [SerializeField] CameraBufferSettings cameraBufferSettings = new CameraBufferSettings
+    {
+        allowHDR = true,
+        renderScale = 1f
+    };
 
     [Space]
     [Space]
@@ -26,10 +31,14 @@ public partial class CustomRenderPipelineAsset : RenderPipelineAsset
     public enum ColorLUTResolution { _16 = 16, _32 = 32, _64 = 64 }
     [SerializeField] ColorLUTResolution colorLUTResolution = ColorLUTResolution._32;
 
+    [Space]
+    [SerializeField] Shader cameraRendererShader = default;
+
     protected override RenderPipeline CreatePipeline()
     {
         return new CustomRenderPipeline(
-            useDynamicBatching, useGPUInstancing, useLightsPerObject, allowHDR, useSRPBatcher, shadows, postFXSettings, (int)colorLUTResolution
+            useDynamicBatching, useGPUInstancing, useLightsPerObject, useSRPBatcher, cameraBufferSettings, shadows, postFXSettings, (int)colorLUTResolution,
+            cameraRendererShader
         );
     }
 }

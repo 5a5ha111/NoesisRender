@@ -25,6 +25,28 @@
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/SpaceTransforms.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Packing.hlsl"
 
+
+SAMPLER(sampler_linear_clamp);
+SAMPLER(sampler_point_clamp);
+
+
+bool IsOrthographicCamera () 
+{
+	return unity_OrthoParams.w;
+}
+float OrthographicDepthBufferToLinear (float rawDepth) 
+{
+	#if UNITY_REVERSED_Z
+		rawDepth = 1.0 - rawDepth;
+	#endif
+	//The near and far distances of camera plane are stored in the Y and Z components of _ProjectionParams.
+	// To convert it to view-space depth we have to scale it by the camera's near–far range and then add the near plane distance.
+	return (_ProjectionParams.z - _ProjectionParams.y) * rawDepth + _ProjectionParams.y;
+}
+
+#include "Fragment.hlsl"
+
+
 //float3 TransformObjectToWorld(float3 positionOS) {
 //	return mul(unity_ObjectToWorld, float4(positionOS, 1.0)).xyz;
 //}

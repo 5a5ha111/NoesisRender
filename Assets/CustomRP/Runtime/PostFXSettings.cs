@@ -13,6 +13,10 @@ public class PostFXSettings : ScriptableObject
 
     [Serializable] public struct BloomSettings
     {
+        /// <summary>
+        /// Smaller render scale can make bloom larger, when larger render scale will make bloom smaller. It is possible to basing on camera size instead of buffer size, so it will keep bloom consistent.
+        /// </summary>
+        public bool ignoreRenderScale;
 
         [Range(0f, 16f)] public int maxIterations;
         [Min(1f)] public int downscaleLimit;

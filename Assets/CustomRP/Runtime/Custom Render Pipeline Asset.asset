@@ -16,12 +16,19 @@ MonoBehaviour:
   useGPUInstancing: 1
   useSRPBatcher: 1
   useLightsPerObject: 1
-  allowHDR: 0
+  cameraBufferSettings:
+    allowHDR: 1
+    copyColor: 1
+    copyColorReflection: 0
+    copyDepth: 1
+    copyDepthReflection: 0
+    renderScale: 1
+    bicubicRescaling: 2
   shadows:
     maxDistance: 25
     distanceFade: 0.1
     directional:
-      atlasSize: 1024
+      atlasSize: 2048
       filter: 3
       cascadeBlend: 1
       cascadeCount: 4
@@ -34,3 +41,4 @@ MonoBehaviour:
       filter: 2
   postFXSettings: {fileID: 11400000, guid: 11740a70adc48e240b302b42654909be, type: 2}
   colorLUTResolution: 64
+  cameraRendererShader: {fileID: 4800000, guid: a8c485989315f784d84be2f1a37388a5, type: 3}

@@ -33,7 +33,7 @@ struct Attributes
 
 struct Varyings 
 {
-	float4 positionCS : SV_POSITION;
+	float4 positionCS_SS : SV_POSITION;
 	float2 baseUV : VAR_BASE_UV;
 	float3 positionWS : TEXCOORD1;
 	UNITY_VERTEX_INPUT_INSTANCE_ID
@@ -104,7 +104,7 @@ Varyings ShadowCasterPassVertex (Attributes input)
 	UNITY_SETUP_INSTANCE_ID(input);
 	UNITY_TRANSFER_INSTANCE_ID(input, output);
 	float3 positionWS = TransformObjectToWorld(input.positionOS);
-	output.positionCS = TransformWorldToHClip(positionWS);
+	output.positionCS_SS = TransformWorldToHClip(positionWS);
 	output.positionWS = positionWS;
 
 
@@ -113,11 +113,11 @@ Varyings ShadowCasterPassVertex (Attributes input)
 	if (_ShadowPancaking) 
 	{
 		#if UNITY_REVERSED_Z
-			output.positionCS.z =
-				min(output.positionCS.z, output.positionCS.w * UNITY_NEAR_CLIP_VALUE);
+			output.positionCS_SS.z =
+				min(output.positionCS_SS.z, output.positionCS_SS.w * UNITY_NEAR_CLIP_VALUE);
 		#else
-			output.positionCS.z =
-				max(output.positionCS.z, output.positionCS.w * UNITY_NEAR_CLIP_VALUE);
+			output.positionCS_SS.z =
+				max(output.positionCS_SS.z, output.positionCS_SS.w * UNITY_NEAR_CLIP_VALUE);
 		#endif
 	}
 
@@ -133,27 +133,27 @@ void ShadowCasterPassFragment (Varyings input)
 	float4 baseColor = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor);
 	float4 base = baseMap * baseColor;*/
 
-	InputConfig config = GetInputConfig(input.baseUV, 0);
+	InputConfig config = GetInputConfig(input.positionCS_SS, input.baseUV, 0);
 	float4 base = GetBase(config);
 
-	ClipLOD(input.positionCS.xy, unity_LODFade.x);
+	ClipLOD(config.fragment, unity_LODFade.x);
 
 	#if defined(_SHADOWS_CLIP)
-		clip(base.a - GetSmoothness(config));
+		clip(base.a - GetCutoff(config));
 	#elif defined(_SHADOWS_DITHER)
-		//float2 pos = input.positionCS.xy;
+		//float2 pos = input.positionCS_SS.xy;
 		//float2 pos = frac(input.positionWS.xz) * 10000;
-		float dither = InterleavedGradientNoise(input.positionCS.xy, 1);
+		float dither = InterleavedGradientNoise(input.positionCS_SS.xy, 1);
 		/*uint SHADES = 32; 
 		float mydither = RiemeresmaDither(pos, SHADES, base.a); */ 
 		//clip(base.a - mydither);
 		clip(base.a - dither);
 	#elif defined(_SHADOWS_RIEMERESMA_DITHER)
 		uint shades = 2; 
-		float2 pos = input.positionCS.xy;
+		float2 pos = input.positionCS_SS.xy;
 		//pos = frac(input.positionWS.xz) * 200;
 		float2 pixel =  _ScreenParams.xy;
-		//pos = round(input.positionCS.xy * pixel);
+		//pos = round(input.positionCS_SS.xy * pixel);
 		float mydither = r_dither(pos);
 		mydither = remapTri(mydither);
 		float amount = smoothstep(0, 1, base.a);

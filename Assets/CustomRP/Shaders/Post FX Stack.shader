@@ -170,6 +170,7 @@ Shader "Hidden/Custom RP/Post FX Stack"
 
 
 
+		// If there is renderScale == 1, it is a final pass
 		Pass 
 		{
 			Name "Apply color grading LUT texture"
@@ -180,6 +181,20 @@ Shader "Hidden/Custom RP/Post FX Stack"
 				#pragma target 3.5
 				#pragma vertex DefaultPassVertex
 				#pragma fragment FinalLUTPassFragment
+			ENDHLSL
+		}
+
+		// If there is renderscale != 1, it is a final pass
+		Pass 
+		{
+			Name "Final Rescale"
+
+			Blend [_FinalSrcBlend] [_FinalDstBlend]
+			
+			HLSLPROGRAM
+				#pragma target 3.5
+				#pragma vertex DefaultPassVertex
+				#pragma fragment FinalPassFragmentRescale
 			ENDHLSL
 		}
 	}
