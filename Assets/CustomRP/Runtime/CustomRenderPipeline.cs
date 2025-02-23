@@ -1,17 +1,19 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Experimental.Rendering.RenderGraphModule;
 
 public partial class CustomRenderPipeline : RenderPipeline 
 {
 
     bool useDynamicBatching, useGPUInstancing, useLightsPerObject;
-    //bool allowHDR;
     CameraBufferSettings cameraBufferSettings;
     ShadowSettings shadowSettings;
     PostFXSettings postFXSettings;
     int colorLUTResolution;
     CameraRenderer renderer;
+
+    readonly RenderGraph renderGraph = new("Custom SRP Render Graph");
 
     public CustomRenderPipeline (
 		bool useDynamicBatching, bool useGPUInstancing, bool useSRPBatcher, bool useLightsPerObject,
@@ -46,10 +48,22 @@ public partial class CustomRenderPipeline : RenderPipeline
     {
         for (int i = 0; i < cameras.Count; i++)
         {
-            renderer.Render(context, cameras[i], useDynamicBatching, useGPUInstancing, useLightsPerObject, cameraBufferSettings,
+            renderer.Render(renderGraph, context, cameras[i], useDynamicBatching, useGPUInstancing, useLightsPerObject, cameraBufferSettings,
                 shadowSettings, postFXSettings, 
                 colorLUTResolution
             );
         }
+
+        renderGraph.EndFrame();
     }
+
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        DisposeForEditor();
+        renderer.Dispose();
+        renderGraph.Cleanup();
+    }
+
 }

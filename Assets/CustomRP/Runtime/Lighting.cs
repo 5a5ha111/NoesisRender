@@ -1,14 +1,16 @@
 using Unity.Collections;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.Rendering;
 
 public class Lighting
 {
-
-    CommandBuffer buffer = new CommandBuffer
+    // --- Moved to RenderGraph ---
+    /*CommandBuffer buffer = new CommandBuffer
     {
         name = bufferName
-    };
+    };*/
+    CommandBuffer buffer;
     Shadows shadows = new Shadows();
 
     CullingResults cullingResults;
@@ -52,17 +54,22 @@ public class Lighting
 
     const int maxDirLightCount = 4, maxOtherLightCount = 64;
 
-    public void Setup(ScriptableRenderContext context, CullingResults cullingResults,
+    public void Setup(/*ScriptableRenderContext*/ RenderGraphContext context, CullingResults cullingResults,
         ShadowSettings shadowSettings, bool useLightsPerObject, int renderingLayerMask)
     {
         this.cullingResults = cullingResults;
-        buffer.BeginSample(bufferName);
+
+        //buffer.BeginSample(bufferName);
         //SetupDirectionalLight();
+        buffer = context.cmd;
+
         shadows.Setup(context, cullingResults, shadowSettings);
         SetupLights(useLightsPerObject, renderingLayerMask);
         shadows.Render();
-        buffer.EndSample(bufferName);
-        context.ExecuteCommandBuffer(buffer);
+        
+        //buffer.EndSample(bufferName);
+        
+        context.renderContext.ExecuteCommandBuffer(buffer);
         buffer.Clear();
     }
 

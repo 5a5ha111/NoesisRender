@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.Rendering;
 
 public partial class CameraRenderer
@@ -10,10 +11,15 @@ public partial class CameraRenderer
     CullingResults cullingResults;
 
 
-    CommandBuffer buffer = new CommandBuffer
+
+    // Now RenderGraph init buffer. Also it handle all buffer.BeginSample() and .EndSample()
+    /*CommandBuffer buffer = new CommandBuffer
     {
         name = bufferName
-    };
+    };*/
+    CommandBuffer buffer;
+
+
     Lighting lighting = new Lighting();
     Material material;
     Texture2D missingTexture;
@@ -26,14 +32,32 @@ public partial class CameraRenderer
     Vector2Int bufferSize;
 
 
+
+    public ScriptableRenderContext _context { get { return context; } }
+    public Camera _camera { get { return camera; } }
+    public CullingResults _cullingResults { get { return cullingResults; } }
+
+    public bool _useHDR { get { return useHDR; } }
+    public bool _useScaledRendering { get { return useScaledRendering; } }
+    public CameraBufferSettings _cameraBufferSettings { get { return cameraBufferSettings; } }
+
+    public bool _useColorTexture { get { return useColorTexture; } }
+    public bool _useDepthTexture { get { return useDepthTexture; } }
+    public bool _useIntermediateBuffer { get { return useIntermediateBuffer; } }
+    public Vector2Int _bufferSize { get { return bufferSize; } }
+
+
+    // In RenderGraph we dont need init buffer themselves, so we dont need buffer name
     const string bufferName = "Render Camera";
+    
+    
     static ShaderTagId
         unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit"),
         litShaderTagId = new ShaderTagId("CustomLit");
 
     // Camera frame buffer are always stored in separeta buffers, known as frame buffer attachments.
     //static int frameBufferId = Shader.PropertyToID("_CameraFrameBuffer");
-    static int
+    public static int
         bufferSizeId = Shader.PropertyToID("_CameraBufferSize"),
         colorAttachmentId = Shader.PropertyToID("_CameraColorAttachment"),
         colorTextureId = Shader.PropertyToID("_CameraColorTexture"), // Camera color copy for distirtion based effects
@@ -68,7 +92,9 @@ public partial class CameraRenderer
     }
 
 
-    public void Render(ScriptableRenderContext context, Camera camera,
+    public void Render(
+        RenderGraph renderGraph,
+        ScriptableRenderContext context, Camera camera,
         bool useDynamicBatching, bool useGPUInstancing, bool useLightsPerObject,
         CameraBufferSettings cameraBufferSettings,
         ShadowSettings shadowSettings, PostFXSettings postFXSettings,
@@ -82,6 +108,7 @@ public partial class CameraRenderer
         useDepthTexture = true;
 
 
+        // --- Moved to RenderGraph ---
         var crpCamera = camera.GetComponent<CustomRenderPipelineCamera>();
         CameraSettings cameraSettings = crpCamera ? crpCamera.Settings : defaultCameraSettings;
         if (cameraSettings.overridePostFX)
@@ -100,7 +127,10 @@ public partial class CameraRenderer
             useDepthTexture = cameraBufferSettings.copyDepth && cameraSettings.copyDepth;
         }
 
-        PrepareBuffer();
+        // --- Moved to renderGraph ---
+        //PrepareBuffer();
+
+
         PrepareForSceneWindow(); // Handle Scene camera
         float renderScale = cameraSettings.GetRenderScale(cameraBufferSettings.renderScale);
         // Very slight deviations from 1 will have neither visual nor performance differences that matter. So let's only use scaled rendering if there is at least a 1% difference.
@@ -143,27 +173,34 @@ public partial class CameraRenderer
             cameraBufferSettings.fxaa.enabled &= cameraSettings.allowFXAA;
         }
 
+        // --- Moved to renderGraph ---
+        //buffer.BeginSample(SampleName);
 
-        buffer.BeginSample(SampleName);
 
-        // Set scaled screen size for shaders, same as URP
-        buffer.SetGlobalVector(bufferSizeId, new Vector4(
-            bufferSize.x, bufferSize.y,
-            1f / bufferSize.x, 1f / bufferSize.y
-        ));
+        // --- Moved to renderGraph ---
+        //ExecuteBuffer();
 
-        ExecuteBuffer();
-        
-        lighting.Setup(context, cullingResults, shadowSettings, useLightsPerObject,
-            cameraSettings.maskLights ? cameraSettings.renderingLayerMask : -1);
-        
-        postFXStack.Setup(context, camera, bufferSize, cameraBufferSettings.bicubicRescaling,
+        // --- Moved to renderGraph ---
+        /*lighting.Setup
+        (
+            context, cullingResults, shadowSettings, useLightsPerObject,
+            cameraSettings.maskLights ? cameraSettings.renderingLayerMask : -1
+        );*/
+
+        postFXStack.Setup
+        (
+            /*context,*/ camera, bufferSize, cameraBufferSettings.bicubicRescaling,
             cameraBufferSettings.fxaa,
             postFXSettings, cameraSettings.keepAlpha, useHDR, colorLUTResolution,
-            cameraSettings.finalBlendMode);
-        
-        buffer.EndSample(SampleName);
-        Setup();
+            cameraSettings.finalBlendMode
+        );
+
+        // --- Moved to renderGraph ---
+        //buffer.EndSample(SampleName);
+
+        // --- Moved to renderGraph ---
+        /*Setup();
+
         DrawVisibleGeometry(useDynamicBatching, useGPUInstancing, useLightsPerObject,
             cameraSettings.renderingLayerMask);
         DrawUnsupportedShaders();
@@ -178,19 +215,87 @@ public partial class CameraRenderer
             DrawFinal(cameraSettings.finalBlendMode);
             ExecuteBuffer();
         }
-        DrawGizmosAfterFX();
+        DrawGizmosAfterFX();*/
+
+        useIntermediateBuffer = useScaledRendering ||
+            useColorTexture || useDepthTexture || postFXStack.IsActive;
+
+
+        ProfilingSampler cameraSampler;
+        //CameraSettings cameraSettings;
+        if (crpCamera != null)
+        {
+            cameraSampler = crpCamera.Sampler;
+            //cameraSettings = crpCamera.Settings;
+        }
+        else
+        {
+            cameraSampler = ProfilingSampler.Get(camera.cameraType);
+            //cameraSettings = defaultCameraSettings;
+        }
+
+        var renderGraphParameters = new RenderGraphParameters 
+        {
+            commandBuffer = CommandBufferPool.Get(),
+            currentFrameIndex = Time.frameCount,
+            executionName = cameraSampler.name,
+            scriptableRenderContext = context
+        };
+        // This is technically incorrect because the render graph could internally use multiple buffers, but that's only the case when asynchronous passes are used, which we don't.
+        buffer = renderGraphParameters.commandBuffer;
+
+        using (renderGraph.RecordAndExecute(renderGraphParameters))
+        {
+            // Minimum pass builder
+            /*using RenderGraphBuilder builder = renderGraph.AddRenderPass("Test Pass", out CameraSettings data);
+            builder.SetRenderFunc((CameraSettings data, RenderGraphContext context) => { });*/
+
+
+            using var _ = new RenderGraphProfilingScope(renderGraph, cameraSampler);
+
+            LightingPass.Record
+            (
+                renderGraph, lighting,
+                cullingResults, shadowSettings, useLightsPerObject,
+                cameraSettings.maskLights ? cameraSettings.renderingLayerMask : -1
+            );
+
+            SetupPass.Record(renderGraph, this);
+
+            VisibleGeometryPass.Record
+            (
+                renderGraph, this,
+                useDynamicBatching, useGPUInstancing, useLightsPerObject,
+                cameraSettings.renderingLayerMask
+            );
+
+            UnsupportedShadersPass.Record(renderGraph, this);
+
+            if (postFXStack.IsActive)
+            {
+                PostFXPass.Record(renderGraph, postFXStack);
+            }
+            else if (useIntermediateBuffer)
+            {
+                FinalPass.Record(renderGraph, this, cameraSettings.finalBlendMode);
+            }
+
+            GizmosPass.Record(renderGraph, this);
+        }
 
         Cleanup();
         Submit();
+        CommandBufferPool.Release(renderGraphParameters.commandBuffer);
     }
 
 
-    void Setup()
+    public void Setup()
     {
         context.SetupCameraProperties(camera);
         CameraClearFlags flags = camera.clearFlags;
 
-        useIntermediateBuffer = useScaledRendering || useColorTexture || useDepthTexture || postFXStack.IsActive;
+        // Move to area before renderGraph
+        /*useIntermediateBuffer = useScaledRendering || useColorTexture || useDepthTexture || postFXStack.IsActive;*/
 
         if (useIntermediateBuffer)
         {
@@ -200,18 +305,21 @@ public partial class CameraRenderer
             }
 
             // Get color buffer
-            buffer.GetTemporaryRT(
+            buffer.GetTemporaryRT
+            (
                 colorAttachmentId, bufferSize.x, bufferSize.y,
                 0, FilterMode.Bilinear, 
                 useHDR ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default
             );
             //Get depth buffer 
-            buffer.GetTemporaryRT(
+            buffer.GetTemporaryRT
+            (
                 depthAttachmentId, bufferSize.x, bufferSize.y,
                 32, FilterMode.Point, RenderTextureFormat.Depth
             );
 
-            buffer.SetRenderTarget(
+            buffer.SetRenderTarget
+            (
                 colorAttachmentId,
                 RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store,
                 depthAttachmentId,
@@ -219,16 +327,30 @@ public partial class CameraRenderer
             );
         }
 
-        buffer.ClearRenderTarget(
+        buffer.ClearRenderTarget
+        (
             flags <= CameraClearFlags.Depth, 
             flags <= CameraClearFlags.Color,
             flags == CameraClearFlags.Color ?
                 camera.backgroundColor.linear : Color.clear
         );
-        buffer.BeginSample(SampleName);
+
+        // --- Moved to renderGraph ---
+        //buffer.BeginSample(SampleName);
         buffer.SetGlobalTexture(depthTextureId, missingTexture);
         buffer.SetGlobalTexture(colorTextureId, missingTexture);
-        ExecuteBuffer();
+        // Set scaled color buffer size for shaders, same as URP screenSize
+        buffer.SetGlobalVector
+        (
+            bufferSizeId, new Vector4
+            (
+                bufferSize.x, bufferSize.y,
+                1f / bufferSize.x, 1f / bufferSize.y
+            )
+        );
+
+        // --- Moved to renderGraph ---
+        //ExecuteBuffer();
     }
 
     void Cleanup()
@@ -255,20 +377,30 @@ public partial class CameraRenderer
         CoreUtils.Destroy(missingTexture);
     }
 
-    void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing, bool useLightsPerObject,
-        int renderingLayerMask)
+    public void DrawVisibleGeometry
+    (
+        bool useDynamicBatching, bool useGPUInstancing, bool useLightsPerObject,
+        int renderingLayerMask
+    )
     {
-        PerObjectData lightsPerObjectFlags = useLightsPerObject ?
+        ExecuteBuffer();
+
+        PerObjectData lightsPerObjectFlags = 
+            useLightsPerObject ?
             PerObjectData.LightData | PerObjectData.LightIndices :
             PerObjectData.None;
 
-        var filteringSettings = new FilteringSettings(RenderQueueRange.opaque, renderingLayerMask: (uint)renderingLayerMask);
+        var filteringSettings = new FilteringSettings
+        (
+            RenderQueueRange.opaque, renderingLayerMask: (uint)renderingLayerMask
+        );
 
         var sortingSettings = new SortingSettings(camera)
         {
             criteria = SortingCriteria.CommonOpaque
         };
-        var drawingSettings = new DrawingSettings(
+        var drawingSettings = new DrawingSettings
+        (
             unlitShaderTagId, sortingSettings
         )
         {
@@ -284,7 +416,8 @@ public partial class CameraRenderer
         };
         drawingSettings.SetShaderPassName(1, litShaderTagId);
 
-        context.DrawRenderers(
+        context.DrawRenderers
+        (
             cullingResults, ref drawingSettings, ref filteringSettings
         );
 
@@ -298,7 +431,8 @@ public partial class CameraRenderer
         drawingSettings.sortingSettings = sortingSettings;
         filteringSettings.renderQueueRange = RenderQueueRange.transparent;
 
-        context.DrawRenderers(
+        context.DrawRenderers
+        (
             cullingResults, ref drawingSettings, ref filteringSettings
         );
     }
@@ -307,7 +441,8 @@ public partial class CameraRenderer
     {
         if (useColorTexture)
         {
-            buffer.GetTemporaryRT(
+            buffer.GetTemporaryRT
+            (
                 colorTextureId, bufferSize.x, bufferSize.y,
                 0, FilterMode.Bilinear, useHDR ?
                     RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default
@@ -323,7 +458,8 @@ public partial class CameraRenderer
         }
         if (useDepthTexture)
         {
-            buffer.GetTemporaryRT(
+            buffer.GetTemporaryRT
+            (
                 depthTextureId, bufferSize.x, bufferSize.y,
                 32, FilterMode.Point, RenderTextureFormat.Depth
             );
@@ -340,42 +476,48 @@ public partial class CameraRenderer
         if (!copyTextureSupported)
         {
             // Draw() changes render target, so we need to change it back
-            buffer.SetRenderTarget(
+            buffer.SetRenderTarget
+            (
                 colorAttachmentId,
                 RenderBufferLoadAction.Load, RenderBufferStoreAction.Store,
                 depthAttachmentId,
                 RenderBufferLoadAction.Load, RenderBufferStoreAction.Store
             );
         }
-        ExecuteBuffer();
+        // --- Moved to renderGraph ---
+        //ExecuteBuffer();
     }
-    void Draw(RenderTargetIdentifier from, RenderTargetIdentifier to, bool isDepth = false)
+    /// <summary>
+    /// Draw fullscreen buffer and change renderTarget to RenderTargetIdentifier to
+    /// </summary>
+    /// <param name="from"></param>
+    /// <param name="to"></param>
+    /// <param name="isDepth"></param>
+    public void Draw(RenderTargetIdentifier from, RenderTargetIdentifier to, bool isDepth = false)
     {
         buffer.SetGlobalTexture(sourceTextureId, from);
-        buffer.SetRenderTarget(
-            to, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store
-        );
-        buffer.DrawProcedural(
-            Matrix4x4.identity, material, isDepth ? 1 : 0, MeshTopology.Triangles, 3
-        );
+        buffer.SetRenderTarget(to, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
+        buffer.DrawProcedural(Matrix4x4.identity, material, isDepth ? 1 : 0, MeshTopology.Triangles, 3);
     }
     /// <summary>
     /// For support multi-camera (i.g. splitscreem) color and depth buffers without post fx stack we need this method
     /// </summary>
     /// <param name="finalBlendMode"></param>
-    void DrawFinal(CameraSettings.FinalBlendMode finalBlendMode)
+    public void DrawFinal(CameraSettings.FinalBlendMode finalBlendMode)
     {
         buffer.SetGlobalFloat(srcBlendId, (float)finalBlendMode.source);
         buffer.SetGlobalFloat(dstBlendId, (float)finalBlendMode.destination);
         buffer.SetGlobalTexture(sourceTextureId, colorAttachmentId);
-        buffer.SetRenderTarget(
+        buffer.SetRenderTarget
+        (
             BuiltinRenderTextureType.CameraTarget,
             finalBlendMode.destination == BlendMode.Zero && camera.rect == fullViewRect ?
                 RenderBufferLoadAction.DontCare : RenderBufferLoadAction.Load,
             RenderBufferStoreAction.Store
         );
         buffer.SetViewport(camera.pixelRect);
-        buffer.DrawProcedural(
+        buffer.DrawProcedural
+        (
             Matrix4x4.identity, material, 0, MeshTopology.Triangles, 3
         );
         buffer.SetGlobalFloat(srcBlendId, 1f);
@@ -386,12 +528,13 @@ public partial class CameraRenderer
 
     void Submit()
     {
-        buffer.EndSample(SampleName);
+        // --- Moved to renderGraph ---
+        //buffer.EndSample(SampleName);
         ExecuteBuffer();
         context.Submit();
     }
 
-    void ExecuteBuffer()
+    public void ExecuteBuffer()
     {
         context.ExecuteCommandBuffer(buffer);
         buffer.Clear();

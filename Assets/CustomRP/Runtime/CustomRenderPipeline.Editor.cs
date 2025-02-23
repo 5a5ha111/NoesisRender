@@ -10,12 +10,6 @@ public partial class CustomRenderPipeline
 
     partial void DisposeForEditor();
 
-    protected override void Dispose(bool disposing)
-    {
-        base.Dispose(disposing);
-        DisposeForEditor();
-        renderer.Dispose();
-    }
 
 
 #if UNITY_EDITOR

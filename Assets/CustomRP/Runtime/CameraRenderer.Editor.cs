@@ -9,7 +9,7 @@ public partial class CameraRenderer
     partial void DrawGizmosBeforeFX();
 
     partial void DrawGizmosAfterFX();
-    partial void DrawUnsupportedShaders();
+    public partial void DrawUnsupportedShaders();
     partial void PrepareForSceneWindow();
 
     partial void PrepareBuffer();
@@ -56,7 +56,7 @@ public partial class CameraRenderer
         }
     }
 
-    partial void DrawUnsupportedShaders()
+    public partial void DrawUnsupportedShaders()
     {
         if (errorMaterial == null)
         {
