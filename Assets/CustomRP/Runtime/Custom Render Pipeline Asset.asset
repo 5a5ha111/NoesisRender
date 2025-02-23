@@ -23,7 +23,13 @@ MonoBehaviour:
     copyDepth: 1
     copyDepthReflection: 0
     renderScale: 1
-    bicubicRescaling: 2
+    bicubicRescaling: 0
+    fxaa:
+      enabled: 1
+      fixedThreshold: 0.0312
+      relativeThreshold: 0.063
+      subpixelBlending: 0.75
+      quality: 2
   shadows:
     maxDistance: 25
     distanceFade: 0.1
@@ -38,7 +44,7 @@ MonoBehaviour:
       cascadeFade: 0.2
     other:
       atlasSize: 1024
-      filter: 2
+      filter: 3
   postFXSettings: {fileID: 11400000, guid: 11740a70adc48e240b302b42654909be, type: 2}
   colorLUTResolution: 64
   cameraRendererShader: {fileID: 4800000, guid: a8c485989315f784d84be2f1a37388a5, type: 3}

@@ -8951,9 +8951,13 @@ MonoBehaviour:
     maskLights: 0
     overridePostFX: 0
     postFXSettings: {fileID: 0}
+    renderScaleMode: 0
+    renderScale: 1
     finalBlendMode:
       source: 1
       destination: 0
+    allowFXAA: 1
+    keepAlpha: 0
 --- !u!1 &977074005
 GameObject:
   m_ObjectHideFlags: 0

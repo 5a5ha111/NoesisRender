@@ -133,8 +133,15 @@ public partial class CameraRenderer
             bufferSize.y = camera.pixelHeight;
         }
 
-        // We can directly modify the buffer settings struct field because it contains a copy of the RP settings struct, not a reference to the original.
-        cameraBufferSettings.fxaa.enabled &= cameraSettings.allowFXAA;
+        if (camera.cameraType == CameraType.SceneView)
+        {
+
+        }
+        else
+        {
+            // We can directly modify the buffer settings struct field because it contains a copy of the RP settings struct, not a reference to the original.
+            cameraBufferSettings.fxaa.enabled &= cameraSettings.allowFXAA;
+        }
 
 
         buffer.BeginSample(SampleName);
