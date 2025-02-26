@@ -90,7 +90,7 @@ public partial class CameraRenderer
         {
             ScriptableRenderContext.EmitWorldGeometryForSceneView(camera);
             useScaledRendering = false;
-            useDepthTexture = true;
+            //useDepthTexture = true;
         }
     }
 

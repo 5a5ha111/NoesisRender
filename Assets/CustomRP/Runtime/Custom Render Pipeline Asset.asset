@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c2b717b2be4ec0f47804068c0aac42e5, type: 3}
   m_Name: Custom Render Pipeline Asset
   m_EditorClassIdentifier: 
-  useDynamicBatching: 0
-  useGPUInstancing: 1
   useSRPBatcher: 1
   useLightsPerObject: 1
+  useDynamicBatching: 0
+  useGPUInstancing: 1
   cameraBufferSettings:
     allowHDR: 1
     copyColor: 1

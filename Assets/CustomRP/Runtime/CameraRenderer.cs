@@ -105,7 +105,7 @@ public partial class CameraRenderer
         this.camera = camera;
         this.cameraBufferSettings = cameraBufferSettings;
         useHDR = cameraBufferSettings.allowHDR && camera.allowHDR;
-        useDepthTexture = true;
+        //useDepthTexture = true;
 
 
         // --- Moved to RenderGraph ---
@@ -136,10 +136,20 @@ public partial class CameraRenderer
         // Very slight deviations from 1 will have neither visual nor performance differences that matter. So let's only use scaled rendering if there is at least a 1% difference.
         useScaledRendering = renderScale < 0.99f || renderScale > 1.01f;
 
-        if (!Cull(shadowSettings.maxDistance)) // Avoiding errors due to incorrect camera settings
+        /*if (!Cull(shadowSettings.maxDistance)) // Avoiding errors due to incorrect camera settings
+        {
+            return;
+        }*/
+        if (!camera.TryGetCullingParameters
+        (
+            out ScriptableCullingParameters scriptableCullingParameters
+        ))
         {
             return;
         }
+        scriptableCullingParameters.shadowDistance =
+            Mathf.Min(shadowSettings.maxDistance, camera.farClipPlane);
+        CullingResults cullingResults = context.Cull(ref scriptableCullingParameters);
 
         if (useScaledRendering)
         {
@@ -165,7 +175,7 @@ public partial class CameraRenderer
 
         if (camera.cameraType == CameraType.SceneView)
         {
-
+            useDepthTexture = cameraBufferSettings.copyDepth;
         }
         else
         {
@@ -239,6 +249,8 @@ public partial class CameraRenderer
             commandBuffer = CommandBufferPool.Get(),
             currentFrameIndex = Time.frameCount,
             executionName = cameraSampler.name,
+            // To cull pasees that not nedded we need explicitly enable culling
+            rendererListCulling = true,
             scriptableRenderContext = context
         };
         // This is technically incorrect because the render graph could internally use multiple buffers, but that's only the case when asynchronous passes are used, which we don't.
@@ -259,32 +271,50 @@ public partial class CameraRenderer
                 cullingResults, shadowSettings, useLightsPerObject,
                 cameraSettings.maskLights ? cameraSettings.renderingLayerMask : -1
             );
-
-            SetupPass.Record(renderGraph, this);
-
+            CameraRendererTextures textures = SetupPass.Record
+            (
+                renderGraph, useIntermediateBuffer, 
+                useColorTexture, useDepthTexture, useHDR, bufferSize, camera
+            );
             VisibleGeometryPass.Record
             (
-                renderGraph, this,
-                useDynamicBatching, useGPUInstancing, useLightsPerObject,
-                cameraSettings.renderingLayerMask
+                renderGraph, camera,
+                cullingResults, useLightsPerObject, cameraSettings.renderingLayerMask, opaque: true, 
+                textures
             );
-
-            UnsupportedShadersPass.Record(renderGraph, this);
-
+            UnsupportedShadersPass.Record(renderGraph, camera, cullingResults);
+            if (camera.clearFlags == CameraClearFlags.Skybox)
+            {
+                SkyboxPass.Record(renderGraph, camera, textures);
+            }
+            var copier = new CameraRendererCopier(material, camera, cameraSettings.finalBlendMode);
+            CopyAttachmentsPass.Record
+            (
+                renderGraph, useColorTexture, useDepthTexture, copier, textures
+            );
+            VisibleGeometryPass.Record
+            (
+                renderGraph, camera,
+                cullingResults, useLightsPerObject, cameraSettings.renderingLayerMask, opaque: false, 
+                textures
+            );
             if (postFXStack.IsActive)
             {
-                PostFXPass.Record(renderGraph, postFXStack);
+                PostFXPass.Record(renderGraph, postFXStack, textures);
             }
             else if (useIntermediateBuffer)
             {
-                FinalPass.Record(renderGraph, this, cameraSettings.finalBlendMode);
+                FinalPass.Record(renderGraph, copier, textures);
             }
-
-            GizmosPass.Record(renderGraph, this);
+            GizmosPass.Record(renderGraph, useIntermediateBuffer, copier, textures);
         }
 
-        Cleanup();
-        Submit();
+
+        //Cleanup();
+        //Submit();
+        lighting.Cleanup();
+        context.ExecuteCommandBuffer(renderGraphParameters.commandBuffer);
+        context.Submit();
         CommandBufferPool.Release(renderGraphParameters.commandBuffer);
     }
 
@@ -358,18 +388,21 @@ public partial class CameraRenderer
         lighting.Cleanup();
         if (useIntermediateBuffer)
         {
-            buffer.ReleaseTemporaryRT(colorAttachmentId);
-            buffer.ReleaseTemporaryRT(depthAttachmentId);
+            // --- Moved to renderGraph
+            /*buffer.ReleaseTemporaryRT(colorAttachmentId);
+            buffer.ReleaseTemporaryRT(depthAttachmentId);*/
+
+            /*if (useColorTexture)
+            {
+                buffer.ReleaseTemporaryRT(colorTextureId);
+            }
+            if (useDepthTexture)
+            {
+                buffer.ReleaseTemporaryRT(depthTextureId);
+            }*/
         }
 
-        if (useColorTexture)
-        {
-            buffer.ReleaseTemporaryRT(colorTextureId);
-        }
-        if (useDepthTexture)
-        {
-            buffer.ReleaseTemporaryRT(depthTextureId);
-        }
+        
     }
     public void Dispose()
     {
@@ -437,8 +470,9 @@ public partial class CameraRenderer
         );
     }
 
-    void CopyAttachments()
+    public void CopyAttachments()
     {
+        ExecuteBuffer();
         if (useColorTexture)
         {
             buffer.GetTemporaryRT

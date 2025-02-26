@@ -30,6 +30,10 @@ public class Shadows
         shadowPancakingId = Shader.PropertyToID("_ShadowPancaking");
 
 
+    // In RenderGraph use TextureHandle instead of direct texture ref
+    TextureHandle directionalAtlas, otherAtlas;
+
+
     static string[] directionalFilterKeywords = 
     {
         "_DIRECTIONAL_PCF3",
@@ -121,6 +125,27 @@ public class Shadows
         this.settings = settings;
 
         shadowedDirLightCount = shadowedOtherLightCount = 0;
+    }
+
+    public ShadowTextures GetRenderTextures(RenderGraph renderGraph, RenderGraphBuilder builder)
+    {
+        int atlasSize = (int)settings.directional.atlasSize;
+        var desc = new TextureDesc(atlasSize, atlasSize)
+        {
+            depthBufferBits = DepthBits.Depth32,
+            name = "Directional Shadow Atlas"
+        };
+        directionalAtlas = shadowedDirLightCount > 0 ?
+            builder.WriteTexture(renderGraph.CreateTexture(desc)) :
+            renderGraph.defaultResources.defaultShadowTexture;
+
+        atlasSize = (int)settings.other.atlasSize;
+        desc.width = desc.height = atlasSize;
+        desc.name = "Other Shadow Atlas";
+        otherAtlas = shadowedOtherLightCount > 0 ?
+                builder.WriteTexture(renderGraph.CreateTexture(desc)) :
+                renderGraph.defaultResources.defaultShadowTexture;
+        return new ShadowTextures(directionalAtlas, otherAtlas);
     }
 
     public void Render()

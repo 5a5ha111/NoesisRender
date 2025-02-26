@@ -16,7 +16,7 @@ MonoBehaviour:
   enabled: 1
   bloom:
     ignoreRenderScale: 1
-    maxIterations: 1
+    maxIterations: 16
     downscaleLimit: 1
     bicubicUpsampling: 1
     threshold: 1.1

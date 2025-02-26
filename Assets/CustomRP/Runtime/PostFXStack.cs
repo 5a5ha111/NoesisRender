@@ -177,6 +177,34 @@ public partial class PostFXStack
         context.renderContext.ExecuteCommandBuffer(buffer);
         buffer.Clear();
     }
+    /// <summary>
+    /// Render Graph overload
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="sourceId"></param>
+    public void Render(RenderGraphContext context, TextureHandle sourceId)
+    {
+        //Draw(sourceId, BuiltinRenderTextureType.CameraTarget, Pass.Copy); // copy
+        buffer = context.cmd;
+        if (settings.Enabled && settings.Material != null)
+        {
+            if (DoBloom(sourceId))
+            {
+                DoPostFXMain(bloomResultId);
+                buffer.ReleaseTemporaryRT(bloomResultId);
+            }
+            else
+            {
+                DoPostFXMain(sourceId);
+            }
+        }
+        else
+        {
+            buffer.Blit(sourceId, BuiltinRenderTextureType.CameraTarget);
+        }
+        context.renderContext.ExecuteCommandBuffer(buffer);
+        buffer.Clear();
+    }
 
     void Draw(RenderTargetIdentifier from, RenderTargetIdentifier to, Pass pass)
     {
@@ -194,6 +222,125 @@ public partial class PostFXStack
 
 
     bool DoBloom(int sourceId)
+    {
+        // Setup & Global Parameters
+        PostFXSettings.BloomSettings bloom = settings.Bloom;
+        buffer.SetGlobalFloat(bloomBucibicUpsamplingId, bloom.bicubicUpsampling ? 1f : 0f);
+
+        // Determine Dimensions of color buffer
+        int width, height;
+        if (bloom.ignoreRenderScale)
+        {
+            width = camera.pixelWidth / 2;
+            height = camera.pixelHeight / 2;
+        }
+        else
+        {
+            width = bufferSize.x / 2;
+            height = bufferSize.y / 2;
+        }
+
+        // Early exit if bloom effect should not be applied.
+        if (bloom.maxIterations == 0 || bloom.intensity <= 0f ||
+            height < bloom.downscaleLimit * 2 || width < bloom.downscaleLimit * 2)
+        {
+            return false;
+        }
+
+        buffer.BeginSample("Bloom");
+
+        // Setup Threshold & Intensity
+        Vector4 threshold;
+        threshold.x = Mathf.GammaToLinearSpace(bloom.threshold);
+        threshold.y = threshold.x * bloom.thresholdKnee;
+        threshold.z = 2f * threshold.y;
+        threshold.w = 0.25f / (threshold.y + 0.00001f);
+        threshold.y -= threshold.x;
+        buffer.SetGlobalVector(bloomThresholdId, threshold);
+        buffer.SetGlobalFloat(bloomIntensityId, bloom.intensity);
+
+        // Prefilter Pass
+        RenderTextureFormat format = useHDR ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default;
+        buffer.GetTemporaryRT(bloomPrefilterId, width, height, 0, FilterMode.Bilinear, format);
+        Draw(sourceId, bloomPrefilterId, bloom.fadeFireflies ? Pass.BloomPrefilterFireflies : Pass.BloomPrefilter);
+
+        // Prepare dimensions for pyramid creation.
+        width /= 2;
+        height /= 2;
+        int fromId = bloomPrefilterId, toId = bloomPyramidId + 1;
+
+        // Pyramid Generation (Downsampling)
+        int i;
+        for (i = 0; i < bloom.maxIterations; i++)
+        {
+            if (height < bloom.downscaleLimit || width < bloom.downscaleLimit)
+            {
+                break;
+            }
+            int midId = toId - 1;
+            buffer.GetTemporaryRT(midId, width, height, 0, FilterMode.Bilinear, format);
+            buffer.GetTemporaryRT(toId, width, height, 0, FilterMode.Bilinear, format);
+            Draw(fromId, midId, Pass.BloomHorizontal);
+            Draw(midId, toId, Pass.BloomVertical);
+            fromId = toId;
+            toId += 2;
+            width /= 2;
+            height /= 2;
+        }
+
+
+        // Additive and scatter mode specifics
+        Pass combinePass, finalPass;
+        float finalIntensity;
+        if (bloom.mode == PostFXSettings.BloomSettings.Mode.Additive)
+        {
+            combinePass = finalPass = Pass.BloomAdd;
+            buffer.SetGlobalFloat(bloomIntensityId, 1f);
+            finalIntensity = bloom.intensity;
+        }
+        else
+        {
+            combinePass = Pass.BloomScatter;
+            finalPass = Pass.BloomScatterFinal;
+            buffer.SetGlobalFloat(bloomIntensityId, bloom.scatter);
+            finalIntensity = Mathf.Min(bloom.intensity, 0.95f);
+        }
+
+        // Pyramid Combination
+        if (i > 1)
+        {
+            buffer.ReleaseTemporaryRT(fromId - 1);
+            toId -= 5;
+
+            for (i -= 1; i > 0; i--)
+            {
+                buffer.SetGlobalTexture(fxSource2Id, toId + 1);
+                Draw(fromId, toId, combinePass);
+                buffer.ReleaseTemporaryRT(fromId);
+                buffer.ReleaseTemporaryRT(toId + 1);
+                fromId = toId;
+                toId -= 2;
+            }
+        }
+        else
+        {
+            buffer.ReleaseTemporaryRT(bloomPyramidId);
+        }
+        buffer.SetGlobalFloat(bloomIntensityId, finalIntensity);
+
+
+        // Final Composition
+        buffer.SetGlobalTexture(fxSource2Id, sourceId);
+        buffer.SetGlobalTexture(fxSource2Id, sourceId);
+        buffer.GetTemporaryRT(bloomResultId, bufferSize.x, bufferSize.y, 0, FilterMode.Bilinear, format);
+        Draw(fromId, bloomResultId, finalPass);
+        buffer.ReleaseTemporaryRT(fromId);
+        buffer.ReleaseTemporaryRT(bloomPrefilterId);
+
+        buffer.EndSample("Bloom");
+        return true;
+    }
+    bool DoBloom(RenderTargetIdentifier sourceId)
     {
         // Setup & Global Parameters
         PostFXSettings.BloomSettings bloom = settings.Bloom;
@@ -502,6 +649,99 @@ public partial class PostFXStack
             }
         }
         else 
+        {
+            // If render scale != 1, first apply postFX, and then rescale. Else hdr effects will be aliased
+            buffer.GetTemporaryRT
+            (
+                finalResultId, bufferSize.x, bufferSize.y, 0,
+                FilterMode.Bilinear, RenderTextureFormat.Default
+            );
+
+            if (fxaa.enabled)
+            {
+                Draw(colorGradingResultId, finalResultId, keepAlpha ? Pass.FXAA : Pass.FXAAWithLuma);
+                buffer.ReleaseTemporaryRT(colorGradingResultId);
+            }
+            else
+            {
+                Draw(sourceId, finalResultId, Pass.ApplyLut);
+            }
+            DrawFinal(finalResultId, Pass.FinalRescale);
+            buffer.ReleaseTemporaryRT(finalResultId);
+        }
+        buffer.ReleaseTemporaryRT(colorGradingLUTId);
+    }
+    /// <summary>
+    /// RenderGraph overload
+    /// </summary>
+    /// <param name="sourceId"></param>
+    void DoPostFXMain(RenderTargetIdentifier sourceId)
+    {
+        ConfigureColorAdjustments();
+        ConfigureWhiteBalance();
+        ConfigureSplitToning();
+        ConfigureChannelMixer();
+        ConfigureShadowsMidtonesHighlights();
+        ConfigureDither();
+        bool bicubicSampling =
+                bicubicRescaling == CameraBufferSettings.BicubicRescalingMode.UpAndDown ||
+                bicubicRescaling == CameraBufferSettings.BicubicRescalingMode.UpOnly &&
+                bufferSize.x < camera.pixelWidth;
+        buffer.SetGlobalFloat(copyBicubicId, bicubicSampling ? 1f : 0f);
+
+        int lutHeight = colorLUTResolution;
+        int lutWidth = lutHeight * lutHeight;
+        buffer.GetTemporaryRT
+        (
+            colorGradingLUTId, lutWidth, lutHeight, 0,
+            FilterMode.Bilinear, RenderTextureFormat.DefaultHDR
+        );
+        buffer.SetGlobalVector
+        (
+            colorGradingLUTParametersId, new Vector4
+            (
+                lutHeight, 0.5f / lutWidth, 0.5f / lutHeight, lutHeight / (lutHeight - 1f)
+            )
+        );
+
+
+        PostFXSettings.ToneMappingSettings.Mode mode = settings.ToneMapping.mode;
+        Pass pass = Pass.ToneMappingNone + (int)mode;
+        buffer.SetGlobalFloat(colorGradingLUTInLogId, useHDR && pass != Pass.ToneMappingNone ? 1f : 0f);
+        Draw(sourceId, colorGradingLUTId, pass);
+
+        buffer.SetGlobalVector
+        (
+            colorGradingLUTParametersId, new Vector4(1f / lutWidth, 1f / lutHeight, lutHeight - 1f)
+        );
+
+
+        buffer.SetGlobalFloat(finalSrcBlendId, 1f);
+        buffer.SetGlobalFloat(finalDstBlendId, 0f);
+        if (fxaa.enabled)
+        {
+            ConfigureFXAA();
+            buffer.GetTemporaryRT
+            (
+                colorGradingResultId, bufferSize.x, bufferSize.y, 0,
+                FilterMode.Bilinear, RenderTextureFormat.Default
+            );
+            Draw(sourceId, colorGradingResultId, keepAlpha ? Pass.ApplyLut : Pass.ApplyLutWithLuma);
+        }
+
+        if (bufferSize.x == camera.pixelWidth)
+        {
+            if (fxaa.enabled)
+            {
+                DrawFinal(colorGradingResultId, keepAlpha ? Pass.FXAA : Pass.FXAAWithLuma);
+                buffer.ReleaseTemporaryRT(colorGradingResultId);
+            }
+            else
+            {
+                DrawFinal(sourceId, Pass.ApplyLut);
+            }
+        }
+        else
         {
             // If render scale != 1, first apply postFX, and then rescale. Else hdr effects will be aliased
             buffer.GetTemporaryRT

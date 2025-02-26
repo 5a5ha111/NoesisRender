@@ -6,10 +6,16 @@ using UnityEngine.Rendering;
 public partial class CustomRenderPipelineAsset : RenderPipelineAsset 
 {
 
-    [SerializeField]
-    bool useDynamicBatching = true, useGPUInstancing = true, useSRPBatcher = true,
+    [SerializeField] bool useSRPBatcher = true,
         useLightsPerObject = true;
 
+    [Header("Deprecated Settings")][SerializeField, Tooltip("Dynamic batching is no longer used.")] bool useDynamicBatching;
+
+    [SerializeField, Tooltip("GPU instancing is always enabled in RenderGraph.")] bool useGPUInstancing;
+
+
+    [Space]
+    [Space]
     //bool allowHDR = true;
     [SerializeField] CameraBufferSettings cameraBufferSettings = new CameraBufferSettings
     {
