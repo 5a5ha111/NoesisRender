@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Experimental.GlobalIllumination;
 using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RendererUtils;
@@ -39,7 +40,7 @@ public class VisibleGeometryPass
         RenderGraph renderGraph, Camera camera, CullingResults cullingResults,
         bool useLightsPerObject, int renderingLayerMask, bool opaque,
         in CameraRendererTextures textures,
-        in ShadowTextures shadowTextures
+        in LightResources lightData
     )
     {
         ProfilingSampler sampler = opaque ? samplerOpaque : samplerTransparent;
@@ -82,9 +83,14 @@ public class VisibleGeometryPass
         builder.ReadWriteTexture(textures.colorAttachment);
         builder.ReadWriteTexture(textures.depthAttachment);
 
-        // Indicate that this texture is needed
-        builder.ReadTexture(shadowTextures.directionalAtlas);
-        builder.ReadTexture(shadowTextures.otherAtlas);
+        // Indicate that this resources is needed
+        builder.ReadComputeBuffer(lightData.directionalLightDataBuffer);
+        builder.ReadComputeBuffer(lightData.otherLightDataBuffer);
+        builder.ReadTexture(lightData.shadowResources.directionalAtlas);
+        builder.ReadTexture(lightData.shadowResources.otherAtlas);
+        builder.ReadComputeBuffer(lightData.shadowResources.directionalShadowCascadesBuffer);
+        builder.ReadComputeBuffer(lightData.shadowResources.directionalShadowMatricesBuffer);
+        builder.ReadComputeBuffer(lightData.shadowResources.otherShadowDataBuffer);
 
         builder.SetRenderFunc<VisibleGeometryPass>(static (pass, context) => pass.Render(context));
     }

@@ -221,9 +221,9 @@ public class Lighting
         buffer.Clear();
     }
 
-    public ShadowTextures GetShadowTextures(RenderGraph renderGraph, RenderGraphBuilder builder)
+    public ShadowResources GetShadowTextures(RenderGraph renderGraph, RenderGraphBuilder builder)
     {
-        return shadows.GetRenderTextures(renderGraph, builder);
+        return shadows.GetRenderResources(renderGraph, builder);
     }
 
 

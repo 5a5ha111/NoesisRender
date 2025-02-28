@@ -269,7 +269,7 @@ public partial class CameraRenderer
 
             using var _ = new RenderGraphProfilingScope(renderGraph, cameraSampler);
 
-            ShadowTextures shadowTextures = LightingPass.Record
+            LightResources lightResources = LightingPass.Record
             (
                 renderGraph, /*lighting,*/
                 cullingResults, shadowSettings, useLightsPerObject,
@@ -284,7 +284,7 @@ public partial class CameraRenderer
             (
                 renderGraph, camera,
                 cullingResults, useLightsPerObject, cameraSettings.renderingLayerMask, opaque: true, 
-                textures, shadowTextures
+                textures, lightResources
             );
             UnsupportedShadersPass.Record(renderGraph, camera, cullingResults);
             if (camera.clearFlags == CameraClearFlags.Skybox)
@@ -300,7 +300,7 @@ public partial class CameraRenderer
             (
                 renderGraph, camera,
                 cullingResults, useLightsPerObject, cameraSettings.renderingLayerMask, opaque: false, 
-                textures, shadowTextures
+                textures, lightResources
             );
             if (hasActivePostFX)
             {

@@ -4,7 +4,7 @@ using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.Rendering;
 using UnityEngine.UIElements;
 
-public class Shadows
+public partial class Shadows
 {
 
 
@@ -18,13 +18,15 @@ public class Shadows
     const string otherShadowsSampleName = "Other Shadows";
 
     static int dirShadowAtlasId = Shader.PropertyToID("_DirectionalShadowAtlas"),
+        directionalShadowCascadesId = Shader.PropertyToID("_DirectionalShadowCascades"),
         dirShadowMatricesId = Shader.PropertyToID("_DirectionalShadowMatrices"),
         otherShadowAtlasId = Shader.PropertyToID("_OtherShadowAtlas"),
-        otherShadowMatricesId = Shader.PropertyToID("_OtherShadowMatrices"),
-        otherShadowTilesId = Shader.PropertyToID("_OtherShadowTiles"),
+        otherShadowDataId = Shader.PropertyToID("_OtherShadowData"), // Use structured buffer
+        //otherShadowMatricesId = Shader.PropertyToID("_OtherShadowMatrices"),
+        //otherShadowTilesId = Shader.PropertyToID("_OtherShadowTiles"),
         cascadeCountId = Shader.PropertyToID("_CascadeCount"),
-        cascadeCullingSpheresId = Shader.PropertyToID("_CascadeCullingSpheres"),
-        cascadeDataId = Shader.PropertyToID("_CascadeData"),
+        //cascadeCullingSpheresId = Shader.PropertyToID("_CascadeCullingSpheres"),
+        //cascadeDataId = Shader.PropertyToID("_CascadeData"),
         shadowAtlasSizeId = Shader.PropertyToID("_ShadowAtlasSize"),
         shadowDistanceFadeId = Shader.PropertyToID("_ShadowDistanceFade"),
         shadowPancakingId = Shader.PropertyToID("_ShadowPancaking");
@@ -63,12 +65,12 @@ public class Shadows
 
 
     static Vector4[] cascadeCullingSpheres = new Vector4[maxCascades],
-        cascadeData = new Vector4[maxCascades],
-        otherShadowTiles = new Vector4[maxShadowedOtherLightCount];
+        cascadeData = new Vector4[maxCascades];
+    //otherShadowTiles = new Vector4[maxShadowedOtherLightCount];
 
     static Matrix4x4[]
-        dirShadowMatrices = new Matrix4x4[maxShadowedDirectionalLightCount * maxCascades],
-        otherShadowMatrices = new Matrix4x4[maxShadowedOtherLightCount];
+        dirShadowMatrices = new Matrix4x4[maxShadowedDirectionalLightCount * maxCascades];
+        //otherShadowMatrices = new Matrix4x4[maxShadowedOtherLightCount];
 
 
     struct ShadowedDirectionalLight
@@ -90,6 +92,17 @@ public class Shadows
         new ShadowedDirectionalLight[maxShadowedDirectionalLightCount];
     ShadowedOtherLight[] shadowedOtherLights =
         new ShadowedOtherLight[maxShadowedOtherLightCount];
+
+
+    static readonly DirectionalShadowCascade[] directionalShadowCascades =
+        new DirectionalShadowCascade[maxCascades];
+
+    static readonly OtherShadowData[] otherShadowData =new OtherShadowData[maxShadowedOtherLightCount];
+    
+    ComputeBufferHandle
+        directionalShadowCascadesBuffer,
+        directionalShadowMatricesBuffer,
+        otherShadowDataBuffer;
 
 
     // --- Moved to RenderGraph --- 
@@ -129,7 +142,8 @@ public class Shadows
     }
 
 
-    public ShadowTextures GetRenderTextures(RenderGraph renderGraph, RenderGraphBuilder builder)
+    // Previously it was a GetRenderTextures
+    public ShadowResources GetRenderResources(RenderGraph renderGraph, RenderGraphBuilder builder)
     {
         int atlasSize = (int)settings.directional.atlasSize;
         var desc = new TextureDesc(atlasSize, atlasSize)
@@ -149,7 +163,49 @@ public class Shadows
         otherAtlas = shadowedOtherLightCount > 0 ?
                 builder.WriteTexture(renderGraph.CreateTexture(desc)) :
                 renderGraph.defaultResources.defaultShadowTexture;
-        return new ShadowTextures(directionalAtlas, otherAtlas);
+
+        directionalShadowCascadesBuffer = builder.WriteComputeBuffer
+        (
+            renderGraph.CreateComputeBuffer
+            (
+                new ComputeBufferDesc
+                {
+                    name = "Shadow Cascades",
+                    stride = DirectionalShadowCascade.stride,
+                    count = maxCascades
+                }
+            )
+        );
+        directionalShadowMatricesBuffer = builder.WriteComputeBuffer
+        (
+            renderGraph.CreateComputeBuffer
+            (
+                new ComputeBufferDesc
+                {
+                    name = "Directional Shadow Matrices",
+                    stride = 4 * 16,
+                    count = maxShadowedDirectionalLightCount * maxCascades
+                }
+            )
+        );
+
+        otherShadowDataBuffer = builder.WriteComputeBuffer
+        (
+            renderGraph.CreateComputeBuffer
+            (
+                new ComputeBufferDesc
+                {
+                    name = "Other Shadow Data",
+                    stride = OtherShadowData.stride,
+                    count = maxShadowedOtherLightCount
+                }
+            )
+        );
+
+        return new ShadowResources(directionalAtlas, otherAtlas,
+            directionalShadowCascadesBuffer,
+            directionalShadowMatricesBuffer,
+            otherShadowDataBuffer);
     }
 
     public void Render(RenderGraphContext context)
@@ -239,12 +295,25 @@ public class Shadows
             RenderDirectionalShadows(i, split, tileSize);
         }
 
-        buffer.SetGlobalVectorArray
+        /*buffer.SetGlobalVectorArray
         (
             cascadeCullingSpheresId, cascadeCullingSpheres
         );
         buffer.SetGlobalVectorArray(cascadeDataId, cascadeData);
-        buffer.SetGlobalMatrixArray(dirShadowMatricesId, dirShadowMatrices);
+        buffer.SetGlobalMatrixArray(dirShadowMatricesId, dirShadowMatrices);*/
+        buffer.SetBufferData
+        (
+            directionalShadowCascadesBuffer, directionalShadowCascades,
+            0, 0, settings.directional.cascadeCount
+        );
+        buffer.SetGlobalBuffer(directionalShadowCascadesId, directionalShadowCascadesBuffer);
+        buffer.SetBufferData
+        (
+            directionalShadowMatricesBuffer, dirShadowMatrices,
+            0, 0, shadowedDirLightCount * settings.directional.cascadeCount
+        );
+        buffer.SetGlobalBuffer(dirShadowMatricesId, directionalShadowMatricesBuffer);
+
         SetKeywords
         (
             directionalFilterKeywords, (int)settings.directional.filter - 1
@@ -298,8 +367,10 @@ public class Shadows
             }
         }
 
-        buffer.SetGlobalMatrixArray(otherShadowMatricesId, otherShadowMatrices);
-        buffer.SetGlobalVectorArray(otherShadowTilesId, otherShadowTiles);
+        /*buffer.SetGlobalMatrixArray(otherShadowMatricesId, otherShadowMatrices);
+        buffer.SetGlobalVectorArray(otherShadowTilesId, otherShadowTiles);*/
+        buffer.SetBufferData(otherShadowDataBuffer, otherShadowData, 0, 0, shadowedOtherLightCount);
+        buffer.SetGlobalBuffer(otherShadowDataId, otherShadowDataBuffer);
         SetKeywords
         (
             otherFilterKeywords, (int)settings.other.filter - 1
@@ -471,7 +542,12 @@ public class Shadows
             if (index == 0)
             {
                 cascadeCullingSpheres[i] = splitData.cullingSphere;
-                SetCascadeData(i, splitData.cullingSphere, tileSize);
+                //SetCascadeData(i, splitData.cullingSphere, tileSize);
+                directionalShadowCascades[i] = new DirectionalShadowCascade
+                (
+                    splitData.cullingSphere,
+                    tileSize, settings.directional.filter
+                );
             }
 
             int tileIndex = tileOffset + i;
@@ -526,10 +602,15 @@ public class Shadows
         float bias = light.normalBias * filterSize * 1.4142136f;
         Vector2 offset = SetTileViewport(index, split, tileSize);
         float tileScale = 1f / split;
-        SetOtherTileData(index, offset, tileScale, bias);
+        /*SetOtherTileData(index, offset, tileScale, bias);
         otherShadowMatrices[index] = ConvertToAtlasMatrix
         (
             projectionMatrix * viewMatrix, offset, tileScale
+        );*/
+        otherShadowData[index] = new OtherShadowData
+        (
+            offset, tileScale, bias, atlasSizes.w * 0.5f,
+            ConvertToAtlasMatrix(projectionMatrix * viewMatrix, offset, tileScale)
         );
 
         buffer.SetViewProjectionMatrices(viewMatrix, projectionMatrix);
@@ -574,10 +655,15 @@ public class Shadows
             shadowSettings.splitData = splitData;
             int tileIndex = index + i;
             Vector2 offset = SetTileViewport(tileIndex, split, tileSize);
-            SetOtherTileData(tileIndex, offset, tileScale, bias);
+            /*SetOtherTileData(tileIndex, offset, tileScale, bias);
             otherShadowMatrices[tileIndex] = ConvertToAtlasMatrix
             (
                 projectionMatrix * viewMatrix, offset, tileScale
+            );*/
+            otherShadowData[tileIndex] = new OtherShadowData
+            (
+                offset, tileScale, bias, atlasSizes.w * 0.5f,
+                ConvertToAtlasMatrix(projectionMatrix * viewMatrix, offset, tileScale)
             );
 
             buffer.SetViewProjectionMatrices(viewMatrix, projectionMatrix);
@@ -589,7 +675,7 @@ public class Shadows
     }
 
 
-    void SetCascadeData(int index, Vector4 cullingSphere, float tileSize)
+    /*void SetCascadeData(int index, Vector4 cullingSphere, float tileSize)
     {
         float texelSize = 2f * cullingSphere.w / tileSize;
         float filterSize = texelSize * ((float)settings.directional.filter + 1f);
@@ -601,7 +687,7 @@ public class Shadows
             1f / cullingSphere.w,
             filterSize * 1.4142136f
         );
-    }
+    }*/
 
     Vector2 SetTileViewport(int index, int split, float tileSize)
     {
@@ -620,7 +706,7 @@ public class Shadows
     /// </summary>
     /// <param name="index"></param>
     /// <param name="bias"></param>
-    void SetOtherTileData(int index, Vector2 offset, float scale, float bias)
+    /*void SetOtherTileData(int index, Vector2 offset, float scale, float bias)
     {
         float border = atlasSizes.w * 0.5f;
         Vector4 data;
@@ -629,7 +715,7 @@ public class Shadows
         data.z = scale - border - border;
         data.w = bias;
         otherShadowTiles[index] = data;
-    }
+    }*/
 
     void SetKeywords(string[] keywords, int enabledIndex)
     {

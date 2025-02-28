@@ -73,7 +73,7 @@ Shader "Custom RP/Lit"
 
 			HLSLPROGRAM
 			
-			#pragma target 3.5
+			#pragma target 4.5
 			#pragma multi_compile_instancing
 
 			#pragma shader_feature _CLIPPING
