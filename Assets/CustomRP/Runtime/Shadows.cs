@@ -236,6 +236,22 @@ public partial class Shadows
             buffer.SetGlobalTexture(otherShadowAtlasId, dirShadowAtlasId);
         }*/
 
+
+        buffer.SetBufferData
+        (
+            directionalShadowCascadesBuffer, directionalShadowCascades,
+            0, 0, settings.directional.cascadeCount
+        );
+        buffer.SetGlobalBuffer(directionalShadowCascadesId, directionalShadowCascadesBuffer);
+        buffer.SetBufferData
+        (
+            directionalShadowMatricesBuffer, dirShadowMatrices,
+            0, 0, shadowedDirLightCount * settings.directional.cascadeCount
+        );
+        buffer.SetGlobalBuffer(dirShadowMatricesId, directionalShadowMatricesBuffer);
+        buffer.SetBufferData(otherShadowDataBuffer, otherShadowData, 0, 0, shadowedOtherLightCount);
+        buffer.SetGlobalBuffer(otherShadowDataId, otherShadowDataBuffer);
+
         buffer.SetGlobalTexture(dirShadowAtlasId, directionalAtlas);
         buffer.SetGlobalTexture(otherShadowAtlasId, otherAtlas);
 
@@ -301,18 +317,6 @@ public partial class Shadows
         );
         buffer.SetGlobalVectorArray(cascadeDataId, cascadeData);
         buffer.SetGlobalMatrixArray(dirShadowMatricesId, dirShadowMatrices);*/
-        buffer.SetBufferData
-        (
-            directionalShadowCascadesBuffer, directionalShadowCascades,
-            0, 0, settings.directional.cascadeCount
-        );
-        buffer.SetGlobalBuffer(directionalShadowCascadesId, directionalShadowCascadesBuffer);
-        buffer.SetBufferData
-        (
-            directionalShadowMatricesBuffer, dirShadowMatrices,
-            0, 0, shadowedDirLightCount * settings.directional.cascadeCount
-        );
-        buffer.SetGlobalBuffer(dirShadowMatricesId, directionalShadowMatricesBuffer);
 
         SetKeywords
         (
@@ -369,8 +373,6 @@ public partial class Shadows
 
         /*buffer.SetGlobalMatrixArray(otherShadowMatricesId, otherShadowMatrices);
         buffer.SetGlobalVectorArray(otherShadowTilesId, otherShadowTiles);*/
-        buffer.SetBufferData(otherShadowDataBuffer, otherShadowData, 0, 0, shadowedOtherLightCount);
-        buffer.SetGlobalBuffer(otherShadowDataId, otherShadowDataBuffer);
         SetKeywords
         (
             otherFilterKeywords, (int)settings.other.filter - 1
