@@ -38,7 +38,8 @@ public class VisibleGeometryPass
     (
         RenderGraph renderGraph, Camera camera, CullingResults cullingResults,
         bool useLightsPerObject, int renderingLayerMask, bool opaque,
-        in CameraRendererTextures textures
+        in CameraRendererTextures textures,
+        in ShadowTextures shadowTextures
     )
     {
         ProfilingSampler sampler = opaque ? samplerOpaque : samplerTransparent;
@@ -81,6 +82,10 @@ public class VisibleGeometryPass
         builder.ReadWriteTexture(textures.colorAttachment);
         builder.ReadWriteTexture(textures.depthAttachment);
 
-        builder.SetRenderFunc<VisibleGeometryPass>((pass, context) => pass.Render(context));
+        // Indicate that this texture is needed
+        builder.ReadTexture(shadowTextures.directionalAtlas);
+        builder.ReadTexture(shadowTextures.otherAtlas);
+
+        builder.SetRenderFunc<VisibleGeometryPass>(static (pass, context) => pass.Render(context));
     }
 }

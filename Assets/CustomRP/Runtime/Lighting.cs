@@ -15,6 +15,9 @@ public class Lighting
 
     CullingResults cullingResults;
 
+    int dirLightCount, otherLightCount;
+    bool useLightsPerObject;
+
 
     const string bufferName = "Lighting";
     static int
@@ -49,28 +52,34 @@ public class Lighting
 
 
 
-    static string lightsPerObjectKeyword = "_LIGHTS_PER_OBJECT";
+    //static string lightsPerObjectKeyword = "_LIGHTS_PER_OBJECT";
+    // For command buffer use GlobalKeyword. GlobalKeyword.Create method looks up the ID and also registers it if needed.
+    static readonly GlobalKeyword lightsPerObjectKeyword = GlobalKeyword.Create("_LIGHTS_PER_OBJECT");
 
 
     const int maxDirLightCount = 4, maxOtherLightCount = 64;
 
-    public void Setup(/*ScriptableRenderContext*/ RenderGraphContext context, CullingResults cullingResults,
+
+    // In RenderGraph we simplify Lightning Setup method so it does not immediately render shadows.
+    public void Setup(/*ScriptableRenderContext*/ /*RenderGraphContext context,*/ CullingResults cullingResults,
         ShadowSettings shadowSettings, bool useLightsPerObject, int renderingLayerMask)
     {
         this.cullingResults = cullingResults;
+        this.useLightsPerObject = useLightsPerObject;
 
         //buffer.BeginSample(bufferName);
         //SetupDirectionalLight();
-        buffer = context.cmd;
+        //buffer = context.cmd;
 
-        shadows.Setup(context, cullingResults, shadowSettings);
-        SetupLights(useLightsPerObject, renderingLayerMask);
-        shadows.Render();
+        shadows.Setup(/*context,*/ cullingResults, shadowSettings);
+        SetupLights(/*useLightsPerObject,*/ renderingLayerMask);
+        
+        //shadows.Render();
         
         //buffer.EndSample(bufferName);
         
-        context.renderContext.ExecuteCommandBuffer(buffer);
-        buffer.Clear();
+        //context.renderContext.ExecuteCommandBuffer(buffer);
+        //buffer.Clear();
     }
 
 
@@ -119,12 +128,13 @@ public class Lighting
     }
 
 
-    void SetupLights(bool useLightsPerObject, int renderingLayerMask) 
+    void SetupLights(/*bool useLightsPerObject,*/ int renderingLayerMask) 
     {
         NativeArray<int> indexMap = useLightsPerObject ? cullingResults.GetLightIndexMap(Allocator.Temp) : default;
         NativeArray<VisibleLight> visibleLights = cullingResults.visibleLights;
 
-        int dirLightCount = 0, otherLightCount = 0;
+        //int dirLightCount = 0, otherLightCount = 0;
+        dirLightCount = otherLightCount = 0;
         int i;
         for (i = 0; i < visibleLights.Length; i++)
         {
@@ -171,12 +181,23 @@ public class Lighting
             }
             cullingResults.SetLightIndexMap(indexMap);
             indexMap.Dispose();
-            Shader.EnableKeyword(lightsPerObjectKeyword);
+
+            // Better to set keyword via a command buffer
+            //Shader.EnableKeyword(lightsPerObjectKeyword);
         }
-        else
+        /*else
         {
             Shader.DisableKeyword(lightsPerObjectKeyword);
-        }
+        }*/
+
+        // Move to render set vectors
+    }
+
+    public void Render(RenderGraphContext context)
+    {
+
+        CommandBuffer buffer = context.cmd;
+        buffer.SetKeyword(lightsPerObjectKeyword, useLightsPerObject);
 
         buffer.SetGlobalInt(dirLightCountId, dirLightCount);
         if (dirLightCount > 0)
@@ -194,10 +215,21 @@ public class Lighting
             buffer.SetGlobalVectorArray(otherLightSpotAnglesId, otherLightSpotAngles);
             buffer.SetGlobalVectorArray(otherLightShadowDataId, otherLightShadowData);
         }
+
+        shadows.Render(context);
+        context.renderContext.ExecuteCommandBuffer(buffer);
+        buffer.Clear();
     }
 
+    public ShadowTextures GetShadowTextures(RenderGraph renderGraph, RenderGraphBuilder builder)
+    {
+        return shadows.GetRenderTextures(renderGraph, builder);
+    }
+
+
+    // When using RenderGraph it cleanup textures automaticly
     public void Cleanup()
     {
-        shadows.Cleanup();
+        //shadows.Cleanup();
     }
 }

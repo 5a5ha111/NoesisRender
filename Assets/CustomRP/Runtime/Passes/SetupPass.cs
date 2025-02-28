@@ -55,13 +55,16 @@ public class SetupPass
     }
 
 
-    public static CameraRendererTextures Record(RenderGraph renderGraph,
+    public static CameraRendererTextures Record
+    (
+        RenderGraph renderGraph,
         bool useIntermediateAttachments,
         bool copyColor,
         bool copyDepth,
         bool useHDR,
         Vector2Int attachmentSize,
-        Camera camera)
+        Camera camera
+    )
     {
         using RenderGraphBuilder builder =
             renderGraph.AddRenderPass(sampler.name, out SetupPass pass, sampler);
@@ -117,7 +120,8 @@ public class SetupPass
 
         // Prevent from culling
         builder.AllowPassCulling(false);
-        builder.SetRenderFunc<SetupPass>((pass, context) => pass.Render(context));
+        // We're going to explicitly mark all anonymous methods of our render passes as static. This isn't required but prevents mistakes that could cause the enclosing scope to be captured, leading to unwanted memory allocations.
+        builder.SetRenderFunc<SetupPass>(static (pass, context) => pass.Render(context));
 
         return new CameraRendererTextures(colorAttachment, depthAttachment, colorCopy, depthCopy);
     }

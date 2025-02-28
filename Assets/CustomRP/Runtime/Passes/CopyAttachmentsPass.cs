@@ -31,7 +31,8 @@ public class CopyAttachmentsPass
         }
         if (CameraRendererCopier.RequiresRenderTargetResetAfterCopy)
         {
-            buffer.SetRenderTarget(
+            buffer.SetRenderTarget
+            (
                 colorAttachment,
                 RenderBufferLoadAction.Load, RenderBufferStoreAction.Store,
                 depthAttachment,
@@ -75,7 +76,7 @@ public class CopyAttachmentsPass
 
             builder.SetRenderFunc<CopyAttachmentsPass>
             (
-                (pass, context) => pass.Render(context)
+                static (pass, context) => pass.Render(context)
             );
         }
     }

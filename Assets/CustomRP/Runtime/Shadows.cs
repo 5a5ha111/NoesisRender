@@ -111,21 +111,23 @@ public class Shadows
 
     public void Setup
     (
-        /*ScriptableRenderContext*/ RenderGraphContext context, CullingResults cullingResults, 
+        /*ScriptableRenderContext*/ /*RenderGraphContext context,*/ CullingResults cullingResults, 
         ShadowSettings settings
     )
     {
         useShadowMask = false;
 
-        buffer = context.cmd;
 
         //this.context = context;
-        this.context = context.renderContext;
+
+        //buffer = context.cmd;
+        //this.context = context.renderContext;
         this.cullingResults = cullingResults;
         this.settings = settings;
 
         shadowedDirLightCount = shadowedOtherLightCount = 0;
     }
+
 
     public ShadowTextures GetRenderTextures(RenderGraph renderGraph, RenderGraphBuilder builder)
     {
@@ -133,6 +135,8 @@ public class Shadows
         var desc = new TextureDesc(atlasSize, atlasSize)
         {
             depthBufferBits = DepthBits.Depth32,
+            // isShadowMap = true avoids the allocation of a stencil buffer.
+            isShadowMap = true,
             name = "Directional Shadow Atlas"
         };
         directionalAtlas = shadowedDirLightCount > 0 ?
@@ -148,13 +152,17 @@ public class Shadows
         return new ShadowTextures(directionalAtlas, otherAtlas);
     }
 
-    public void Render()
+    public void Render(RenderGraphContext context)
     {
+        buffer = context.cmd;
+        this.context = context.renderContext;
+
         if (shadowedDirLightCount > 0)
         {
             RenderDirectionalShadows();
         }
-        else
+        // Handle missing texture in texture handles
+        /*else
         {
             // For WebGL 2.0 compatability we must add texture for every sampler, even if we dont need them
             buffer.GetTemporaryRT
@@ -162,15 +170,18 @@ public class Shadows
                 dirShadowAtlasId, 1, 1,
                 32, FilterMode.Bilinear, RenderTextureFormat.Shadowmap
             );
-        }
+        }*/
         if (shadowedOtherLightCount > 0)
         {
             RenderOtherShadows();
         }
-        else
+        /*else
         {
             buffer.SetGlobalTexture(otherShadowAtlasId, dirShadowAtlasId);
-        }
+        }*/
+
+        buffer.SetGlobalTexture(dirShadowAtlasId, directionalAtlas);
+        buffer.SetGlobalTexture(otherShadowAtlasId, otherAtlas);
 
         //buffer.BeginSample(bufferName);
         SetKeywords
@@ -203,14 +214,15 @@ public class Shadows
         int atlasSize = (int)settings.directional.atlasSize;
         atlasSizes.x = atlasSize;
         atlasSizes.y = 1f / atlasSize;
-        buffer.GetTemporaryRT
+        /*buffer.GetTemporaryRT
         (
             dirShadowAtlasId, atlasSize, atlasSize,
             32, FilterMode.Bilinear, RenderTextureFormat.Shadowmap
-        );
+        );*/
         buffer.SetRenderTarget
         (
-            dirShadowAtlasId,
+            //dirShadowAtlasId,
+            directionalAtlas,
             RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store
         );
         buffer.ClearRenderTarget(true, false, Color.clear);
@@ -250,15 +262,16 @@ public class Shadows
         atlasSizes.z = atlasSize;
         atlasSizes.w = 1f / atlasSize;
 
-        buffer.GetTemporaryRT
+        /*buffer.GetTemporaryRT
         (
             otherShadowAtlasId, atlasSize, atlasSize,
             32, FilterMode.Bilinear, RenderTextureFormat.Shadowmap
-        );
+        );*/
 
         buffer.SetRenderTarget
         (
-            otherShadowAtlasId,
+            //otherShadowAtlasId,
+            otherAtlas,
             RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store
         );
 

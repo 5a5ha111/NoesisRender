@@ -38,6 +38,6 @@ public class FinalPass
         //pass.finalBlendMode = finalBlendMode;
         pass.copier = copier;
         pass.colorAttachment = builder.ReadTexture(textures.colorAttachment);
-        builder.SetRenderFunc<FinalPass>((pass, context) => pass.Render(context));
+        builder.SetRenderFunc<FinalPass>(static (pass, context) => pass.Render(context));
     }
 }

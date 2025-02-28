@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.Rendering;
+using static CameraSettings;
 using static CustomRenderPipelineAsset;
 using static PostFXSettings;
 
@@ -9,7 +10,7 @@ public partial class PostFXStack
 
     /// Use Shader "Hidden/Custom RP/Post FX Stack" 
 
-    enum Pass
+    public enum Pass
     {
         Copy,
         BloomHorizontal,
@@ -53,7 +54,7 @@ public partial class PostFXStack
     const int maxBloomPyramidLevels = 16;
     static Rect fullViewRect = new Rect(0f, 0f, 1f, 1f);
 
-    int
+    public static readonly int
         bloomBucibicUpsamplingId = Shader.PropertyToID("_BloomBicubicUpsampling"),
         bloomPrefilterId = Shader.PropertyToID("_BloomPrefilter"),
         bloomThresholdId = Shader.PropertyToID("_BloomThreshold"),
@@ -83,7 +84,7 @@ public partial class PostFXStack
         smhRangeId = Shader.PropertyToID("_SMHRange");
 
 
-    int
+    public static readonly int
         copyBicubicId = Shader.PropertyToID("_CopyBicubic"),
         colorGradingResultId = Shader.PropertyToID("_ColorGradingResult"),
         finalResultId = Shader.PropertyToID("_FinalResult"),
@@ -104,17 +105,18 @@ public partial class PostFXStack
     ScriptableRenderContext context;*/
     CommandBuffer buffer;
 
-    Camera camera;
+    public Camera camera;
+    public CameraBufferSettings BufferSettings { get; set; }
 
-    Vector2Int bufferSize;
+    public Vector2Int bufferSize;
     CameraBufferSettings.BicubicRescalingMode bicubicRescaling;
-    CameraBufferSettings.FXAA fxaa;
+    public CameraBufferSettings.FXAA fxaa;
 
 
-    PostFXSettings settings;
+    public PostFXSettings settings;
     bool keepAlpha, useHDR;
     int colorLUTResolution;
-    CameraSettings.FinalBlendMode finalBlendMode;
+    public CameraSettings.FinalBlendMode finalBlendMode;
 
 
     public bool IsActive => settings != null && settings.Enabled;
@@ -206,7 +208,7 @@ public partial class PostFXStack
         buffer.Clear();
     }
 
-    void Draw(RenderTargetIdentifier from, RenderTargetIdentifier to, Pass pass)
+    public void Draw(RenderTargetIdentifier from, RenderTargetIdentifier to, Pass pass)
     {
         if (settings.Material == null)
         {
@@ -214,6 +216,26 @@ public partial class PostFXStack
             return;
         }
 
+        buffer.SetGlobalTexture(fxSourceId, from);
+        buffer.SetRenderTarget(to, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
+        buffer.DrawProcedural(Matrix4x4.identity, settings.Material, (int)pass, MeshTopology.Triangles, 3);
+    }
+
+    public void Draw(CommandBuffer buffer, RenderTargetIdentifier to, Pass pass)
+    {
+        buffer.SetRenderTarget(
+            to, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
+        buffer.DrawProcedural(Matrix4x4.identity, settings.Material, (int)pass,
+            MeshTopology.Triangles, 3);
+    }
+    public void Draw
+    (
+        CommandBuffer buffer,
+        RenderTargetIdentifier from,
+        RenderTargetIdentifier to,
+        Pass pass
+    )
+    {
         buffer.SetGlobalTexture(fxSourceId, from);
         buffer.SetRenderTarget(to, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
         buffer.DrawProcedural(Matrix4x4.identity, settings.Material, (int)pass, MeshTopology.Triangles, 3);
@@ -541,6 +563,87 @@ public partial class PostFXStack
             }
         }
     }
+
+    public void ConfigureColorAdjustments(CommandBuffer buffer)
+    {
+        ColorAdjustmentsSettings colorAdjustments = settings.ColorAdjustments;
+        /// The color adjustments vector components are the exposure, contrast, hue shift, and saturation. Exposure is measured in stops, which means that we have to raise 2 to the power of the configured exposure value. Also convert contrast and saturation to the 0–2 range and hue shift to −1–1. The filter must be in linear linear color space.
+        buffer.SetGlobalVector
+        (
+            colorAdjustmentsId, new Vector4
+            (
+                Mathf.Pow(2f, colorAdjustments.postExposure),
+                colorAdjustments.contrast * 0.01f + 1f,
+                colorAdjustments.hueShift * (1f / 360f),
+                colorAdjustments.saturation * 0.01f + 1f
+            )
+        );
+        buffer.SetGlobalColor(colorFilterId, colorAdjustments.colorFilter.linear);
+    }
+    public void ConfigureWhiteBalance(CommandBuffer buffer)
+    {
+        WhiteBalanceSettings whiteBalance = settings.WhiteBalance;
+        buffer.SetGlobalVector
+        (
+            whiteBalanceId, ColorUtils.ColorBalanceToLMSCoeffs
+            (
+                whiteBalance.temperature, whiteBalance.tint
+            )
+        );
+    }
+    public void ConfigureSplitToning(CommandBuffer buffer)
+    {
+        SplitToningSettings splitToning = settings.SplitToning;
+        Color splitColor = splitToning.shadows;
+        splitColor.a = splitToning.balance * 0.01f;
+        buffer.SetGlobalColor(splitToningShadowsId, splitColor);
+        buffer.SetGlobalColor(splitToningHighlightsId, splitToning.highlights);
+    }
+    public void ConfigureChannelMixer(CommandBuffer buffer)
+    {
+        ChannelMixerSettings channelMixer = settings.ChannelMixer;
+        buffer.SetGlobalVector(channelMixerRedId, channelMixer.red);
+        buffer.SetGlobalVector(channelMixerGreenId, channelMixer.green);
+        buffer.SetGlobalVector(channelMixerBlueId, channelMixer.blue);
+    }
+    public void ConfigureShadowsMidtonesHighlights(CommandBuffer buffer)
+    {
+        ShadowsMidtonesHighlightsSettings smh = settings.ShadowsMidtonesHighlights;
+        buffer.SetGlobalColor(smhShadowsId, smh.shadows.linear);
+        buffer.SetGlobalColor(smhMidtonesId, smh.midtones.linear);
+        buffer.SetGlobalColor(smhHighlightsId, smh.highlights.linear);
+        buffer.SetGlobalVector
+        (
+            smhRangeId, new Vector4
+            (
+                smh.shadowsStart, smh.shadowsEnd, smh.highlightsStart, smh.highLightsEnd
+            )
+        );
+    }
+    public void ConfigureDither(CommandBuffer buffer)
+    {
+        if (settings.Material != null)
+        {
+            var mat = settings.Material;
+            if (settings.dither.mode == 0)
+            {
+                mat.DisableKeyword(ditherKeyword);
+            }
+            else
+            {
+                mat.EnableKeyword(ditherKeyword);
+                if (settings.dither.mode == Dither.Mode.HighQuality)
+                {
+                    mat.EnableKeyword(ditherHQKeyword);
+                }
+                else
+                {
+                    mat.DisableKeyword(ditherHQKeyword);
+                }
+            }
+        }
+    }
+
     void ConfigureFXAA()
     {
         if (fxaa.quality == CameraBufferSettings.FXAA.Quality.Low)
@@ -577,6 +680,27 @@ public partial class PostFXStack
         (
             BuiltinRenderTextureType.CameraTarget,
             finalBlendMode.destination == BlendMode.Zero && camera.rect == fullViewRect ? RenderBufferLoadAction.DontCare : RenderBufferLoadAction.Load,
+            RenderBufferStoreAction.Store
+        );
+        buffer.SetViewport(camera.pixelRect);
+        buffer.DrawProcedural(Matrix4x4.identity, settings.Material, (int)pass, MeshTopology.Triangles, 3);
+    }
+    public void DrawFinal
+    (
+        CommandBuffer buffer,
+        RenderTargetIdentifier from,
+        Pass pass
+    )
+    {
+        buffer.SetGlobalFloat(finalSrcBlendId, (float)finalBlendMode.source);
+        buffer.SetGlobalFloat(finalDstBlendId, (float)finalBlendMode.destination);
+        buffer.SetGlobalTexture(fxSourceId, from);
+        buffer.SetRenderTarget
+        (
+            BuiltinRenderTextureType.CameraTarget,
+            finalBlendMode.destination == BlendMode.Zero &&
+                camera.rect == fullViewRect ?
+                RenderBufferLoadAction.DontCare : RenderBufferLoadAction.Load,
             RenderBufferStoreAction.Store
         );
         buffer.SetViewport(camera.pixelRect);

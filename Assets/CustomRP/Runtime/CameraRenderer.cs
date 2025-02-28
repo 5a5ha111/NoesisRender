@@ -92,7 +92,8 @@ public partial class CameraRenderer
     }
 
 
-    public void Render(
+    public void Render
+    (
         RenderGraph renderGraph,
         ScriptableRenderContext context, Camera camera,
         bool useDynamicBatching, bool useGPUInstancing, bool useLightsPerObject,
@@ -182,6 +183,9 @@ public partial class CameraRenderer
             // We can directly modify the buffer settings struct field because it contains a copy of the RP settings struct, not a reference to the original.
             cameraBufferSettings.fxaa.enabled &= cameraSettings.allowFXAA;
         }
+        cameraBufferSettings.allowHDR &= camera.allowHDR;
+        cameraBufferSettings.allowHDR = true;
+        bool hasActivePostFX = postFXSettings != null && PostFXSettings.AreApplicableTo(camera);
 
         // --- Moved to renderGraph ---
         //buffer.BeginSample(SampleName);
@@ -216,9 +220,9 @@ public partial class CameraRenderer
         DrawUnsupportedShaders();
 
         DrawGizmosBeforeFX();
-        if (postFXStack.IsActive)
+        if (stack.IsActive)
         {
-            postFXStack.Render(colorAttachmentId);
+            stack.Render(colorAttachmentId);
         }
         else if (useIntermediateBuffer)
         {
@@ -265,9 +269,9 @@ public partial class CameraRenderer
 
             using var _ = new RenderGraphProfilingScope(renderGraph, cameraSampler);
 
-            LightingPass.Record
+            ShadowTextures shadowTextures = LightingPass.Record
             (
-                renderGraph, lighting,
+                renderGraph, /*lighting,*/
                 cullingResults, shadowSettings, useLightsPerObject,
                 cameraSettings.maskLights ? cameraSettings.renderingLayerMask : -1
             );
@@ -280,7 +284,7 @@ public partial class CameraRenderer
             (
                 renderGraph, camera,
                 cullingResults, useLightsPerObject, cameraSettings.renderingLayerMask, opaque: true, 
-                textures
+                textures, shadowTextures
             );
             UnsupportedShadersPass.Record(renderGraph, camera, cullingResults);
             if (camera.clearFlags == CameraClearFlags.Skybox)
@@ -296,11 +300,21 @@ public partial class CameraRenderer
             (
                 renderGraph, camera,
                 cullingResults, useLightsPerObject, cameraSettings.renderingLayerMask, opaque: false, 
-                textures
+                textures, shadowTextures
             );
-            if (postFXStack.IsActive)
+            if (hasActivePostFX)
             {
-                PostFXPass.Record(renderGraph, postFXStack, textures);
+                //PostFXPass.Record(renderGraph, postFXStack, textures);
+                postFXStack.BufferSettings = cameraBufferSettings;
+                postFXStack.bufferSize = bufferSize;
+                postFXStack.camera = camera;
+                postFXStack.finalBlendMode = cameraSettings.finalBlendMode;
+                postFXStack.settings = postFXSettings;
+                PostFXPass.Record
+                (
+                    renderGraph, postFXStack, colorLUTResolution,
+                    cameraSettings.keepAlpha, textures
+                );
             }
             else if (useIntermediateBuffer)
             {
@@ -312,7 +326,7 @@ public partial class CameraRenderer
 
         //Cleanup();
         //Submit();
-        lighting.Cleanup();
+        //lighting.Cleanup();
         context.ExecuteCommandBuffer(renderGraphParameters.commandBuffer);
         context.Submit();
         CommandBufferPool.Release(renderGraphParameters.commandBuffer);
@@ -325,7 +339,7 @@ public partial class CameraRenderer
         CameraClearFlags flags = camera.clearFlags;
 
         // Move to area before renderGraph
-        /*useIntermediateBuffer = useScaledRendering || useColorTexture || useDepthTexture || postFXStack.IsActive;*/
+        /*useIntermediateBuffer = useScaledRendering || useColorTexture || useDepthTexture || stack.IsActive;*/
 
         if (useIntermediateBuffer)
         {

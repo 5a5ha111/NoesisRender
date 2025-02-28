@@ -26,7 +26,7 @@ MonoBehaviour:
     mode: 1
     scatter: 0.05
   colorAdjustments:
-    postExposure: 0
+    postExposure: 1
     contrast: 0
     colorFilter: {r: 1, g: 1, b: 1, a: 1}
     hueShift: 0
@@ -51,6 +51,6 @@ MonoBehaviour:
     highlightsStart: 0.55
     highLightsEnd: 1
   toneMapping:
-    mode: 5
+    mode: 3
   dither:
     mode: 2
