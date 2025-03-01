@@ -9,16 +9,12 @@ public class FinalPass
 {
     static readonly ProfilingSampler sampler = new("Final");
 
-    //CameraRenderer renderer;
 
     CameraRendererCopier copier;
     TextureHandle colorAttachment;
 
     void Render(RenderGraphContext context)
     {
-        /*renderer.DrawFinal(finalBlendMode);
-        renderer.ExecuteBuffer();*/
-
         CommandBuffer buffer = context.cmd;
         copier.CopyToCameraTarget(buffer, colorAttachment);
         context.renderContext.ExecuteCommandBuffer(buffer);
@@ -34,8 +30,6 @@ public class FinalPass
     {
         using RenderGraphBuilder builder =
             renderGraph.AddRenderPass(sampler.name, out FinalPass pass, sampler);
-        //pass.renderer = renderer;
-        //pass.finalBlendMode = finalBlendMode;
         pass.copier = copier;
         pass.colorAttachment = builder.ReadTexture(textures.colorAttachment);
         builder.SetRenderFunc<FinalPass>(static (pass, context) => pass.Render(context));

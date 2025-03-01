@@ -61,7 +61,6 @@ public class UnsupportedShadersPass
                 }
             ));
 
-            //pass.renderer = renderer;
             builder.SetRenderFunc<UnsupportedShadersPass>(static (pass, context) => pass.Render(context));
 
         #endif

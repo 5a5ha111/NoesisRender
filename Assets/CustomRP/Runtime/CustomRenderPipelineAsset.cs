@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -6,18 +7,16 @@ using UnityEngine.Rendering;
 public partial class CustomRenderPipelineAsset : RenderPipelineAsset 
 {
 
-    [SerializeField] bool useSRPBatcher = true,
-        useLightsPerObject = true;
+    [SerializeField] CustomRenderPipelineSettings settings;
 
-    [Header("Deprecated Settings")][SerializeField, Tooltip("Dynamic batching is no longer used.")] bool useDynamicBatching;
+    [NonSerialized, HideInInspector] bool useSRPBatcher = true;
 
-    [SerializeField, Tooltip("GPU instancing is always enabled in RenderGraph.")] bool useGPUInstancing;
 
 
     [Space]
     [Space]
     //bool allowHDR = true;
-    [SerializeField] CameraBufferSettings cameraBufferSettings = new CameraBufferSettings
+    [SerializeField, HideInInspector] CameraBufferSettings cameraBufferSettings = new CameraBufferSettings
     {
         allowHDR = true,
         renderScale = 1f,
@@ -32,26 +31,59 @@ public partial class CustomRenderPipelineAsset : RenderPipelineAsset
 
     [Space]
     [Space]
-    [SerializeField] ShadowSettings shadows = default;
+    [SerializeField, HideInInspector] ShadowSettings shadows = default;
 
 
     [Space]
     [Space]
     [Space]
     [Space]
-    [SerializeField] PostFXSettings postFXSettings = default;
+    [SerializeField, HideInInspector] PostFXSettings postFXSettings = default;
 
     public enum ColorLUTResolution { _16 = 16, _32 = 32, _64 = 64 }
-    [SerializeField] ColorLUTResolution colorLUTResolution = ColorLUTResolution._32;
+    [SerializeField, HideInInspector] ColorLUTResolution colorLUTResolution = ColorLUTResolution._32;
 
     [Space]
-    [SerializeField] Shader cameraRendererShader = default;
+    [SerializeField, HideInInspector] Shader cameraRendererShader = default;
+
+
+    [Header("Deprecated Settings")]
+    [Tooltip("Deprecated, lights-per-object drawing mode will be removed.")]
+    public bool useLightsPerObject;
 
     protected override RenderPipeline CreatePipeline()
     {
-        return new CustomRenderPipeline(
+        /*return new CustomRenderPipeline(
             useDynamicBatching, useGPUInstancing, useLightsPerObject, useSRPBatcher, cameraBufferSettings, shadows, postFXSettings, (int)colorLUTResolution,
             cameraRendererShader
-        );
+        );*/
+
+        if ((settings == null || settings.cameraRendererShader == null) &&
+            cameraRendererShader != null)
+        {
+            settings = new CustomRenderPipelineSettings
+            {
+                cameraBuffer = cameraBufferSettings,
+                useSRPBatcher = useSRPBatcher,
+                useLightsPerObject = useLightsPerObject,
+                shadows = shadows,
+                postFXSettings = postFXSettings,
+                colorLUTResolution =
+                    (CustomRenderPipelineSettings.ColorLUTResolution)
+                    colorLUTResolution,
+                cameraRendererShader = cameraRendererShader
+            };
+
+            if (postFXSettings != null)
+            {
+                postFXSettings = null;
+            }
+            if (cameraRendererShader != null)
+            {
+                cameraRendererShader = null;
+            }
+        }
+
+        return new CustomRenderPipeline(settings);
     }
 }

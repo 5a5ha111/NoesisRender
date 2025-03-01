@@ -147,8 +147,7 @@ public partial class PostFXStack
         this.bufferSize = bufferSize;
         this.bicubicRescaling = bicubicRescaling;
         this.fxaa = fxaa;
-        this.settings =
-            camera.cameraType <= CameraType.SceneView ? settings : null;
+        this.settings = camera.cameraType <= CameraType.SceneView ? settings : null;
         this.useHDR = useHDR;
         this.keepAlpha = keepAlpha;
         this.colorLUTResolution = colorLUTResolution;

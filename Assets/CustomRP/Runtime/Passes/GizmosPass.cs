@@ -19,10 +19,6 @@ public class GizmosPass
             ScriptableRenderContext renderContext = context.renderContext;
             if (requiresDepthCopy)
             {
-                //renderer.Draw(
-                //  CameraRenderer.depthAttachmentId, BuiltinRenderTextureType.CameraTarget,
-                //  true);
-                //renderer.ExecuteBuffer();
                 copier.CopyByDrawing(
                     buffer, depthAttachment, BuiltinRenderTextureType.CameraTarget, true);
                 renderContext.ExecuteCommandBuffer(buffer);

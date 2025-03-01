@@ -22,7 +22,7 @@ public class SetupPass
     Camera camera;
     CameraClearFlags clearFlags;
 
-    void Render(RenderGraphContext context) //=> renderer.Setup();
+    void Render(RenderGraphContext context)
     {
         context.renderContext.SetupCameraProperties(camera);
         CommandBuffer cmd = context.cmd;
@@ -68,7 +68,6 @@ public class SetupPass
     {
         using RenderGraphBuilder builder =
             renderGraph.AddRenderPass(sampler.name, out SetupPass pass, sampler);
-        //pass.renderer = renderer;
 
         pass.useIntermediateAttachments = useIntermediateAttachments;
         pass.attachmentSize = attachmentSize;

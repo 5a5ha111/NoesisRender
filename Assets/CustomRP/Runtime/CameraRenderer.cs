@@ -11,12 +11,6 @@ public partial class CameraRenderer
     CullingResults cullingResults;
 
 
-
-    // Now RenderGraph init buffer. Also it handle all buffer.BeginSample() and .EndSample()
-    /*CommandBuffer buffer = new CommandBuffer
-    {
-        name = bufferName
-    };*/
     CommandBuffer buffer;
 
 
@@ -55,8 +49,6 @@ public partial class CameraRenderer
         unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit"),
         litShaderTagId = new ShaderTagId("CustomLit");
 
-    // Camera frame buffer are always stored in separeta buffers, known as frame buffer attachments.
-    //static int frameBufferId = Shader.PropertyToID("_CameraFrameBuffer");
     public static int
         bufferSizeId = Shader.PropertyToID("_CameraBufferSize"),
         colorAttachmentId = Shader.PropertyToID("_CameraColorAttachment"),
@@ -79,7 +71,7 @@ public partial class CameraRenderer
     public const float renderScaleMax = 2f;
 
 
-    public CameraRenderer(Shader shader)
+    public CameraRenderer(Shader shader, Shader cameraDebuggerShader)
     {
         material = CoreUtils.CreateEngineMaterial(shader);
         missingTexture = new Texture2D(1, 1)
@@ -89,29 +81,38 @@ public partial class CameraRenderer
         };
         missingTexture.SetPixel(0, 0, Color.white * 0.5f);
         missingTexture.Apply(true, true);
+
+        CameraDebugger.Initialize(cameraDebuggerShader);
     }
 
 
     public void Render
     (
         RenderGraph renderGraph,
-        ScriptableRenderContext context, Camera camera,
-        bool useDynamicBatching, bool useGPUInstancing, bool useLightsPerObject,
-        CameraBufferSettings cameraBufferSettings,
-        ShadowSettings shadowSettings, PostFXSettings postFXSettings,
-        int colorLUTResolution
+        ScriptableRenderContext context,
+        Camera camera,
+        CustomRenderPipelineSettings settings
     )
     {
-        this.context = context;
-        this.camera = camera;
-        this.cameraBufferSettings = cameraBufferSettings;
+        CameraBufferSettings bufferSettings = settings.cameraBuffer;
+        PostFXSettings postFXSettings = settings.postFXSettings;
+        ShadowSettings shadowSettings = settings.shadows;
+        bool useLightsPerObject = settings.useLightsPerObject;
         useHDR = cameraBufferSettings.allowHDR && camera.allowHDR;
-        //useDepthTexture = true;
 
 
-        // --- Moved to RenderGraph ---
-        var crpCamera = camera.GetComponent<CustomRenderPipelineCamera>();
-        CameraSettings cameraSettings = crpCamera ? crpCamera.Settings : defaultCameraSettings;
+        ProfilingSampler cameraSampler;
+        CameraSettings cameraSettings;
+        if (camera.TryGetComponent(out CustomRenderPipelineCamera crpCamera))
+        {
+            cameraSampler = crpCamera.Sampler;
+            cameraSettings = crpCamera.Settings;
+        }
+        else
+        {
+            cameraSampler = ProfilingSampler.Get(camera.cameraType);
+            cameraSettings = defaultCameraSettings;
+        }
         if (cameraSettings.overridePostFX)
         {
             postFXSettings = cameraSettings.postFXSettings;
@@ -128,19 +129,12 @@ public partial class CameraRenderer
             useDepthTexture = cameraBufferSettings.copyDepth && cameraSettings.copyDepth;
         }
 
-        // --- Moved to renderGraph ---
-        //PrepareBuffer();
-
 
         PrepareForSceneWindow(); // Handle Scene camera
-        float renderScale = cameraSettings.GetRenderScale(cameraBufferSettings.renderScale);
+        float renderScale = cameraSettings.GetRenderScale(cameraSettings.renderScale);
         // Very slight deviations from 1 will have neither visual nor performance differences that matter. So let's only use scaled rendering if there is at least a 1% difference.
         useScaledRendering = renderScale < 0.99f || renderScale > 1.01f;
 
-        /*if (!Cull(shadowSettings.maxDistance)) // Avoiding errors due to incorrect camera settings
-        {
-            return;
-        }*/
         if (!camera.TryGetCullingParameters
         (
             out ScriptableCullingParameters scriptableCullingParameters
@@ -148,8 +142,7 @@ public partial class CameraRenderer
         {
             return;
         }
-        scriptableCullingParameters.shadowDistance =
-            Mathf.Min(shadowSettings.maxDistance, camera.farClipPlane);
+        scriptableCullingParameters.shadowDistance = Mathf.Min(shadowSettings.maxDistance, camera.farClipPlane);
         CullingResults cullingResults = context.Cull(ref scriptableCullingParameters);
 
         if (useScaledRendering)
@@ -187,66 +180,21 @@ public partial class CameraRenderer
         cameraBufferSettings.allowHDR = true;
         bool hasActivePostFX = postFXSettings != null && PostFXSettings.AreApplicableTo(camera);
 
-        // --- Moved to renderGraph ---
-        //buffer.BeginSample(SampleName);
-
-
-        // --- Moved to renderGraph ---
-        //ExecuteBuffer();
-
-        // --- Moved to renderGraph ---
-        /*lighting.Setup
-        (
-            context, cullingResults, shadowSettings, useLightsPerObject,
-            cameraSettings.maskLights ? cameraSettings.renderingLayerMask : -1
-        );*/
 
         postFXStack.Setup
         (
             /*context,*/ camera, bufferSize, cameraBufferSettings.bicubicRescaling,
             cameraBufferSettings.fxaa,
-            postFXSettings, cameraSettings.keepAlpha, useHDR, colorLUTResolution,
+            postFXSettings, cameraSettings.keepAlpha, useHDR, (int)settings.colorLUTResolution,
             cameraSettings.finalBlendMode
         );
 
-        // --- Moved to renderGraph ---
-        //buffer.EndSample(SampleName);
-
-        // --- Moved to renderGraph ---
-        /*Setup();
-
-        DrawVisibleGeometry(useDynamicBatching, useGPUInstancing, useLightsPerObject,
-            cameraSettings.renderingLayerMask);
-        DrawUnsupportedShaders();
-
-        DrawGizmosBeforeFX();
-        if (stack.IsActive)
-        {
-            stack.Render(colorAttachmentId);
-        }
-        else if (useIntermediateBuffer)
-        {
-            DrawFinal(cameraSettings.finalBlendMode);
-            ExecuteBuffer();
-        }
-        DrawGizmosAfterFX();*/
-
         useIntermediateBuffer = useScaledRendering ||
-            useColorTexture || useDepthTexture || postFXStack.IsActive;
+            useColorTexture || useDepthTexture || postFXStack.IsActive ||
+            !useLightsPerObject;
 
 
-        ProfilingSampler cameraSampler;
-        //CameraSettings cameraSettings;
-        if (crpCamera != null)
-        {
-            cameraSampler = crpCamera.Sampler;
-            //cameraSettings = crpCamera.Settings;
-        }
-        else
-        {
-            cameraSampler = ProfilingSampler.Get(camera.cameraType);
-            //cameraSettings = defaultCameraSettings;
-        }
+
 
         var renderGraphParameters = new RenderGraphParameters 
         {
@@ -271,7 +219,7 @@ public partial class CameraRenderer
 
             LightResources lightResources = LightingPass.Record
             (
-                renderGraph, /*lighting,*/
+                renderGraph, bufferSize, settings.forwardPlus,
                 cullingResults, shadowSettings, useLightsPerObject,
                 cameraSettings.maskLights ? cameraSettings.renderingLayerMask : -1
             );
@@ -304,7 +252,6 @@ public partial class CameraRenderer
             );
             if (hasActivePostFX)
             {
-                //PostFXPass.Record(renderGraph, postFXStack, textures);
                 postFXStack.BufferSettings = cameraBufferSettings;
                 postFXStack.bufferSize = bufferSize;
                 postFXStack.camera = camera;
@@ -312,7 +259,7 @@ public partial class CameraRenderer
                 postFXStack.settings = postFXSettings;
                 PostFXPass.Record
                 (
-                    renderGraph, postFXStack, colorLUTResolution,
+                    renderGraph, postFXStack, (int)settings.colorLUTResolution,
                     cameraSettings.keepAlpha, textures
                 );
             }
@@ -320,13 +267,11 @@ public partial class CameraRenderer
             {
                 FinalPass.Record(renderGraph, copier, textures);
             }
+            DebugPass.Record(renderGraph, settings, camera, lightResources);
             GizmosPass.Record(renderGraph, useIntermediateBuffer, copier, textures);
         }
 
 
-        //Cleanup();
-        //Submit();
-        //lighting.Cleanup();
         context.ExecuteCommandBuffer(renderGraphParameters.commandBuffer);
         context.Submit();
         CommandBufferPool.Release(renderGraphParameters.commandBuffer);
@@ -422,6 +367,7 @@ public partial class CameraRenderer
     {
         CoreUtils.Destroy(material);
         CoreUtils.Destroy(missingTexture);
+        CameraDebugger.Cleanup();
     }
 
     public void DrawVisibleGeometry

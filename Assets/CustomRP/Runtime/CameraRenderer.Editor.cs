@@ -86,12 +86,15 @@ public partial class CameraRenderer
 
     partial void PrepareForSceneWindow()
     {
-        if (camera.cameraType == CameraType.SceneView)
+        if (camera != null)
         {
-            ScriptableRenderContext.EmitWorldGeometryForSceneView(camera);
-            useScaledRendering = false;
-            //useDepthTexture = true;
+            if (camera.cameraType == CameraType.SceneView)
+            {
+                ScriptableRenderContext.EmitWorldGeometryForSceneView(camera);
+                useScaledRendering = false;
+            }
         }
+        
     }
 
     /// <summary>

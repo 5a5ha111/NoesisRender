@@ -53,7 +53,7 @@ public class PostFXPass
 
 
 
-    void Render(RenderGraphContext context) //=> stack.Render(context, colorAttachment);
+    void Render(RenderGraphContext context)
     {
         CommandBuffer buffer = context.cmd;
         buffer.SetGlobalFloat(finalSrcBlendId, 1f);
@@ -107,6 +107,12 @@ public class PostFXPass
         in CameraRendererTextures textures
     )
     {
+        if (stack.settings.Material == null)
+        {
+            return;
+        }
+
+
         using var _ = new RenderGraphProfilingScope(renderGraph, groupSampler);
 
         TextureHandle colorSource = BloomPass.Record(renderGraph, stack, textures);

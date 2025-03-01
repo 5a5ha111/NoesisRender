@@ -25,11 +25,6 @@ public class VisibleGeometryPass
 
     void Render(RenderGraphContext context)
     {
-        /*renderer.DrawVisibleGeometry
-        (
-            useDynamicBatching, useGPUInstancing, useLightsPerObject, renderingLayerMask
-        );*/
-
         context.cmd.DrawRendererList(list);
         context.renderContext.ExecuteCommandBuffer(context.cmd);
         context.cmd.Clear();
@@ -47,11 +42,6 @@ public class VisibleGeometryPass
 
         using RenderGraphBuilder builder = renderGraph.AddRenderPass
             (sampler.name, out VisibleGeometryPass pass, sampler);
-        /*pass.renderer = renderer;
-        pass.useDynamicBatching = useDynamicBatching;
-        pass.useGPUInstancing = useGPUInstancing;
-        pass.useLightsPerObject = useLightsPerObject;
-        pass.renderingLayerMask = renderingLayerMask;*/
         pass.useLightsPerObject = useLightsPerObject;
         pass.renderingLayerMask = renderingLayerMask;
 
@@ -78,6 +68,13 @@ public class VisibleGeometryPass
                 }
             )
         );
+
+
+        if (lightData.tilesBuffer.IsValid())
+        {
+            builder.ReadComputeBuffer(lightData.tilesBuffer);
+        }
+
 
         // Readwrite not change renderTarget. Also allow RenderBufferLoadAction.DontCare
         builder.ReadWriteTexture(textures.colorAttachment);

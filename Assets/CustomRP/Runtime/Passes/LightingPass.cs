@@ -1,61 +1,37 @@
 using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.Rendering;
 
 
+using static Unity.Mathematics.math;
+
 
 public partial class LightingPass
 {
-    /*static readonly ProfilingSampler sampler = new("Lighting");
-
-    *//*readonly*//* Lighting lighting = new();
-
-    CullingResults cullingResults;
-    ShadowSettings shadowSettings;
-    bool useLightsPerObject;
-    int renderingLayerMask;
-
-    void Render(RenderGraphContext context)
-    {
-        lighting.Setup
-        (
-            cullingResults, shadowSettings,
-            useLightsPerObject, renderingLayerMask
-        );
-        lighting.Render(context);
-    }
-
-    public static ShadowResources Record
-    (
-        RenderGraph renderGraph, *//*Lighting lighting,*//*
-        CullingResults cullingResults, ShadowSettings shadowSettings,
-        bool useLightsPerObject, int renderingLayerMask
-    )
-    {
-        using RenderGraphBuilder builder = renderGraph.AddRenderPass
-        (
-            sampler.name, out LightingPass pass, sampler
-        );
-        //pass.lighting = lighting;
-        pass.cullingResults = cullingResults;
-        pass.shadowSettings = shadowSettings;
-        pass.useLightsPerObject = useLightsPerObject;
-        pass.renderingLayerMask = renderingLayerMask;
-        builder.SetRenderFunc<LightingPass>((pass, context) => pass.Render(context));
-
-        // prevent culling
-        builder.AllowPassCulling(false);
-
-        return pass.lighting.GetShadowTextures(renderGraph, builder);
-    }*/
-
-
-    // Merge code from lightning
 
     static readonly ProfilingSampler sampler = new("Lighting");
 
-    const int maxDirLightCount = 4, maxOtherLightCount = 64;
+    const int
+        maxDirectionalLightCount = 4,
+        maxOtherLightCount = 128;
+
+
+    Vector2 screenUVToTileCoordinates;
+    Vector2Int tileCount;
+    NativeArray<float4> lightBounds;
+    /// <summary>
+    /// The amount of tiles that we end up with depends on the window size, which we determine while rendering.
+    /// </summary>
+    int TileCount => tileCount.x * tileCount.y;
+    int maxLightsPerTile, tileDataSize, maxTileDataSize;
+
+    NativeArray<int> tileData;
+    JobHandle forwardPlusJobHandle;
+
+
 
     static readonly GlobalKeyword lightsPerObjectKeyword =
         GlobalKeyword.Create("_LIGHTS_PER_OBJECT");
@@ -63,41 +39,19 @@ public partial class LightingPass
     static readonly int
         dirLightCountId = Shader.PropertyToID("_DirectionalLightCount"),
         dirLightDataId = Shader.PropertyToID("_DirectionalLightData");
-        /*dirLightColorsId = Shader.PropertyToID("_DirectionalLightColors"),
-        dirLightDirectionsAndMasksId =
-            Shader.PropertyToID("_DirectionalLightDirectionsAndMasks"),
-        dirLightShadowDataId =
-            Shader.PropertyToID("_DirectionalLightShadowData");*/
-
-    /*static readonly Vector4[]
-        dirLightColors = new Vector4[maxDirLightCount],
-        dirLightDirectionsAndMasks = new Vector4[maxDirLightCount],
-        dirLightShadowData = new Vector4[maxDirLightCount];*/
 
     static readonly int
         otherLightCountId = Shader.PropertyToID("_OtherLightCount"),
-        //We'll be sending the other light data to the GPU using a compute buffer, instead of filling five portions of a constant buffer. 
-        otherLightDataId = Shader.PropertyToID("_OtherLightData");
-    /*otherLightColorsId = Shader.PropertyToID("_OtherLightColors"),
-        otherLightPositionsId = Shader.PropertyToID("_OtherLightPositions"),
-        otherLightDirectionsAndMasksId =
-            Shader.PropertyToID("_OtherLightDirectionsAndMasks"),
-        otherLightSpotAnglesId = Shader.PropertyToID("_OtherLightSpotAngles"),
-        otherLightShadowDataId = Shader.PropertyToID("_OtherLightShadowData");*/
-
-    /*static readonly Vector4[]
-        otherLightColors = new Vector4[maxOtherLightCount],
-        otherLightPositions = new Vector4[maxOtherLightCount],
-        otherLightDirectionsAndMasks = new Vector4[maxOtherLightCount],
-        otherLightSpotAngles = new Vector4[maxOtherLightCount],
-        otherLightShadowData = new Vector4[maxOtherLightCount];*/
+        otherLightDataId = Shader.PropertyToID("_OtherLightData"),
+        tilesId = Shader.PropertyToID("_ForwardPlusTiles"),
+        tileSettingsId = Shader.PropertyToID("_ForwardPlusTileSettings");
 
     static readonly DirectionalLightData[] directionalLightData = 
-        new DirectionalLightData[maxDirLightCount];
+        new DirectionalLightData[maxDirectionalLightCount];
     static readonly OtherLightData[] otherLightData = new OtherLightData[maxOtherLightCount];
     
 
-    ComputeBufferHandle directionalLightDataBuffer, otherLightDataBuffer;
+    ComputeBufferHandle directionalLightDataBuffer, otherLightDataBuffer, tilesBuffer;
 
     CullingResults cullingResults;
     readonly Shadows shadows = new();
@@ -107,13 +61,36 @@ public partial class LightingPass
 
     public void Setup
     (
-        CullingResults cullingResults, ShadowSettings shadowSettings,
+        CullingResults cullingResults, Vector2Int attachmentSize, 
+        ForwardPlusSettings forwardPlusSettings, ShadowSettings shadowSettings,
         bool useLightsPerObject, int renderingLayerMask
     )
     {
         this.cullingResults = cullingResults;
         this.useLightsPerObject = useLightsPerObject;
         shadows.Setup(cullingResults, shadowSettings);
+
+        if (!useLightsPerObject)
+        {
+            maxLightsPerTile = forwardPlusSettings.maxLightsPerTile <= 0 ?
+                31 : forwardPlusSettings.maxLightsPerTile;
+            tileDataSize = maxLightsPerTile + 1;
+            maxTileDataSize = maxLightsPerTile + 1;
+            lightBounds = new NativeArray<float4>
+            (
+                maxOtherLightCount, Allocator.TempJob,
+                NativeArrayOptions.UninitializedMemory
+            );
+
+            float tileScreenPixelSize = forwardPlusSettings.tileSize <= 0 ?
+                64f : (float)forwardPlusSettings.tileSize;
+
+            screenUVToTileCoordinates.x = attachmentSize.x / (float)tileScreenPixelSize;
+            screenUVToTileCoordinates.y = attachmentSize.y / (float)tileScreenPixelSize;
+            tileCount.x = Mathf.CeilToInt(screenUVToTileCoordinates.x);
+            tileCount.y = Mathf.CeilToInt(screenUVToTileCoordinates.y);
+        }
+
         SetupLights(renderingLayerMask);
     }
 
@@ -124,6 +101,8 @@ public partial class LightingPass
         NativeArray<VisibleLight> visibleLights = cullingResults.visibleLights;
         int i;
         dirLightCount = otherLightCount = 0;
+        int requiredMaxLightsPerTile = Mathf.Min(maxLightsPerTile, visibleLights.Length);
+        tileDataSize = requiredMaxLightsPerTile + 1;
         for (i = 0; i < visibleLights.Length; i++)
         {
             int newIndex = -1;
@@ -134,9 +113,8 @@ public partial class LightingPass
                 switch (visibleLight.lightType)
                 {
                     case LightType.Directional:
-                        if (dirLightCount < maxDirLightCount)
+                        if (dirLightCount < maxDirectionalLightCount)
                         {
-                            //SetupDirectionalLight(dirLightCount++, i, ref visibleLight, light);
                             directionalLightData[dirLightCount++] =new DirectionalLightData
                             (
                                 ref visibleLight, light, shadows.ReserveDirectionalShadows(light, i)
@@ -147,7 +125,7 @@ public partial class LightingPass
                         if (otherLightCount < maxOtherLightCount)
                         {
                             newIndex = otherLightCount;
-                            //SetupPointLight(otherLightCount++, i, ref visibleLight, light);
+                            SetupForwardPlus(otherLightCount, ref visibleLight);
                             otherLightData[otherLightCount++] = OtherLightData.CreatePointLight
                             (
                                 ref visibleLight, light,
@@ -159,7 +137,7 @@ public partial class LightingPass
                         if (otherLightCount < maxOtherLightCount)
                         {
                             newIndex = otherLightCount;
-                            //SetupSpotLight(otherLightCount++, i, ref visibleLight, light);
+                            SetupForwardPlus(otherLightCount, ref visibleLight);
                             otherLightData[otherLightCount++] = OtherLightData.CreateSpotLight
                             (
                                 ref visibleLight, light,
@@ -184,84 +162,82 @@ public partial class LightingPass
             cullingResults.SetLightIndexMap(indexMap);
             indexMap.Dispose();
         }
+        else
+        {
+            tileData = new NativeArray<int>(TileCount * tileDataSize, Allocator.TempJob);
+            forwardPlusJobHandle = new ForwardPlusTilesJob
+            {
+                lightBounds = lightBounds,
+                tileData = tileData,
+                otherLightCount = otherLightCount,
+                tileScreenUVSize = float2
+                (
+                    1f / screenUVToTileCoordinates.x,
+                    1f / screenUVToTileCoordinates.y
+                ),
+                maxLightsPerTile = requiredMaxLightsPerTile,
+                tilesPerRow = tileCount.x,
+                tileDataSize = tileDataSize
+            }.ScheduleParallel(TileCount, tileCount.x, default);
+        }
     }
+
+    void SetupForwardPlus(int lightIndex, ref VisibleLight visibleLight)
+    {
+        if (!useLightsPerObject)
+        {
+            Rect r = visibleLight.screenRect;
+            lightBounds[lightIndex] = float4(r.xMin, r.yMin, r.xMax, r.yMax);
+        }
+    }
+
 
     void Render(RenderGraphContext context)
     {
         CommandBuffer buffer = context.cmd;
         buffer.SetKeyword(lightsPerObjectKeyword, useLightsPerObject);
         buffer.SetGlobalInt(dirLightCountId, dirLightCount);
-        /*if (dirLightCount > 0)
-        {
-            buffer.SetGlobalVectorArray(dirLightColorsId, dirLightColors);
-            buffer.SetGlobalVectorArray(dirLightDirectionsAndMasksId, dirLightDirectionsAndMasks);
-            buffer.SetGlobalVectorArray(dirLightShadowDataId, dirLightShadowData);
-        }*/
         buffer.SetBufferData(directionalLightDataBuffer, directionalLightData, 0, 0, dirLightCount);
         buffer.SetGlobalBuffer(dirLightDataId, directionalLightDataBuffer);
 
         buffer.SetGlobalInt(otherLightCountId, otherLightCount);
-        /*if (otherLightCount > 0)
-        {
-            buffer.SetGlobalVectorArray(otherLightColorsId, otherLightColors);
-            buffer.SetGlobalVectorArray(otherLightPositionsId, otherLightPositions);
-            buffer.SetGlobalVectorArray(otherLightDirectionsAndMasksId, otherLightDirectionsAndMasks);
-            buffer.SetGlobalVectorArray(otherLightSpotAnglesId, otherLightSpotAngles);
-            buffer.SetGlobalVectorArray(otherLightShadowDataId, otherLightShadowData);
-        }*/
         buffer.SetBufferData(otherLightDataBuffer, otherLightData, 0, 0, otherLightCount);
         buffer.SetGlobalBuffer(otherLightDataId, otherLightDataBuffer);
 
         shadows.Render(context);
+
+        if (useLightsPerObject)
+        {
+            context.renderContext.ExecuteCommandBuffer(buffer);
+            buffer.Clear();
+            return;
+        }
+
+        forwardPlusJobHandle.Complete();
+
+        buffer.SetBufferData(tilesBuffer, tileData, 0, 0, tileData.Length);
+        buffer.SetGlobalBuffer(tilesId, tilesBuffer);
+        buffer.SetGlobalVector
+        (
+            tileSettingsId, new Vector4
+            (
+                screenUVToTileCoordinates.x, screenUVToTileCoordinates.y,
+                tileCount.x.ReinterpretAsFloat(),
+                tileDataSize.ReinterpretAsFloat()
+            )
+        );
+
         context.renderContext.ExecuteCommandBuffer(buffer);
         buffer.Clear();
+        lightBounds.Dispose();
+        tileData.Dispose();
     }
 
-    /*void SetupDirectionalLight(int index, int visibleIndex, ref VisibleLight visibleLight, Light light)
-    {
-        dirLightColors[index] = visibleLight.finalColor;
-        Vector4 dirAndMask = -visibleLight.localToWorldMatrix.GetColumn(2);
-        dirAndMask.w = light.renderingLayerMask.ReinterpretAsFloat();
-        dirLightDirectionsAndMasks[index] = dirAndMask;
-        dirLightShadowData[index] = shadows.ReserveDirectionalShadows(light, visibleIndex);
-    }*/
-
-
-    // Change api to use structured buffers
-    /*void SetupPointLight(int index, int visibleIndex, ref VisibleLight visibleLight, Light light)
-    {
-        otherLightColors[index] = visibleLight.finalColor;
-        Vector4 position = visibleLight.localToWorldMatrix.GetColumn(3);
-        position.w =
-            1f / Mathf.Max(visibleLight.range * visibleLight.range, 0.00001f);
-        otherLightPositions[index] = position;
-        otherLightSpotAngles[index] = new Vector4(0f, 1f);
-        Vector4 dirAndmask = Vector4.zero;
-        dirAndmask.w = light.renderingLayerMask.ReinterpretAsFloat();
-        otherLightDirectionsAndMasks[index] = dirAndmask;
-        otherLightShadowData[index] = shadows.ReserveOtherShadows(light, visibleIndex);
-    }
-
-    void SetupSpotLight(int index, int visibleIndex, ref VisibleLight visibleLight, Light light)
-    {
-        otherLightColors[index] = visibleLight.finalColor;
-        Vector4 position = visibleLight.localToWorldMatrix.GetColumn(3);
-        position.w = 1f / Mathf.Max(visibleLight.range * visibleLight.range, 0.00001f);
-        otherLightPositions[index] = position;
-        Vector4 dirAndMask = -visibleLight.localToWorldMatrix.GetColumn(2);
-        dirAndMask.w = light.renderingLayerMask.ReinterpretAsFloat();
-        otherLightDirectionsAndMasks[index] = dirAndMask;
-
-        float innerCos = Mathf.Cos(Mathf.Deg2Rad * 0.5f * light.innerSpotAngle);
-        float outerCos = Mathf.Cos(Mathf.Deg2Rad * 0.5f * visibleLight.spotAngle);
-        float angleRangeInv = 1f / Mathf.Max(innerCos - outerCos, 0.001f);
-        otherLightSpotAngles[index] = new Vector4(angleRangeInv, -outerCos * angleRangeInv);
-        otherLightShadowData[index] = shadows.ReserveOtherShadows(light, visibleIndex);
-    }*/
 
     public static LightResources Record
     (
-        RenderGraph renderGraph,
+        RenderGraph renderGraph, Vector2Int attachmentSize,
+        ForwardPlusSettings forwardPlusSettings,
         CullingResults cullingResults, ShadowSettings shadowSettings,
         bool useLightsPerObject, int renderingLayerMask
     )
@@ -272,7 +248,7 @@ public partial class LightingPass
         );
         pass.Setup
         (
-            cullingResults, shadowSettings,
+            cullingResults, attachmentSize, forwardPlusSettings, shadowSettings,
             useLightsPerObject, renderingLayerMask
         );
 
@@ -283,7 +259,7 @@ public partial class LightingPass
                 new ComputeBufferDesc
                 {
                     name = "Directional Light Data",
-                    count = maxDirLightCount,
+                    count = maxDirectionalLightCount,
                     stride = DirectionalLightData.stride
                 }
             )
@@ -302,6 +278,22 @@ public partial class LightingPass
                 }
             )
         );
+        if (!useLightsPerObject)
+        {
+            pass.tilesBuffer = builder.WriteComputeBuffer
+            (
+                renderGraph.CreateComputeBuffer
+                (
+                    new ComputeBufferDesc
+                    {
+                        name = "Forward+ Tiles",
+                        //count = pass.TileCount * pass.tileDataSize,
+                        count = pass.TileCount * pass.maxTileDataSize,
+                        stride = 4
+                    }
+                )
+            );
+        }
 
         builder.SetRenderFunc<LightingPass>(static (pass, context) => pass.Render(context));
         builder.AllowPassCulling(false);
@@ -309,6 +301,7 @@ public partial class LightingPass
         (
             pass.directionalLightDataBuffer,
             pass.otherLightDataBuffer,
+            pass.tilesBuffer,
             pass.shadows.GetRenderResources(renderGraph, builder)
         );
     }

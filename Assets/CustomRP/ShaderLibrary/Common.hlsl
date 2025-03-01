@@ -45,6 +45,7 @@ float OrthographicDepthBufferToLinear (float rawDepth)
 }
 
 #include "Fragment.hlsl"
+#include "ForwardPlus.hlsl"
 
 
 //float3 TransformObjectToWorld(float3 positionOS) {

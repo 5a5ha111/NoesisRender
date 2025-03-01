@@ -39,7 +39,6 @@ public class BloomPass
         buffer.SetGlobalVector(thresholdId, threshold);
 
 
-        //stack.Draw(buffer, colorSource, colorSource, Pass.Copy);
 
         stack.Draw(buffer, colorSource, pyramid[0], bloom.fadeFireflies ? Pass.BloomPrefilterFireflies : Pass.BloomPrefilter);
 

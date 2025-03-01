@@ -11,12 +11,11 @@ public class CopyAttachmentsPass
         depthCopyID = Shader.PropertyToID("_CameraDepthTexture");
 
 
-    //CameraRenderer renderer;
     bool copyColor, copyDepth;
     CameraRendererCopier copier;
     TextureHandle colorAttachment, depthAttachment, colorCopy, depthCopy;
 
-    void Render(RenderGraphContext context) //=> renderer.CopyAttachments();
+    void Render(RenderGraphContext context)
     {
         CommandBuffer buffer = context.cmd;
         if (copyColor)
@@ -58,7 +57,6 @@ public class CopyAttachmentsPass
             (
                 sampler.name, out CopyAttachmentsPass pass, sampler
             );
-            //pass.renderer = renderer;
             pass.copyColor = copyColor;
             pass.copyDepth = copyDepth;
             pass.copier = copier;
