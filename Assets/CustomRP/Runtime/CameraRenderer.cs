@@ -98,6 +98,7 @@ public partial class CameraRenderer
         PostFXSettings postFXSettings = settings.postFXSettings;
         ShadowSettings shadowSettings = settings.shadows;
         bool useLightsPerObject = settings.useLightsPerObject;
+        cameraBufferSettings = settings.cameraBuffer;
         useHDR = cameraBufferSettings.allowHDR && camera.allowHDR;
 
 
@@ -128,6 +129,7 @@ public partial class CameraRenderer
             useColorTexture = cameraBufferSettings.copyColor && cameraSettings.copyColor;
             useDepthTexture = cameraBufferSettings.copyDepth && cameraSettings.copyDepth;
         }
+        Debug.Log("useDepthTexture " + useDepthTexture);
 
 
         PrepareForSceneWindow(); // Handle Scene camera

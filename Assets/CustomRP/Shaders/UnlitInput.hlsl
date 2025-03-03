@@ -79,7 +79,8 @@ float4 GetBase (InputConfig c)
 		baseMap.a *= saturate(nearAttenuation);
 	}
 	float4 baseColor = INPUT_PROP(_BaseColor);
-	/*baseMap.rgb = baseMap.a;
+	//baseColor = 1;
+	/*baseMap.rgb = baseColor.a;
 	baseMap.a = 1;*/
 	return baseMap * baseColor * c.color;
 }

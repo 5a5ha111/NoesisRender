@@ -80,6 +80,18 @@ public class VisibleGeometryPass
         builder.ReadWriteTexture(textures.colorAttachment);
         builder.ReadWriteTexture(textures.depthAttachment);
 
+        if (!opaque)
+        {
+            if (textures.colorCopy.IsValid())
+            {
+                builder.ReadTexture(textures.colorCopy);
+            }
+            if (textures.depthCopy.IsValid())
+            {
+                builder.ReadTexture(textures.depthCopy);
+            }
+        }
+
         // Indicate that this resources is needed
         builder.ReadComputeBuffer(lightData.directionalLightDataBuffer);
         builder.ReadComputeBuffer(lightData.otherLightDataBuffer);

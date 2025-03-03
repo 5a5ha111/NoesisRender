@@ -18,14 +18,14 @@ MonoBehaviour:
       copyColor: 1
       copyColorReflection: 0
       copyDepth: 1
-      copyDepthReflection: 0
+      copyDepthReflection: 1
       renderScale: 1
       bicubicRescaling: 0
       fxaa:
         enabled: 1
         fixedThreshold: 0.0312
         relativeThreshold: 0.063
-        subpixelBlending: 0.75
+        subpixelBlending: 1
         quality: 2
     useSRPBatcher: 1
     useLightsPerObject: 0

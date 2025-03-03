@@ -8,8 +8,8 @@ using UnityEngine;
     public bool allowHDR;
 
     [Space]
-    [Space]
-    public bool copyColor, copyColorReflection, copyDepth, copyDepthReflection;
+    public bool copyColor;
+    public bool copyColorReflection, copyDepth, copyDepthReflection;
 
     [Space]
     [Tooltip("Renderscale 4/3 with high FXAA can be considered as high quality")][Range(CameraRenderer.renderScaleMin, CameraRenderer.renderScaleMax)] public float renderScale;

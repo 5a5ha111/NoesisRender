@@ -63,7 +63,8 @@ Shader "Custom RP/Lit"
 		Pass 
 		{
 
-			Tags {
+			Tags 
+			{
 				"LightMode" = "CustomLit"
 			}
 
