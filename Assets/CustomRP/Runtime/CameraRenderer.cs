@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering.RenderGraphModule;
+using UnityEngine.NVIDIA;
 using UnityEngine.Rendering;
 
 public partial class CameraRenderer
@@ -16,6 +18,7 @@ public partial class CameraRenderer
 
     Lighting lighting = new Lighting();
     Material material;
+    Material materialMotion, depthOnlyMaterial, motionVectorDebugMaterial;
     Texture2D missingTexture;
 
 
@@ -70,10 +73,20 @@ public partial class CameraRenderer
     /// </summary>
     public const float renderScaleMax = 2f;
 
+    #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+        int cachedDLSSQuality = -1;
+        Vector2Int cachedDLSSResolution;
+        float cachedDLSSSharpness;
+        float cachedDLSSJitterScale;
+    #endif
 
-    public CameraRenderer(Shader shader, Shader cameraDebuggerShader)
+
+    public CameraRenderer(Shader shader, Shader cameraDebuggerShader, Shader cameraMotionShader, Shader depthOnlyShader, Shader motionDebug)
     {
         material = CoreUtils.CreateEngineMaterial(shader);
+        materialMotion = CoreUtils.CreateEngineMaterial(cameraMotionShader);
+        depthOnlyMaterial = CoreUtils.CreateEngineMaterial(depthOnlyShader);
+        motionVectorDebugMaterial = CoreUtils.CreateEngineMaterial(motionDebug);
         missingTexture = new Texture2D(1, 1)
         {
             hideFlags = HideFlags.HideAndDontSave,
@@ -81,6 +94,7 @@ public partial class CameraRenderer
         };
         missingTexture.SetPixel(0, 0, Color.white * 0.5f);
         missingTexture.Apply(true, true);
+        cachedDLSSQuality = -1;
 
         CameraDebugger.Initialize(cameraDebuggerShader);
     }
@@ -129,11 +143,10 @@ public partial class CameraRenderer
             useColorTexture = cameraBufferSettings.copyColor && cameraSettings.copyColor;
             useDepthTexture = cameraBufferSettings.copyDepth && cameraSettings.copyDepth;
         }
-        Debug.Log("useDepthTexture " + useDepthTexture);
 
 
         PrepareForSceneWindow(); // Handle Scene camera
-        float renderScale = cameraSettings.GetRenderScale(cameraSettings.renderScale);
+        float renderScale = cameraSettings.GetRenderScale(cameraBufferSettings.renderScale);
         // Very slight deviations from 1 will have neither visual nor performance differences that matter. So let's only use scaled rendering if there is at least a 1% difference.
         useScaledRendering = renderScale < 0.99f || renderScale > 1.01f;
 
@@ -168,15 +181,59 @@ public partial class CameraRenderer
             bufferSize.x = camera.pixelWidth;
             bufferSize.y = camera.pixelHeight;
         }
+        #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+            if (cameraBufferSettings.dlss.enabled)
+            {
+                // Dlss is upscaler, not downscaler
+                renderScale = Mathf.Clamp01(renderScale);
+
+                // We cache results, because its unnecessary spam request if they results are same. Not catch screen size change in current state
+                if (cameraBufferSettings.dlss.useOptimalSettings && (int)cameraBufferSettings.dlss.dlssQuality != cachedDLSSQuality)
+                    {
+                    cachedDLSSQuality = (int)cameraBufferSettings.dlss.dlssQuality;
+                    bufferSize.x = Mathf.Max((int)(camera.pixelWidth * renderScale), 1);
+                    bufferSize.y = Mathf.Max((int)(camera.pixelHeight * renderScale), 1);
+                    UnityEngine.NVIDIA.OptimalDLSSSettingsData optimalDLSSSettingsData;
+                    bool fit = UnityDLSS.UnityDlssCommon.device.GetOptimalSettings((uint)bufferSize.x, (uint)bufferSize.y, cameraBufferSettings.dlss.dlssQuality, out optimalDLSSSettingsData);
+                    bufferSize.x = (int)optimalDLSSSettingsData.outRenderWidth;
+                    bufferSize.y = (int)optimalDLSSSettingsData.outRenderHeight;
+                    float multJitter = 1.5f; // 2.254698f
+                    float relation = Mathf.Clamp01((float)bufferSize.y * multJitter / Screen.height);
+                    cameraBufferSettings.dlss.jitterScale *= relation;
+                    cameraBufferSettings.dlss.sharpness = optimalDLSSSettingsData.sharpness;
+                    Vector2 minRec = new Vector2(optimalDLSSSettingsData.minWidth, optimalDLSSSettingsData.minHeight);
+
+                    cachedDLSSResolution = bufferSize;
+                    cachedDLSSJitterScale = relation;
+                    cachedDLSSSharpness = optimalDLSSSettingsData.sharpness;
+                    //Debug.Log("bufferSize " + bufferSize + " " + relation + " minSize " + minRec);
+                }
+                else if (cameraBufferSettings.dlss.useOptimalSettings)
+                {
+                    bufferSize = cachedDLSSResolution;
+                    cameraBufferSettings.dlss.jitterScale *= cachedDLSSJitterScale;
+                    cameraBufferSettings.dlss.sharpness = cachedDLSSSharpness;
+                }
+                bufferSize = Vector2Int.Max(bufferSize, Vector2Int.one);
+            }
+        #endif
 
         if (camera.cameraType == CameraType.SceneView)
         {
             useDepthTexture = cameraBufferSettings.copyDepth;
+            cameraBufferSettings.dlss.useJitter = false;
         }
         else
         {
             // We can directly modify the buffer settings struct field because it contains a copy of the RP settings struct, not a reference to the original.
             cameraBufferSettings.fxaa.enabled &= cameraSettings.allowFXAA;
+            #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+                if (cameraBufferSettings.dlss.enabled)
+                {
+                    // FXAA will be overwritten anyway, so disable it
+                    cameraBufferSettings.fxaa.enabled = false;
+                }
+            #endif
         }
         cameraBufferSettings.allowHDR &= camera.allowHDR;
         cameraBufferSettings.allowHDR = true;
@@ -185,7 +242,9 @@ public partial class CameraRenderer
 
         postFXStack.Setup
         (
-            /*context,*/ camera, bufferSize, cameraBufferSettings.bicubicRescaling,
+            /*context,*/ camera, 
+            bufferSize, 
+            cameraBufferSettings.bicubicRescaling,
             cameraBufferSettings.fxaa,
             postFXSettings, cameraSettings.keepAlpha, useHDR, (int)settings.colorLUTResolution,
             cameraSettings.finalBlendMode
@@ -196,6 +255,7 @@ public partial class CameraRenderer
             !useLightsPerObject;
 
 
+        //DrawMotionVectors(context, camera, materialMotion, cullingResults);
 
 
         var renderGraphParameters = new RenderGraphParameters 
@@ -230,6 +290,10 @@ public partial class CameraRenderer
                 renderGraph, useIntermediateBuffer, 
                 useColorTexture, useDepthTexture, useHDR, bufferSize, camera
             );
+
+
+            MotionVectorPass.Record(renderGraph, camera, textures, cameraBufferSettings, materialMotion, cameraSettings.renderingLayerMask, cullingResults);
+
             VisibleGeometryPass.Record
             (
                 renderGraph, camera,
@@ -246,29 +310,44 @@ public partial class CameraRenderer
             (
                 renderGraph, useColorTexture, useDepthTexture, copier, textures
             );
+
+
+
             VisibleGeometryPass.Record
             (
                 renderGraph, camera,
                 cullingResults, useLightsPerObject, cameraSettings.renderingLayerMask, opaque: false, 
                 textures, lightResources
             );
+
+            #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+                DLSSPass.Record(renderGraph, camera, textures, cameraBufferSettings, bufferSize, useHDR);
+            #endif
+
             if (hasActivePostFX)
             {
                 postFXStack.BufferSettings = cameraBufferSettings;
                 postFXStack.bufferSize = bufferSize;
+                #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+                    if (cameraBufferSettings.dlss.enabled)
+                    {
+                        postFXStack.bufferSize = new Vector2Int(Screen.width, Screen.height);
+                    }
+                #endif
                 postFXStack.camera = camera;
                 postFXStack.finalBlendMode = cameraSettings.finalBlendMode;
                 postFXStack.settings = postFXSettings;
                 PostFXPass.Record
                 (
                     renderGraph, postFXStack, (int)settings.colorLUTResolution,
-                    cameraSettings.keepAlpha, textures
+                    cameraSettings.keepAlpha, textures, motionVectorDebugMaterial
                 );
             }
             else if (useIntermediateBuffer)
             {
                 FinalPass.Record(renderGraph, copier, textures);
             }
+
             DebugPass.Record(renderGraph, settings, camera, lightResources);
             GizmosPass.Record(renderGraph, useIntermediateBuffer, copier, textures);
         }
@@ -368,7 +447,9 @@ public partial class CameraRenderer
     public void Dispose()
     {
         CoreUtils.Destroy(material);
-        CoreUtils.Destroy(missingTexture);
+        CoreUtils.Destroy(motionVectorDebugMaterial);
+        CoreUtils.Destroy(materialMotion);
+        CoreUtils.Destroy(depthOnlyMaterial);
         CameraDebugger.Cleanup();
     }
 
@@ -430,6 +511,167 @@ public partial class CameraRenderer
         (
             cullingResults, ref drawingSettings, ref filteringSettings
         );
+    }
+
+    private static int m_DepthRTid = Shader.PropertyToID("_CameraDepthTexture");
+    private static int m_MotionVectorRTid = Shader.PropertyToID("_CameraMotionVectorsTexture");
+    private static RenderTargetIdentifier m_DepthRT = new RenderTargetIdentifier(m_DepthRTid);
+    private static RenderTargetIdentifier m_MotionVectorRT = new RenderTargetIdentifier(m_MotionVectorRTid);
+    private static readonly ShaderTagId m_PassName = new ShaderTagId("SRP0703_Pass"); //The shader pass tag just for SRP0703
+
+    private Matrix4x4 _NonJitteredVP;
+    private Matrix4x4 _PreviousVP;
+
+    static Mesh s_FullscreenMesh = null;
+    public static Mesh fullscreenMesh
+    {
+        get
+        {
+            if (s_FullscreenMesh != null)
+                return s_FullscreenMesh;
+
+            float topV = 1.0f;
+            float bottomV = 0.0f;
+
+            s_FullscreenMesh = new Mesh { name = "Fullscreen Quad" };
+            s_FullscreenMesh.SetVertices(new List<Vector3>
+            {
+                new Vector3(-1.0f, -1.0f, 0.0f),
+                new Vector3(-1.0f,  1.0f, 0.0f),
+                new Vector3(1.0f, -1.0f, 0.0f),
+                new Vector3(1.0f,  1.0f, 0.0f)
+            });
+
+            s_FullscreenMesh.SetUVs(0, new List<Vector2>
+            {
+                new Vector2(0.0f, bottomV),
+                new Vector2(0.0f, topV),
+                new Vector2(1.0f, bottomV),
+                new Vector2(1.0f, topV)
+            });
+
+            s_FullscreenMesh.SetIndices(new[] { 0, 1, 2, 2, 1, 3 }, MeshTopology.Triangles, 0, false);
+            s_FullscreenMesh.UploadMeshData(true);
+            return s_FullscreenMesh;
+        }
+    }
+    private static int depthBufferBits = 32;
+
+    public void DrawMotionVectors(ScriptableRenderContext context, Camera camera, Material motionVectorMaterial, CullingResults cull)
+    {
+        CommandBuffer cmdTempId = new CommandBuffer();
+        cmdTempId.name = "(" + camera.name + ")" + "Setup TempRT";
+
+        //Depth
+        RenderTextureDescriptor depthRTDesc = new RenderTextureDescriptor(camera.pixelWidth, camera.pixelHeight);
+        depthRTDesc.colorFormat = RenderTextureFormat.Depth;
+        depthRTDesc.depthBufferBits = depthBufferBits;
+        cmdTempId.GetTemporaryRT(m_DepthRTid, depthRTDesc, FilterMode.Bilinear);
+
+
+        //MotionVector
+        RenderTextureDescriptor motionvectorRTDesc = new RenderTextureDescriptor(camera.pixelWidth, camera.pixelHeight);
+        motionvectorRTDesc.graphicsFormat = UnityEngine.Experimental.Rendering.GraphicsFormat.R16G16_SFloat;
+        motionvectorRTDesc.depthBufferBits = depthBufferBits;
+        //colorRTDesc.sRGB = ;
+        motionvectorRTDesc.msaaSamples = 1;
+        motionvectorRTDesc.enableRandomWrite = false;
+        cmdTempId.GetTemporaryRT(m_MotionVectorRTid, motionvectorRTDesc, FilterMode.Bilinear);
+        
+        context.ExecuteCommandBuffer(cmdTempId);
+        cmdTempId.Release();
+
+
+        var sortingSettings = new SortingSettings(camera);
+        DrawingSettings drawSettingsMotionVector = new DrawingSettings(m_PassName, sortingSettings)
+        {
+            perObjectData = PerObjectData.MotionVectors,
+            overrideMaterial = motionVectorMaterial,
+            overrideMaterialPassIndex = 0
+        };
+        FilteringSettings filterSettingsMotionVector = new FilteringSettings(RenderQueueRange.all)
+        {
+            excludeMotionVectorObjects = false
+        };
+
+        DrawingSettings drawSettingsDepth = new DrawingSettings(m_PassName, sortingSettings)
+        {
+            //perObjectData = PerObjectData.None,
+            overrideMaterial = depthOnlyMaterial,
+            overrideMaterialPassIndex = 0,
+        };
+        FilteringSettings filterSettingsDepth = new FilteringSettings(RenderQueueRange.all);
+
+
+        //************************** Rendering depth ************************************
+
+        //Set RenderTarget & Camera clear flag
+        CommandBuffer cmdDepth = new CommandBuffer();
+        cmdDepth.name = "(" + camera.name + ")" + "Depth Clear Flag";
+        cmdDepth.SetRenderTarget(m_DepthRT); //Set CameraTarget to the depth texture
+        cmdDepth.ClearRenderTarget(true, true, Color.black);
+        context.ExecuteCommandBuffer(cmdDepth);
+        cmdDepth.Release();
+
+        //Opaque objects
+        sortingSettings.criteria = SortingCriteria.CommonOpaque;
+        drawSettingsDepth.sortingSettings = sortingSettings;
+        filterSettingsDepth.renderQueueRange = RenderQueueRange.opaque;
+        RenderObjects("Render Opaque Objects Depth", context, cull, filterSettingsDepth, drawSettingsDepth);
+
+
+        //To let shader has _CameraDepthTexture
+        CommandBuffer cmdDepthTexture = new CommandBuffer();
+        cmdDepthTexture.name = "(" + camera.name + ")" + "Depth Texture";
+        cmdDepthTexture.SetGlobalTexture(m_DepthRTid, m_DepthRT);
+        context.ExecuteCommandBuffer(cmdDepthTexture);
+        cmdDepthTexture.Release();
+
+
+        //************************** Rendering motion vectors ************************************
+
+        //Camera clear flag
+        CommandBuffer cmdMotionvector = new CommandBuffer();
+        cmdMotionvector.SetRenderTarget(m_MotionVectorRT); //Set CameraTarget to the motion vector texture
+        cmdMotionvector.ClearRenderTarget(true, true, Color.black);
+        context.ExecuteCommandBuffer(cmdMotionvector);
+        cmdMotionvector.Release();
+
+        //Opaque objects
+        sortingSettings.criteria = SortingCriteria.CommonOpaque;
+        drawSettingsMotionVector.sortingSettings = sortingSettings;
+        filterSettingsMotionVector.renderQueueRange = RenderQueueRange.opaque;
+        RenderObjects("Render Opaque Objects Motion Vector", context, cull, filterSettingsMotionVector, drawSettingsMotionVector);
+
+        //Camera motion vector
+        CommandBuffer cmdCameraMotionVector = new CommandBuffer();
+        cmdCameraMotionVector.name = "(" + camera.name + ")" + "Camera MotionVector";
+        _NonJitteredVP = camera.nonJitteredProjectionMatrix * camera.worldToCameraMatrix;
+        cmdCameraMotionVector.SetGlobalMatrix("_CamPrevViewProjMatrix", _PreviousVP);
+        cmdCameraMotionVector.SetGlobalMatrix("_CamNonJitteredViewProjMatrix", _NonJitteredVP);
+        cmdCameraMotionVector.SetViewProjectionMatrices(Matrix4x4.identity, Matrix4x4.identity);
+        cmdCameraMotionVector.DrawMesh(fullscreenMesh, Matrix4x4.identity, motionVectorMaterial, 0, 1, null); // draw full screen quad to make Camera motion
+        cmdCameraMotionVector.SetViewProjectionMatrices(camera.worldToCameraMatrix, camera.projectionMatrix);
+        context.ExecuteCommandBuffer(cmdCameraMotionVector);
+        cmdCameraMotionVector.Release();
+
+        //To let shader has MotionVectorTexture
+        CommandBuffer cmdMotionVectorTexture = new CommandBuffer();
+        cmdMotionVectorTexture.name = "(" + camera.name + ")" + "MotionVector Texture";
+        cmdMotionVectorTexture.SetGlobalTexture(m_MotionVectorRTid, m_MotionVectorRT);
+        context.ExecuteCommandBuffer(cmdMotionVectorTexture);
+        cmdMotionVectorTexture.Release();
+    }
+
+    static void RenderObjects(string name, ScriptableRenderContext context, CullingResults cull, FilteringSettings filterSettings, DrawingSettings drawSettings)
+    {
+        RendererListParams rlp = new RendererListParams(cull, drawSettings, filterSettings);
+        RendererList rl = context.CreateRendererList(ref rlp);
+        CommandBuffer cmd = new CommandBuffer();
+        cmd.name = name;
+        cmd.DrawRendererList(rl);
+        context.ExecuteCommandBuffer(cmd);
+        cmd.Release();
     }
 
     public void CopyAttachments()

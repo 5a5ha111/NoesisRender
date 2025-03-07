@@ -239,6 +239,7 @@ GameObject:
   - component: {fileID: 56065062}
   - component: {fileID: 56065061}
   - component: {fileID: 56065060}
+  - component: {fileID: 56065063}
   m_Layer: 0
   m_Name: Sphere (30)
   m_TagString: Untagged
@@ -332,6 +333,21 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 56065057}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &56065063
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 56065057}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d387e08ad4bf2045a522ee22bb1fd6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  centerPoint: {x: 0, y: 0, z: 0}
+  radius: 2.5
+  angularSpeed: 5
 --- !u!1 &97062660
 GameObject:
   m_ObjectHideFlags: 0
@@ -8877,7 +8893,7 @@ Camera:
   serializedVersion: 2
   m_ClearFlags: 1
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
-  m_projectionMatrixMode: 1
+  m_projectionMatrixMode: 0
   m_GateFitMode: 2
   m_FOVAxisMode: 0
   m_Iso: 200

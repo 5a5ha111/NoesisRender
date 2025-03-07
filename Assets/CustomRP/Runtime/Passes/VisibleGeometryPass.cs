@@ -22,9 +22,11 @@ public class VisibleGeometryPass
     bool useDynamicBatching, useGPUInstancing, useLightsPerObject;
 
     int renderingLayerMask;
+    TextureHandle colorTex, depthTex;
 
     void Render(RenderGraphContext context)
     {
+        context.cmd.SetRenderTarget(colorTex, depthTex);
         context.cmd.DrawRendererList(list);
         context.renderContext.ExecuteCommandBuffer(context.cmd);
         context.cmd.Clear();
@@ -79,6 +81,8 @@ public class VisibleGeometryPass
         // Readwrite not change renderTarget. Also allow RenderBufferLoadAction.DontCare
         builder.ReadWriteTexture(textures.colorAttachment);
         builder.ReadWriteTexture(textures.depthAttachment);
+        pass.colorTex = textures.colorAttachment;
+        pass.depthTex = textures.depthAttachment;
 
         if (!opaque)
         {

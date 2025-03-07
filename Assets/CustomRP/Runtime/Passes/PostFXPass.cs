@@ -30,7 +30,8 @@ public class PostFXPass
     bool keepAlpha;
     enum ScaleMode { None, Linear, Bicubic }
     ScaleMode scaleMode;
-    TextureHandle colorSource, colorGradingResult, scaledResult;
+    TextureHandle colorSource, colorGradingResult, scaledResult, motionSource;
+    Material motionDebug;
 
 
 
@@ -38,10 +39,8 @@ public class PostFXPass
     {
         // If both keywords false, shader use high quality
         CameraBufferSettings.FXAA fxaa = stack.BufferSettings.fxaa;
-        buffer.SetKeyword(fxaaLowKeyword, fxaa.quality ==
-            CameraBufferSettings.FXAA.Quality.Low);
-        buffer.SetKeyword(fxaaMediumKeyword, fxaa.quality ==
-            CameraBufferSettings.FXAA.Quality.Medium);
+        buffer.SetKeyword(fxaaLowKeyword, fxaa.quality == CameraBufferSettings.FXAA.Quality.Low);
+        buffer.SetKeyword(fxaaMediumKeyword, fxaa.quality == CameraBufferSettings.FXAA.Quality.Medium);
         buffer.SetGlobalVector
         (
             fxaaConfigId, new Vector4
@@ -94,6 +93,9 @@ public class PostFXPass
                 scaleMode == ScaleMode.Bicubic ? 1f : 0f);
             stack.DrawFinal(buffer, scaledResult, Pass.FinalRescale);
         }
+        //stack.DrawFinal(buffer, motionSource, Pass.Copy);
+        //buffer.SetGlobalTexture("_CameraMotionVectorsTexture", motionSource);
+        //buffer.Blit(BuiltinRenderTextureType.CameraTarget, BuiltinRenderTextureType.CameraTarget, motionDebug);
         context.renderContext.ExecuteCommandBuffer(buffer);
         buffer.Clear();
     }
@@ -104,7 +106,7 @@ public class PostFXPass
         PostFXStack stack,
         int colorLUTResolution,
         bool keepAlpha,
-        in CameraRendererTextures textures
+        in CameraRendererTextures textures, Material motionDebug
     )
     {
         if (stack.settings.Material == null)
@@ -125,6 +127,9 @@ public class PostFXPass
         pass.keepAlpha = keepAlpha;
         pass.stack = stack;
         pass.colorSource = builder.ReadTexture(colorSource);
+        //pass.motionSource = builder.ReadTexture(textures.motionVectorsTexture);
+        //pass.motionSource = builder.ReadTexture(textures.motionVectorDepth);
+        pass.motionDebug = motionDebug;
         builder.ReadTexture(colorLUT);
 
         if (stack.bufferSize.x == stack.camera.pixelWidth)

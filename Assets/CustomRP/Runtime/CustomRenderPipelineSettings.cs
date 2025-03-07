@@ -29,7 +29,7 @@ public class CustomRenderPipelineSettings
 
     public ForwardPlusSettings forwardPlus;
 
-    public Shader cameraRendererShader, cameraDebuggerShader;
+    public Shader cameraRendererShader, cameraDebuggerShader, cameraMotionShader, depthOnlyShader, motionVectorDebug;
 }
 
 

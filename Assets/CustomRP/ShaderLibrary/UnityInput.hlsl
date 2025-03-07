@@ -36,6 +36,7 @@ CBUFFER_END
 
 float4x4 unity_MatrixVP;
 float4x4 unity_MatrixV;
+float4x4 UNITY_MATRIX_I_V;
 float4x4 unity_MatrixInvV;
 float4x4 unity_prev_MatrixM;
 float4x4 unity_prev_MatrixIM;

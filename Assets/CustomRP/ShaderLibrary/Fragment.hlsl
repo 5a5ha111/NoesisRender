@@ -4,6 +4,7 @@
 
 TEXTURE2D(_CameraColorTexture);
 TEXTURE2D(_CameraDepthTexture);
+TEXTURE2D(_MotionVectorTexture);
 
 float4 _CameraBufferSize;
 
@@ -36,6 +37,11 @@ float4 GetBufferColor (Fragment fragment, float2 uvOffset = float2(0.0, 0.0))
 {
 	float2 uv = fragment.screenUV + uvOffset;
 	return SAMPLE_TEXTURE2D_LOD(_CameraColorTexture, sampler_linear_clamp, uv, 0);
+}
+float4 GetMotion(Fragment fragment)
+{
+	float2 uv = fragment.screenUV;
+	return SAMPLE_TEXTURE2D_LOD(_MotionVectorTexture, sampler_linear_clamp, uv, 0);
 }
 
 #endif

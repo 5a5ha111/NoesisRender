@@ -18,15 +18,25 @@ MonoBehaviour:
       copyColor: 1
       copyColorReflection: 0
       copyDepth: 1
-      copyDepthReflection: 1
+      copyDepthReflection: 0
       renderScale: 1
       bicubicRescaling: 0
       fxaa:
-        enabled: 1
+        enabled: 0
         fixedThreshold: 0.0312
         relativeThreshold: 0.063
         subpixelBlending: 1
         quality: 2
+      dlss:
+        enabled: 1
+        useMipBias: 0
+        useMotionVectors: 1
+        useOptimalSettings: 0
+        dlssQuality: 2
+        sharpness: 1
+        useJitter: 1
+        jitterScale: 1
+        jitterRand: 0.01
     useSRPBatcher: 1
     useLightsPerObject: 0
     shadows:
@@ -51,6 +61,9 @@ MonoBehaviour:
       maxLightsPerTile: 31
     cameraRendererShader: {fileID: 4800000, guid: a8c485989315f784d84be2f1a37388a5, type: 3}
     cameraDebuggerShader: {fileID: 4800000, guid: 0c9248d52e2afbb47b4821ebdfc9cebe, type: 3}
+    cameraMotionShader: {fileID: 4800000, guid: bbd6f41c1ff5bb34a8bbfe7f9d4eca72, type: 3}
+    depthOnlyShader: {fileID: 4800000, guid: 5df1e3b7d59fd934f829cb8d0f029df8, type: 3}
+    motionVectorDebug: {fileID: 4800000, guid: 023a4501ca74f9f4d97bb8baeae9fda8, type: 3}
   cameraBufferSettings:
     allowHDR: 1
     copyColor: 1
@@ -65,6 +78,16 @@ MonoBehaviour:
       relativeThreshold: 0.063
       subpixelBlending: 0.75
       quality: 2
+    dlss:
+      enabled: 0
+      useMipBias: 0
+      useMotionVectors: 0
+      useOptimalSettings: 0
+      dlssQuality: 0
+      sharpness: 0
+      useJitter: 0
+      jitterScale: 0
+      jitterRand: 0
   shadows:
     maxDistance: 25
     distanceFade: 0.1
@@ -83,4 +106,5 @@ MonoBehaviour:
   postFXSettings: {fileID: 11400000, guid: 11740a70adc48e240b302b42654909be, type: 2}
   colorLUTResolution: 64
   cameraRendererShader: {fileID: 4800000, guid: a8c485989315f784d84be2f1a37388a5, type: 3}
+  depthOnlyShader: {fileID: 0}
   useLightsPerObject: 0

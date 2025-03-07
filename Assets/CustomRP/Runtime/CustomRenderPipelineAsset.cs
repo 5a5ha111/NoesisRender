@@ -16,7 +16,8 @@ public partial class CustomRenderPipelineAsset : RenderPipelineAsset
     [Space]
     [Space]
     //bool allowHDR = true;
-    [SerializeField, HideInInspector] CameraBufferSettings cameraBufferSettings = new CameraBufferSettings
+    [SerializeField, HideInInspector]
+    CameraBufferSettings cameraBufferSettings = new CameraBufferSettings
     {
         allowHDR = true,
         renderScale = 1f,
@@ -26,7 +27,21 @@ public partial class CustomRenderPipelineAsset : RenderPipelineAsset
             relativeThreshold = 0.166f,
             subpixelBlending = 0.75f,
             quality = CameraBufferSettings.FXAA.Quality.Medium,
-        }
+        },
+        #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+            dlss = new CameraBufferSettings.DLSS_Settings
+            {
+                enabled = true,
+                useMipBias = true,
+                useMotionVectors = true,
+                useOptimalSettings = true,
+                dlssQuality = UnityEngine.NVIDIA.DLSSQuality.MaximumQuality,
+                sharpness = 0.5f,
+                useJitter = true,
+                jitterScale = 1f,
+                jitterRand = 0.1f,
+            }
+        #endif
     };
 
     [Space]
@@ -45,6 +60,7 @@ public partial class CustomRenderPipelineAsset : RenderPipelineAsset
 
     [Space]
     [SerializeField, HideInInspector] Shader cameraRendererShader = default;
+    [SerializeField, HideInInspector] Shader depthOnlyShader = default;
 
 
     [Header("Deprecated Settings")]
@@ -71,7 +87,8 @@ public partial class CustomRenderPipelineAsset : RenderPipelineAsset
                 colorLUTResolution =
                     (CustomRenderPipelineSettings.ColorLUTResolution)
                     colorLUTResolution,
-                cameraRendererShader = cameraRendererShader
+                cameraRendererShader = cameraRendererShader,
+                depthOnlyShader = depthOnlyShader
             };
 
             if (postFXSettings != null)

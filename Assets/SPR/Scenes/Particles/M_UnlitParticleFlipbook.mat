@@ -16,6 +16,7 @@ Material:
   - _FLIPBOOK_BLENDING
   - _NEAR_FADE
   - _RECEIVE_SHADOWS
+  - _SOFT_PARTICLES
   - _VERTEX_COLORS
   m_InvalidKeywords:
   - _SHADOWS_OFF
@@ -80,8 +81,8 @@ Material:
     - _Cutoff: 1
     - _DetailNormalMapScale: 1
     - _Distortion: 1
-    - _DistortionBlend: 0.25
-    - _DistortionStrength: 0.047
+    - _DistortionBlend: 0.003
+    - _DistortionStrength: 0.0144
     - _DstBlend: 10
     - _FlipbookBlending: 1
     - _GlossMapScale: 1
@@ -91,15 +92,15 @@ Material:
     - _Mode: 0
     - _NearFade: 1
     - _NearFadeDistance: 0.04
-    - _NearFadeRange: 0.32
+    - _NearFadeRange: 0.04
     - _OcclusionStrength: 1
     - _Parallax: 0.02
     - _ReceiveShadows: 1
     - _Shadows: 3
     - _SmoothnessTextureChannel: 0
-    - _SoftParticles: 0
-    - _SoftParticlesDistance: 0.66
-    - _SoftParticlesRange: 0.71
+    - _SoftParticles: 1
+    - _SoftParticlesDistance: 0.16
+    - _SoftParticlesRange: 1
     - _SpecularHighlights: 1
     - _SrcBlend: 5
     - _UVSec: 0

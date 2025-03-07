@@ -17,7 +17,7 @@ public class SetupPass
 
     static readonly int attachmentSizeID = Shader.PropertyToID("_CameraBufferSize");
     // Texture Handle structs act as identifiers for textures
-    TextureHandle colorAttachment, depthAttachment;
+    TextureHandle colorAttachment, depthAttachment, motionTexture, motionDepthTexture;
     Vector2Int attachmentSize;
     Camera camera;
     CameraClearFlags clearFlags;
@@ -26,6 +26,10 @@ public class SetupPass
     {
         context.renderContext.SetupCameraProperties(camera);
         CommandBuffer cmd = context.cmd;
+
+        cmd.SetRenderTarget(motionTexture, motionDepthTexture); //Set CameraTarget to the motion vector texture
+        cmd.ClearRenderTarget(true, true, Color.black);
+
         if (useIntermediateAttachments)
         {
             cmd.SetRenderTarget
@@ -115,13 +119,36 @@ public class SetupPass
                 )
             );
         }
-       
+
+        TextureDesc motionvectorRTDesc = new TextureDesc(attachmentSize.x, attachmentSize.y);
+        TextureDesc motionvectorDepthRTDesc = new TextureDesc(attachmentSize.x, attachmentSize.y);
+        motionvectorRTDesc.colorFormat = UnityEngine.Experimental.Rendering.GraphicsFormat.R16G16_SFloat;
+        motionvectorDepthRTDesc.depthBufferBits = DepthBits.Depth32;
+        //motionvectorRTDesc.depthBufferBits = DepthBits.Depth32;
+
+        //motionvectorRTDesc.msaaSamples = MSAASamples.None;
+        motionvectorRTDesc.enableRandomWrite = false;
+        motionvectorRTDesc.name = "motionVectorsTexture";
+        motionvectorRTDesc.filterMode = FilterMode.Bilinear;
+        motionvectorRTDesc.isShadowMap = false;
+
+        motionvectorDepthRTDesc.enableRandomWrite = false;
+        motionvectorDepthRTDesc.name = "motionVectorsDepthTexture";
+        motionvectorDepthRTDesc.filterMode = FilterMode.Bilinear;
+        motionvectorDepthRTDesc.isShadowMap = false;
+
+
+        TextureHandle motionVectorTexture, motionVectorDepthTexture;
+        motionVectorTexture = builder.WriteTexture(renderGraph.CreateTexture(motionvectorRTDesc));
+        motionVectorDepthTexture = builder.WriteTexture(renderGraph.CreateTexture(motionvectorDepthRTDesc));
+        pass.motionTexture = motionVectorTexture;
+        pass.motionDepthTexture = motionVectorDepthTexture;
 
         // Prevent from culling
         builder.AllowPassCulling(false);
         // We're going to explicitly mark all anonymous methods of our render passes as static. This isn't required but prevents mistakes that could cause the enclosing scope to be captured, leading to unwanted memory allocations.
         builder.SetRenderFunc<SetupPass>(static (pass, context) => pass.Render(context));
 
-        return new CameraRendererTextures(colorAttachment, depthAttachment, colorCopy, depthCopy);
+        return new CameraRendererTextures(colorAttachment, depthAttachment, colorCopy, depthCopy, motionVectorTexture, motionVectorDepthTexture);
     }
 }

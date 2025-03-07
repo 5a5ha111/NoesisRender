@@ -1,6 +1,14 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.NVIDIA;
 
+
+#if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+    using NVIDIA = UnityEngine.NVIDIA;
+#endif
 
 [Serializable] public struct CameraBufferSettings
 {
@@ -37,4 +45,49 @@ using UnityEngine;
 
     [Space]
     public FXAA fxaa;
+
+    #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+    [Serializable] public struct DLSS_Settings
+    {
+        public bool enabled;
+
+        [Header("DLSS Settings")]
+
+        [Tooltip("Biases mip maps to allow sharper texture detail in upscaling.\n" +
+                        "This is pretty important for textures to look good with DLSS. Completely custom shaders in CRP need to use the _GlobalMipBias property for this to work.")]
+        public bool useMipBias; // = true;
+
+        [Tooltip("Whether to use motion vectors or not. DLSS doesn't work well without at least *some* motion vectors.\n" +
+                    "If certain things don't have them it can be alright, like grass moving in the wind. But especially for walls and stuff it's pretty necessary.\n" +
+                    "I recommend only to disable these for debugging.")]
+        public bool useMotionVectors; // = true;
+
+        [Tooltip("If true, will use the base resolution and sharpness settings recommended by DLSS. Disable this to manually set a scaling ratio.")]
+        public bool useOptimalSettings; // = true;
+
+        [Tooltip("Quality setting for automatic optimal DLSS settings.")]
+        public NVIDIA.DLSSQuality dlssQuality; // = NVIDIA.DLSSQuality.MaximumQuality;
+
+        //[Tooltip("Manual viewport scaling ratio.")]
+        //public float viewportMult; // = 0.5f;
+
+        [Tooltip("DLSS sharpening amount.")]
+        public float sharpness; // = 0.5f;
+
+
+        [Header("Jitter")]
+        [Tooltip("Wether to enable jitter. This should always be left on as DLSS is uselss without it pretty much. Useful for debugging/experimenting.")]
+        public bool useJitter; // = true;
+        [Tooltip("Scale of jitter to wiggle the camera for the temporal aspect of DLSS. This is best left at 1. Fun to experiment with.")]
+        public float jitterScale; // = 1;
+        [Tooltip("Additional slight randomness to jitter. At 0.1 this adds a slight imperceptable shimmering in the pixels but eliminates a lot of artifacts when the camera is still and looking at a complex pattern.\n" +
+            "Also improves readability. Disable only if you feel like it's adding too much shimmering.")]
+        public float jitterRand; // = 0.1f;
+
+
+    }
+
+    [Space]
+    public DLSS_Settings dlss;
+    #endif
 }

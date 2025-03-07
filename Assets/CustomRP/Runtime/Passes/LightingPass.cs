@@ -288,7 +288,7 @@ public partial class LightingPass
                     {
                         name = "Forward+ Tiles",
                         //count = pass.TileCount * pass.tileDataSize,
-                        count = pass.TileCount * pass.maxTileDataSize,
+                        count = Mathf.Max(pass.TileCount * pass.maxTileDataSize, 1),
                         stride = 4
                     }
                 )
