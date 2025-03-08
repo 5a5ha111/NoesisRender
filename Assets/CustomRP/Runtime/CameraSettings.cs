@@ -35,7 +35,8 @@ using UnityEngine.Rendering;
     };
 
     [Space]
-    public bool allowFXAA = false;
+    public bool allowFXAA = true;
+    public bool allowDLSS = true;
     [Tooltip("Currently the only reason to keep alpha is when multiple cameras are stacked with transparency. Else, when FXAA enabled, luma that needed for FXAA will be pre-calculated in alpha channel.")]public bool keepAlpha = false;
 
     public float GetRenderScale(float scale)

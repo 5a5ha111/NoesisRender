@@ -36,6 +36,7 @@ public partial class CustomRenderPipelineAsset : RenderPipelineAsset
                 useMotionVectors = true,
                 useOptimalSettings = true,
                 dlssQuality = UnityEngine.NVIDIA.DLSSQuality.MaximumQuality,
+                useDLAA = false,
                 sharpness = 0.5f,
                 useJitter = true,
                 jitterScale = 1f,

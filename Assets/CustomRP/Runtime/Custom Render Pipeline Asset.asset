@@ -22,7 +22,7 @@ MonoBehaviour:
       renderScale: 1
       bicubicRescaling: 0
       fxaa:
-        enabled: 0
+        enabled: 1
         fixedThreshold: 0.0312
         relativeThreshold: 0.063
         subpixelBlending: 1
@@ -30,9 +30,10 @@ MonoBehaviour:
       dlss:
         enabled: 1
         useMipBias: 0
-        useMotionVectors: 1
+        useMotionVectors: 0
         useOptimalSettings: 0
-        dlssQuality: 2
+        dlssQuality: 0
+        useDLAA: 1
         sharpness: 1
         useJitter: 1
         jitterScale: 1
@@ -79,15 +80,16 @@ MonoBehaviour:
       subpixelBlending: 0.75
       quality: 2
     dlss:
-      enabled: 0
-      useMipBias: 0
-      useMotionVectors: 0
-      useOptimalSettings: 0
-      dlssQuality: 0
-      sharpness: 0
-      useJitter: 0
-      jitterScale: 0
-      jitterRand: 0
+      enabled: 1
+      useMipBias: 1
+      useMotionVectors: 1
+      useOptimalSettings: 1
+      dlssQuality: 2
+      useDLAA: 0
+      sharpness: 0.5
+      useJitter: 1
+      jitterScale: 1
+      jitterRand: 0.1
   shadows:
     maxDistance: 25
     distanceFade: 0.1

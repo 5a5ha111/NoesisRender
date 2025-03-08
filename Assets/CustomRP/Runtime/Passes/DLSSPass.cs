@@ -6,7 +6,6 @@ using UnityEngine.Experimental.Rendering;
 using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.NVIDIA;
 using UnityEngine.Rendering;
-using static Unity.Burst.Intrinsics.X86.Avx;
 using UnityEngine.PlayerLoop;
 
 
@@ -18,11 +17,9 @@ using UnityEngine.PlayerLoop;
 
 public class DLSSPass 
 {
+
+    #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
     static readonly ProfilingSampler sampler = new("DLSS");
-
-    static int _MotionVectorTextureID = Shader.PropertyToID("_MotionVectorTexture");
-
-#if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
     TextureHandle colorSRc, depthSource, motionSource, colorCopy;
     Camera camera;
     CameraBufferSettings.DLSS_Settings settings;
@@ -50,8 +47,9 @@ public class DLSSPass
         var resolutionOut = new UnityDLSS.UnityDlssCommon.Resolution();
         resolution.width = Mathf.Max(attachmentSize.x, 1);
         resolution.height = Mathf.Max(attachmentSize.y, 1);
-        resolutionOut.width = Screen.width;
-        resolutionOut.height = Screen.height;
+        Vector2Int screenSize = CameraRenderer.GetScreenSize();
+        resolutionOut.width = screenSize.x;
+        resolutionOut.height = screenSize.y;
         dlssData.inputRes = resolution;
         dlssData.outputRes = resolutionOut;
         context.cmd.Blit(colorSRc, colorCopy);
@@ -88,69 +86,71 @@ public class DLSSPass
         context.renderContext.ExecuteCommandBuffer(context.cmd);
         context.cmd.Clear();
     }
-#endif
+    #endif
 
     public static void Record(RenderGraph renderGraph, Camera camera, in CameraRendererTextures textures, CameraBufferSettings settings, Vector2Int attachmentSize, bool useHDR)
     {
-        if (IsDlssSupported() == false)
-        {
+        #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+
+            if (IsDlssSupported() == false)
+            {
+                return;
+            }
+            if (device == null || !settings.dlss.enabled)
+            {
+                return;
+            }
+            using RenderGraphBuilder builder = renderGraph.AddRenderPass
+            (
+                sampler.name, out DLSSPass pass, sampler
+            );
+            pass.camera = camera;
+            pass.colorSRc = builder.ReadWriteTexture(textures.colorAttachment);
+            pass.depthSource = builder.ReadTexture(textures.depthAttachment);
+            pass.motionSource = builder.ReadTexture(textures.motionVectorsTexture);
+
+
+            pass.settings = settings.dlss;
+            pass.attachmentSize = attachmentSize;
+
+
+            if (pass.state == null)
+            {
+                pass.state = new ViewState(device);
+            }
+
+            Vector2Int screenSize = CameraRenderer.GetScreenSize();
+            var desc = new TextureDesc(screenSize.x, screenSize.y)
+            {
+                colorFormat = SystemInfo.GetGraphicsFormat(useHDR ? DefaultFormat.HDR : DefaultFormat.LDR),
+                name = "DLSS color Attachment",
+                msaaSamples = MSAASamples.None,
+                enableRandomWrite = true,
+            };
+            pass.colorCopy = builder.WriteTexture(renderGraph.CreateTexture(desc));
+
+
+            builder.SetRenderFunc<DLSSPass>(static (pass, context) => pass.Render(context));
+
+        #else
             return;
-        }
-#if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
-
-        if (device == null || !settings.dlss.enabled)
-        {
-            return;
-        }
-
-        using RenderGraphBuilder builder = renderGraph.AddRenderPass
-        (
-            sampler.name, out DLSSPass pass, sampler
-        );
-        pass.camera = camera;
-        pass.colorSRc = builder.ReadWriteTexture(textures.colorAttachment);
-        pass.depthSource = builder.ReadTexture(textures.depthAttachment);
-        pass.motionSource = builder.ReadTexture(textures.motionVectorsTexture);
-
-
-
-        pass.settings = settings.dlss;
-        pass.attachmentSize = attachmentSize;
-
-
-        if (pass.state == null)
-        {
-            pass.state = new ViewState(device);
-        }
-
-        var desc = new TextureDesc(Screen.width, Screen.height)
-        {
-            colorFormat = SystemInfo.GetGraphicsFormat(useHDR ? DefaultFormat.HDR : DefaultFormat.LDR),
-            name = "DLSS color Attachment",
-            msaaSamples = MSAASamples.None,
-            enableRandomWrite = true,
-        };
-        pass.colorCopy = builder.WriteTexture(renderGraph.CreateTexture(desc));
-
-
-        builder.SetRenderFunc<DLSSPass>(static (pass, context) => pass.Render(context));
-
-
-#endif
+        #endif
     }
 
-    void Cleanup(CommandBuffer commandBuffer)
-    {
-        if (commandBuffer != null)
+    #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+        void Cleanup(CommandBuffer commandBuffer)
         {
-            state.Cleanup(commandBuffer);
-            //cam.RemoveCommandBuffer(prevRenderPos, commandBuffer);
-            //commandBuffer.Release();
+            if (commandBuffer != null)
+            {
+                state.Cleanup(commandBuffer);
+                //cam.RemoveCommandBuffer(prevRenderPos, commandBuffer);
+                //commandBuffer.Release();
 
-            //commandBuffer = null;
+                //commandBuffer = null;
+            }
+
+            //RestoreMipBias();
         }
-
-        //RestoreMipBias();
-    }
+    #endif
 
 }

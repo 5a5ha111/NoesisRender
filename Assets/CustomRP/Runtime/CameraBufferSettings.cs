@@ -49,6 +49,7 @@ using UnityEngine.NVIDIA;
     #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
     [Serializable] public struct DLSS_Settings
     {
+        [Tooltip("When DLSS enabled, it disable FXAA")]
         public bool enabled;
 
         [Header("DLSS Settings")]
@@ -62,11 +63,13 @@ using UnityEngine.NVIDIA;
                     "I recommend only to disable these for debugging.")]
         public bool useMotionVectors; // = true;
 
-        [Tooltip("If true, will use the base resolution and sharpness settings recommended by DLSS. Disable this to manually set a scaling ratio.")]
+        [Tooltip("If true, will use the base resolution and sharpness settings recommended by DLSS. Disable this to manually set a scaling ratio and sharpness.")]
         public bool useOptimalSettings; // = true;
 
         [Tooltip("Quality setting for automatic optimal DLSS settings.")]
         public NVIDIA.DLSSQuality dlssQuality; // = NVIDIA.DLSSQuality.MaximumQuality;
+
+        [Tooltip("DLAA is the same DLSS, but with renderScale = 1. More expensive and have more quality. Overwrite previous settings")] public bool useDLAA; // = false;
 
         //[Tooltip("Manual viewport scaling ratio.")]
         //public float viewportMult; // = 0.5f;

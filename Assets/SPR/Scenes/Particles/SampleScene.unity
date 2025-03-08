@@ -8972,7 +8972,8 @@ MonoBehaviour:
     finalBlendMode:
       source: 1
       destination: 0
-    allowFXAA: 1
+    allowFXAA: 0
+    allowDLSS: 1
     keepAlpha: 0
 --- !u!1 &977074005
 GameObject:
