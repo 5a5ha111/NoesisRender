@@ -51,6 +51,6 @@ MonoBehaviour:
     highlightsStart: 0.55
     highLightsEnd: 1
   toneMapping:
-    mode: 5
+    mode: 4
   dither:
     mode: 2

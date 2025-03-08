@@ -76,6 +76,13 @@ public partial class CameraRenderer
     }
 
 
+    PortalsUnity.Portal[] portals;
+    public void HandleSceneLoad(PortalsUnity.Portal[] portals)
+    {
+        this.portals = portals;
+    }
+
+
     public void Render
     (
         RenderGraph renderGraph,
@@ -122,6 +129,19 @@ public partial class CameraRenderer
 
 
         PrepareForSceneWindow(); // Handle Scene camera
+
+        if (portals != null && portals.Length > 0)
+        {
+            for (int i = 0; i < portals.Length; i++)
+            {
+                var portal = portals[i];
+                if (portal == null) continue;
+                portal.PrePortalRender(camera);
+
+                portal.Render(camera);
+            }
+        }
+
         float renderScale = cameraSettings.GetRenderScale(cameraBufferSettings.renderScale);
         // Very slight deviations from 1 will have neither visual nor performance differences that matter. So let's only use scaled rendering if there is at least a 1% difference.
         useScaledRendering = renderScale < 0.99f || renderScale > 1.01f;
@@ -233,13 +253,12 @@ public partial class CameraRenderer
                 postFXBufferSize = GetCameraPixelSize(camera);
             }
         #endif
-        Debug.Log(camera.name + " postFXBufferSize " + postFXBufferSize);
 
         postFXStack.Setup
         (
             /*context,*/ camera,
             postFXBufferSize, 
-        cameraBufferSettings.bicubicRescaling,
+            cameraBufferSettings.bicubicRescaling,
             cameraBufferSettings.fxaa,
             postFXSettings, cameraSettings.keepAlpha, useHDR, (int)settings.colorLUTResolution,
             cameraSettings.finalBlendMode
@@ -250,7 +269,6 @@ public partial class CameraRenderer
             !useLightsPerObject;
 
 
-        //DrawMotionVectors(context, camera, materialMotion, cullingResults);
 
 
         var renderGraphParameters = new RenderGraphParameters 
