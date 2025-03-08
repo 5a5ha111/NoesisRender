@@ -703,6 +703,7 @@ public partial class PostFXStack
             RenderBufferStoreAction.Store
         );
         buffer.SetViewport(camera.pixelRect);
+        //Debug.Log("PostFXStack camera.pixelRect " + camera.name + " " + camera.pixelRect);
         buffer.DrawProcedural(Matrix4x4.identity, settings.Material, (int)pass, MeshTopology.Triangles, 3);
     }
     void DoPostFXMain(int sourceId)

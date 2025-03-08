@@ -7,6 +7,8 @@ using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.NVIDIA;
 using UnityEngine.Rendering;
 using UnityEngine.PlayerLoop;
+using System;
+
 
 
 
@@ -47,7 +49,7 @@ public class DLSSPass
         var resolutionOut = new UnityDLSS.UnityDlssCommon.Resolution();
         resolution.width = Mathf.Max(attachmentSize.x, 1);
         resolution.height = Mathf.Max(attachmentSize.y, 1);
-        Vector2Int screenSize = CameraRenderer.GetScreenSize();
+        Vector2Int screenSize = CameraRenderer.GetCameraPixelSize(camera);
         resolutionOut.width = screenSize.x;
         resolutionOut.height = screenSize.y;
         dlssData.inputRes = resolution;
@@ -57,6 +59,8 @@ public class DLSSPass
         if (settings.enabled)
         {
             cam.ResetProjectionMatrix();
+            context.cmd.SetProjectionMatrix(cam.projectionMatrix);
+            context.cmd.SetViewport(camera.pixelRect);
             if (settings.useJitter)
             {
                 cam.nonJitteredProjectionMatrix = cam.projectionMatrix;
@@ -72,14 +76,17 @@ public class DLSSPass
 
                 cam.projectionMatrix = jitteredMatrix;
                 context.cmd.SetProjectionMatrix(jitteredMatrix);
+                context.cmd.SetViewport(camera.pixelRect);
             }
 
             state.UpdateViewState(dlssData, context.cmd);
             state.SubmitDlssCommands(colorSRc, depthSource, motionSource, null, colorCopy, context.cmd, settings.sharpness);
             
             context.cmd.SetRenderTarget(colorCopy);
-            context.cmd.Blit(colorCopy, BuiltinRenderTextureType.CameraTarget);
+            //context.cmd.Blit(colorCopy, BuiltinRenderTextureType.CameraTarget);
             context.cmd.Blit(colorCopy, colorSRc);
+
+            //cam.ResetProjectionMatrix();
         }
 
         //Cleanup(context.cmd);
@@ -119,7 +126,7 @@ public class DLSSPass
                 pass.state = new ViewState(device);
             }
 
-            Vector2Int screenSize = CameraRenderer.GetScreenSize();
+            Vector2Int screenSize = CameraRenderer.GetCameraPixelSize(camera);
             var desc = new TextureDesc(screenSize.x, screenSize.y)
             {
                 colorFormat = SystemInfo.GetGraphicsFormat(useHDR ? DefaultFormat.HDR : DefaultFormat.LDR),

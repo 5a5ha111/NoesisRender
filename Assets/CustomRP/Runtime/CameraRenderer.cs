@@ -172,13 +172,13 @@ public partial class CameraRenderer
                 if ((cameraBufferSettings.dlss.useOptimalSettings && !cameraBufferSettings.dlss.useDLAA) && (int)cameraBufferSettings.dlss.dlssQuality != cachedDLSSQuality)
                     {
                     cachedDLSSQuality = (int)cameraBufferSettings.dlss.dlssQuality;
-                    bufferSize = GetScaledBufferSize(renderScale);
+                    bufferSize = GetScaledBufferSize(renderScale, camera);
                     UnityEngine.NVIDIA.OptimalDLSSSettingsData optimalDLSSSettingsData;
                     bool fit = UnityDLSS.UnityDlssCommon.device.GetOptimalSettings((uint)bufferSize.x, (uint)bufferSize.y, cameraBufferSettings.dlss.dlssQuality, out optimalDLSSSettingsData);
-                    bufferSize.x = (int)optimalDLSSSettingsData.outRenderWidth;
-                    bufferSize.y = (int)optimalDLSSSettingsData.outRenderHeight;
+                    bufferSize.x = (int)((float)optimalDLSSSettingsData.outRenderWidth * camera.rect.width);
+                    bufferSize.y = (int)((float)optimalDLSSSettingsData.outRenderHeight * camera.rect.height);
                     float multJitter = 1.5f; // 2.254698f
-                    float relation = Mathf.Clamp01((float)bufferSize.y * multJitter / GetScreenSize().y);
+                    float relation = Mathf.Clamp01((float)bufferSize.y * multJitter / GetCameraPixelSize(camera).y);
                     cameraBufferSettings.dlss.jitterScale *= relation;
                     cameraBufferSettings.dlss.sharpness = optimalDLSSSettingsData.sharpness;
                     Vector2 minRec = new Vector2(optimalDLSSSettingsData.minWidth, optimalDLSSSettingsData.minHeight);
@@ -186,18 +186,18 @@ public partial class CameraRenderer
                     cachedDLSSResolution = bufferSize;
                     cachedDLSSJitterScale = relation;
                     cachedDLSSSharpness = optimalDLSSSettingsData.sharpness;
-                    //Debug.Log("bufferSize " + bufferSize + " " + relation + " minSize " + minRec);
                 }
                 else if (cameraBufferSettings.dlss.useOptimalSettings && !cameraBufferSettings.dlss.useDLAA)
                 {
                     bufferSize = cachedDLSSResolution;
                     cameraBufferSettings.dlss.jitterScale *= cachedDLSSJitterScale;
                     cameraBufferSettings.dlss.sharpness = cachedDLSSSharpness;
+                    //Debug.Log("bufferSize " + cachedDLSSResolution);
                 }
                 else if (cameraBufferSettings.dlss.useDLAA)
                 {
                     renderScale = 1;
-                    bufferSize = GetScaledBufferSize(renderScale);
+                    bufferSize = GetScaledBufferSize(renderScale, camera);
                 }
                 bufferSize = Vector2Int.Max(bufferSize, Vector2Int.one);
             }
@@ -230,9 +230,10 @@ public partial class CameraRenderer
         #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
             if (cameraBufferSettings.dlss.enabled)
             {
-                postFXBufferSize = GetScreenSize();
+                postFXBufferSize = GetCameraPixelSize(camera);
             }
         #endif
+        Debug.Log(camera.name + " postFXBufferSize " + postFXBufferSize);
 
         postFXStack.Setup
         (
@@ -347,18 +348,18 @@ public partial class CameraRenderer
     }
 
 
-    private static Vector2Int GetScaledBufferSize(float renderScale)
+    private static Vector2Int GetScaledBufferSize(float renderScale, Camera camera)
     {
-        Vector2Int screenSize = GetScreenSize();
+        Vector2Int screenSize = GetCameraPixelSize(camera);
         Vector2Int bufferSize = new Vector2Int();
         bufferSize.x = Mathf.Max((int)(screenSize.x * renderScale), 1);
         bufferSize.y = Mathf.Max((int)(screenSize.y * renderScale), 1);
         return bufferSize;
     }
 
-    public static Vector2Int GetScreenSize()
+    public static Vector2Int GetCameraPixelSize(Camera camera)
     {
-        return Vector2Int.Max(new Vector2Int(Screen.width, Screen.height), new Vector2Int(1,1));
+        return Vector2Int.Max(new Vector2Int(camera.pixelWidth, camera.pixelHeight), new Vector2Int(1,1));
     }
 
 
