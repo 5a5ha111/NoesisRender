@@ -115,8 +115,12 @@ public class MotionVectorPass
         cmd.Clear();*/
     }
 
-    public static void Record(RenderGraph renderGraph, Camera camera, in CameraRendererTextures textures, CameraBufferSettings settings, Material materialMotion, int renderingLayerMask, CullingResults cullingResults)
+    public static void Record(RenderGraph renderGraph, Camera camera, CameraSettings cameraSettings, in CameraRendererTextures textures, CameraBufferSettings settings, Material materialMotion, int renderingLayerMask, CullingResults cullingResults)
     {
+        if (!cameraSettings.renderMotionVectors)
+        {
+            return;
+        }
         using RenderGraphBuilder builder = renderGraph.AddRenderPass
         (
             sampler.name, out MotionVectorPass pass, sampler

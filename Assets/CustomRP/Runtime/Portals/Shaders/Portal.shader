@@ -1,14 +1,16 @@
-﻿Shader "Custom/Portal"
+﻿Shader "Custom RP/Portal"
 {
     Properties
     {
         _InactiveColour ("Inactive Colour", Color) = (1, 1, 1, 1)
         _ShadowTex ("Shadow Texture", 2D) = "white" {} 
+        _MainTex ("Main tex", 2D) = "white" {} 
         _ShaowSlider ("Shadow subtr", Float) = 0
+        _ColorSlider ("Shadow subtr", Vector) = (0, 0, 1, 1)
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" }
+        Tags { "RenderType"="Transparrent" }
         LOD 100
         Cull Off
 
@@ -30,10 +32,70 @@
 
             #pragma multi_compile_instancing
 
-            #pragma vertex UnlitPassVertex
-            #pragma fragment UnlitPassFragment
+            #pragma vertex vert
+            #pragma fragment frag
 
             #include "Assets/CustomRP/Shaders/UnlitPass.hlsl"
+
+            struct appdata
+            {
+                float4 vertex : POSITION;
+                float4 uv : TEXCOORD0;
+            };
+
+            struct v2f
+            {
+                float4 pos : SV_POSITION;
+                float4 screenPos : TEXCOORD0;
+                float4 uv : TEXCOORD1;
+            };
+
+            sampler2D _MainTex;
+            sampler2D _ShadowTex;
+            float4 _InactiveColour;
+            float4 _ColorSlider;
+            int displayMask; // set to 1 to display texture, otherwise will draw test colour
+            
+            float4 UnityObjectToClipPos(float4 pos)
+            {
+                /*float4 world =  float4(TransformObjectToWorld(pos),1);
+                float4 clipPos = TransformWorldToHClip(world);
+                return clipPos;*/
+
+                return mul(UNITY_MATRIX_VP, mul(UNITY_MATRIX_M, pos));
+            }
+            float4 ComputeScreenPos(float4 positionCS)
+            {
+                float4 o = positionCS * 0.5f;
+                o.xy = float2(o.x, o.y * _ProjectionParams.x) + o.w;
+                o.zw = positionCS.zw;
+                return o;
+            }
+
+            v2f vert (appdata v)
+            {
+                v2f o;
+                //o.pos = UnityObjectToClipPos(v.vertex);
+                o.pos = TransformWorldToHClip(TransformObjectToWorld(v.vertex));
+                o.screenPos = ComputeScreenPos(o.pos);
+                float4 screenPr = o.pos;
+                screenPr.y = 1 - screenPr.y;
+                //o.screenPos = o.pos;
+                o.uv = v.uv;
+                return o;
+            }
+
+            half4 frag (v2f i) : SV_Target
+            {
+                float2 uv = i.screenPos.xy / i.screenPos.w;
+                //fixed4 portalCol = tex2D(_ShadowTex, uv);
+                //uv = i.uv;
+                uv = (uv + _ColorSlider.xy) * _ColorSlider.zw;
+                half4 portalCol = tex2D(_MainTex, uv);
+                //return i.uv;
+                //return portalCol * displayMask + _InactiveColour * (1-displayMask);
+                return portalCol;
+            }
 
             ENDHLSL
         }

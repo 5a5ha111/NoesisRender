@@ -21,5 +21,12 @@ public class CustomRenderPipelineCamera : MonoBehaviour
 
     #if UNITY_EDITOR || DEVELOPMENT_BUILD
         void OnEnable() => sampler = null;
+
+        [ContextMenu("ResetProjMatrix")]
+        public void ResetProjMatrix()
+        {
+            Camera camera = GetComponent<Camera>();
+            camera.ResetProjectionMatrix();
+        }
     #endif
 }

@@ -30,10 +30,10 @@ MonoBehaviour:
       dlss:
         enabled: 1
         useMipBias: 0
-        useMotionVectors: 0
-        useOptimalSettings: 0
-        dlssQuality: 0
-        useDLAA: 1
+        useMotionVectors: 1
+        useOptimalSettings: 1
+        dlssQuality: 2
+        useDLAA: 0
         sharpness: 1
         useJitter: 1
         jitterScale: 1
@@ -44,8 +44,8 @@ MonoBehaviour:
       maxDistance: 25
       distanceFade: 0.1
       directional:
-        atlasSize: 256
-        filter: 3
+        atlasSize: 1024
+        filter: 2
         cascadeBlend: 1
         cascadeCount: 4
         cascadeRatio1: 0.15
@@ -53,8 +53,8 @@ MonoBehaviour:
         cascadeRatio3: 0.5
         cascadeFade: 0.2
       other:
-        atlasSize: 1024
-        filter: 3
+        atlasSize: 512
+        filter: 1
     postFXSettings: {fileID: 11400000, guid: 11740a70adc48e240b302b42654909be, type: 2}
     colorLUTResolution: 32
     forwardPlus:

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.PackageManager.Requests;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace PortalsUnity
 {
@@ -32,9 +34,18 @@ namespace PortalsUnity
 
         private const string viewTex = "";
         private const string shadowTex = "_ShadowTex";
+        //private const string mainTex = "_BaseMap";
+        private const string mainTex = "_MainTex";
         private const int shadowWritePass = 0;
 
         private static readonly int ScreenSpaceShadowmapTexture = Shader.PropertyToID("_ScreenSpaceShadowmapTexture");
+
+        /// <summary>
+        /// Based on thickness of the frame of screen. If camera near clip plane is too big, portal box will be too big, and can be visible outside frame.
+        /// </summary>
+        private const float maxNearClippingPlane = 0.06f;
+        private const float minNearClippingPlane = 0.00001f;
+        private const float maxFarClippingPlane = 1000f;
 
 
         void Awake()
@@ -44,15 +55,31 @@ namespace PortalsUnity
             {
                 portalCam = GetComponentInChildren<Camera>();
             }
-            portalCam.enabled = false;
+            if (portalCam != null)
+            {
+                portalCam.enabled = false;
+                var portalCamType = portalCam.GetComponent<CustomRenderPipelineCamera>();
+                if (portalCamType != null )
+                {
+                    // Portals cameras render to texture, that later will be displayed on mesh and then render to main camera, so it cannot have postFX
+                    portalCamType.Settings.CameraType = CameraSettings.CameraTypeSetting.Portal;
+                    portalCamType.Settings.allowDLSS = false;
+                    portalCamType.Settings.allowFXAA = false;
+                    portalCamType.Settings.overridePostFX = true;
+                    portalCamType.Settings.renderMotionVectors = false;
+                }
+            }
             trackedTravellers = new List<PortalTraveller>();
-            screenMeshFilter = screen.GetComponent<MeshFilter>();
-            screen.material.SetInt("displayMask", 1);
+            if (screen != null)
+            {
+                screenMeshFilter = screen.GetComponent<MeshFilter>();
+                screen.material.SetInt("displayMask", 1);
+            }
         }
 
         void LateUpdate()
         {
-            //HandleTravellers();
+            HandleTravellers();
         }
 
         [ContextMenu("Update tex&shadows")]
@@ -85,7 +112,6 @@ namespace PortalsUnity
                     linkedPortal.OnTravellerEnterPortal(traveller);
                     trackedTravellers.RemoveAt(i);
                     i--;
-
                 }
                 else
                 {
@@ -96,7 +122,10 @@ namespace PortalsUnity
             }
         }
 
-        // Called before any portal cameras are rendered for the current frame
+        /// <summary>
+        /// Called before any portal cameras are rendered for the current frame
+        /// </summary>
+        /// <param name="playerCam"></param>
         public void PrePortalRender(Camera playerCam)
         {
             foreach (var traveller in trackedTravellers)
@@ -105,10 +134,18 @@ namespace PortalsUnity
             }
         }
 
-        // Manually render the camera attached to this portal
-        // Called after PrePortalRender, and before PostPortalRender
+        /// <summary>
+        /// Manually render the camera attached to this portal
+        /// Called after PrePortalRender, and before PostPortalRender
+        /// </summary>
+        /// <param name="playerCam"></param>
         public void Render(Camera playerCam)
         {
+            if (linkedPortal == null || screen == null || portalCam == null || playerCam == null)
+            {
+                return;
+            }
+
 
             // Skip rendering the view from this portal if player is not looking at the linked portal
             if (!PortalCameraUtility.VisibleFromCamera(linkedPortal.screen, playerCam))
@@ -188,8 +225,24 @@ namespace PortalsUnity
                 {
                     try
                     {
-                        portalCam.Render();
+                        //portalCam.Render();
                         //SetShadowTexture();
+
+                        // Create a standard request
+                        RenderPipeline.StandardRequest request = new RenderPipeline.StandardRequest();
+                        // Check if the request is supported by the active render pipeline
+                        if (RenderPipeline.SupportsRenderRequest(playerCam, request))
+                        {
+                            Debug.Log("Support request");
+                            request.destination = viewTexture;
+                            RenderPipeline.SubmitRenderRequest(portalCam, request);
+                            return;
+                        }
+                        else
+                        {
+                            Debug.Log("Dont support");
+                            return;
+                        }
                     }
                     catch (Exception e)
                     {
@@ -209,6 +262,204 @@ namespace PortalsUnity
             screen.enabled = true;
         }
 
+        /// <summary>
+        /// Check if portal is working and if camera can see it
+        /// </summary>
+        /// <param name="playerCam"></param>
+        /// <returns></returns>
+        public bool CanRender(Camera playerCam)
+        {
+            if (linkedPortal == null || screen == null || portalCam == null || playerCam == null)
+            {
+                return false;
+            }
+            // Skip rendering the view from this portal if player is not looking at the linked portal
+            if (!PortalCameraUtility.VisibleFromCamera(linkedPortal.screen, playerCam))
+            {
+                return false;
+            }
+
+            CreateViewTexture();
+            return true;
+        }
+        public (Vector3[] positions, Quaternion[] rotations, int startIndex, int loopSize) GetPosAndRot(Camera playerCam)
+        {
+            var localToWorldMatrix = playerCam.transform.localToWorldMatrix;
+            var renderPositions = new Vector3[recursionLimit];
+            var renderRotations = new Quaternion[recursionLimit];
+
+            int startIndex = 0;
+            int loopSize = 0;
+            portalCam.projectionMatrix = playerCam.projectionMatrix;
+            for (int i = 0; i < recursionLimit; i++, loopSize++)
+            {
+                if (i > 0)
+                {
+                    // No need for recursive rendering if linked portal is not visible through this portal
+                    if (!PortalCameraUtility.BoundsOverlap(screenMeshFilter, linkedPortal.screenMeshFilter, portalCam))
+                    {
+                        break;
+                    }
+                    /*Camera recursiveCam = linkedPortal.portalCam;
+                    MeshRenderer portalRenderer = screen;
+                    if (i % 2 != 0) 
+                    {
+                        recursiveCam = portalCam;
+                        portalRenderer = linkedPortal.screen;
+                    }
+                    if (!PortalCameraUtility.VisibleFromCamera(portalRenderer, recursiveCam))
+                    {
+                        break;
+                    }*/
+                }
+                localToWorldMatrix = transform.localToWorldMatrix * linkedPortal.transform.worldToLocalMatrix * localToWorldMatrix;
+                int renderOrderIndex = recursionLimit - i - 1;
+                renderPositions[renderOrderIndex] = localToWorldMatrix.GetColumn(3);
+                renderRotations[renderOrderIndex] = localToWorldMatrix.rotation;
+
+                portalCam.transform.SetPositionAndRotation(renderPositions[renderOrderIndex], renderRotations[renderOrderIndex]);
+                startIndex = renderOrderIndex;
+            }
+
+            return (renderPositions, renderRotations, startIndex, loopSize);
+        }
+        public ShadowCastingMode SetPreCamera(Camera playerCam)
+        {
+            // Hide screen so that camera can see through portal
+            var tempShadowCastValue = screen.shadowCastingMode;
+            screen.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            screen.enabled = false;
+            linkedPortal.screen.material.SetInt("displayMask", 0);
+            playerCam.fieldOfView = playerCam.fieldOfView;
+            return tempShadowCastValue;
+        }
+        public (bool canRender, Camera portalCamera) SetCameraRender(Camera playerCam, int index, int startIndex, Vector3[] renderPositions, Quaternion[] renderRotations)
+        {
+            portalCam.transform.SetPositionAndRotation(renderPositions[index], renderRotations[index]);
+            SetNearClipPlane(playerCam);
+            HandleClipping(playerCam);
+
+            // avoid frustrum on Corners
+            Vector3[] frustumCorners = new Vector3[4];
+            bool FrustumError = false;
+
+            Rect portalCamRect = new Rect(0, 0f, 0.5f, 0.5f);
+            Rect normalRect = new Rect(0f, 0f, 1, 1f);
+            //portalCam.ResetProjectionMatrix();
+            var resMeshProj = PortalCameraUtility.ApplyMeshProjection(portalCam, playerCam, portalCam.projectionMatrix, linkedPortal.screenMeshFilter, playerCam.fieldOfView);
+            var meshRect = resMeshProj.rect;
+            /*if (Mathf.Max(meshRect.max.x, meshRect.max.y) > 1)
+            {
+                Debug.LogError(meshRect);
+                FrustumError = true;
+            }*/
+            FrustumError |= !resMeshProj.valid;
+
+            //Rect meshViewportRect = PortalCameraUtility.GetMeshViewRect(playerCam, screenMeshFilter);
+            //portalCam.rect = meshViewportRect;
+
+            //var meshRect = normalRect;
+            // Calculate Corners for my portalCamera :
+            portalCam.CalculateFrustumCorners(meshRect, portalCam.farClipPlane, Camera.MonoOrStereoscopicEye.Mono, frustumCorners);
+            //portalCam.rect = meshRect;
+            //portalCam.fieldOfView = Camera.VerticalToHorizontalFieldOfView(playerCam.fieldOfView, portalCamRect.width / portalCamRect.height);
+
+            //portalCam.
+
+            // Check for NaN in any of the 4 vectors (checking x is enough since NaN occurs in all 3 components)
+            for (int j = 0; j < 4; j++)
+            {
+                if (float.IsNaN(frustumCorners[j].x))
+                {
+                    Debug.Log("Frustrum NaN on Vector #" + j);
+                    FrustumError = true;
+                }
+                if (float.IsNaN(frustumCorners[j].y))
+                {
+                    Debug.Log("Frustrum NaN on Vector #" + j);
+                    FrustumError = true;
+                }
+                if (float.IsNaN(frustumCorners[j].z))
+                {
+                    Debug.Log("Frustrum NaN on Vector #" + j);
+                    FrustumError = true;
+                }
+            }
+
+            Rect viewport = meshRect;
+            float viewportXMin = viewport.x;
+            float viewportXMax = viewport.x + viewport.width;
+            float viewportYMin = viewport.y;
+            float viewportYMax = viewport.y + viewport.height;
+            Rect frustumRect = new Rect(viewportXMin, viewportYMin, viewportXMax - viewportXMin, viewportYMax - viewportYMin);
+            portalCam.CalculateFrustumCorners(frustumRect, portalCam.farClipPlane, Camera.MonoOrStereoscopicEye.Mono, frustumCorners);
+
+            foreach (Vector3 corner in frustumCorners)
+            {
+                Vector4 worldPoint = new Vector4(corner.x, corner.y, corner.z, 1.0f);
+                Vector4 projected = portalCam.projectionMatrix * worldPoint;
+
+                if (projected.w == 0)
+                {
+                    Debug.LogError("Invalid projection matrix: division by zero in homogeneous coordinates.");
+                    FrustumError = true;
+                }
+
+                /*Vector3 ndc = new Vector3(projected.x / projected.w, projected.y / projected.w, projected.z / projected.w);
+                if (ndc.x < -1 || ndc.x > 1 || ndc.y < -1 || ndc.y > 1 || ndc.z < 0 || ndc.z > 1)
+                {
+                    Debug.LogError("Projection matrix produces out-of-bounds NDC coordinates.");
+                    FrustumError = true;
+                }*/
+            }
+            //FrustumError |= PortalCameraUtility.IsMatrixValid();
+
+            if (index == startIndex)
+            {
+                linkedPortal.screen.material.SetInt("displayMask", 1);
+            }
+            //return (true, portalCam);
+
+            if (!FrustumError)
+            {
+                try
+                {
+                    return (true, portalCam);
+                    //portalCam.Render();
+                    //SetShadowTexture();
+
+                    // Create a standard request
+                    //RenderPipeline.StandardRequest request = new RenderPipeline.StandardRequest();
+                    // Check if the request is supported by the active render pipeline
+                    /*if (RenderPipeline.SupportsRenderRequest(playerCam, request))
+                    {
+                        Debug.Log("Support request");
+                        request.destination = viewTexture;
+                        RenderPipeline.SubmitRenderRequest(portalCam, request);
+                        return;
+                    }
+                    else
+                    {
+                        Debug.Log("Dont support");
+                        return;
+                    }*/
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning("Frustrum catched despite checking " + e);
+                    return (false, null);
+                }
+            }
+            return (false, null);
+        }
+        public void EndRender(ShadowCastingMode tempShadowCastValue)
+        {
+            linkedPortal.screen.material.SetInt("displayMask", 1);
+            screen.shadowCastingMode = tempShadowCastValue;
+            screen.enabled = true;
+        }
+
+
         void HandleClipping(Camera playerCam)
         {
             // There are two main graphical issues when slicing travellers
@@ -219,7 +470,7 @@ namespace PortalsUnity
             // Would be great if this could be fixed more elegantly, but this is the best I can figure out for now
             const float hideDst = -1000;
             const float showDst = 1000;
-            float screenThickness = linkedPortal.ProtectScreenFromClipping(playerCam, portalCam.transform.position);
+            float screenThickness = linkedPortal.ProtectScreenFromClipping(playerCam, playerCam.transform.position);
 
             foreach (var traveller in trackedTravellers)
             {
@@ -278,8 +529,11 @@ namespace PortalsUnity
             }
         }
 
-        // Called once all portals have been rendered, but before the player camera renders
-        public void PostPortalRender(Camera playerCam, List<PortalTraveller> trackedTravellers)
+        /// <summary>
+        /// Called once all portals have been rendered, but before the player camera renders
+        /// </summary>
+        /// <param name="playerCam"></param>
+        public void PostPortalRender(Camera playerCam)
         {
             foreach (var traveller in trackedTravellers)
             {
@@ -297,11 +551,12 @@ namespace PortalsUnity
                 }
                 viewTexture = new RenderTexture(Screen.width, Screen.height, 0);
                 viewTexture.autoGenerateMips = false;
+                viewTexture.depth = 0;
                 viewTexture.name = "PortalCam " + gameObject.name + " RenderTexture";
                 // Render the view from the portal camera to the view texture
                 portalCam.targetTexture = viewTexture;
                 // Display the view texture on the screen of the linked portal
-                linkedPortal.screen.material.SetTexture("_MainTex", viewTexture);
+                linkedPortal.screen.material.SetTexture(mainTex, viewTexture);
             }
         }
         void SetShadowTexture()
@@ -324,12 +579,18 @@ namespace PortalsUnity
             linkedPortal.screen.material.SetTexture(shadowTex, shadowTexture);*/
         }
 
-        // Sets the thickness of the portal screen so as not to clip with camera near plane when player goes through
+        /// <summary>
+        /// Sets the thickness of the portal screen so as not to clip with camera near plane when player goes through
+        /// </summary>
+        /// <param name="playerCam"></param>
+        /// <param name="viewPoint"></param>
+        /// <returns></returns>
         float ProtectScreenFromClipping(Camera playerCam, Vector3 viewPoint)
         {
-            float halfHeight = playerCam.nearClipPlane * Mathf.Tan(playerCam.fieldOfView * 0.5f * Mathf.Deg2Rad);
+            float nearPlane = Mathf.Min(playerCam.nearClipPlane, maxNearClippingPlane);
+            float halfHeight = nearPlane * Mathf.Tan(playerCam.fieldOfView * 0.5f * Mathf.Deg2Rad);
             float halfWidth = halfHeight * playerCam.aspect;
-            float dstToNearClipPlaneCorner = new Vector3(halfWidth, halfHeight, playerCam.nearClipPlane).magnitude;
+            float dstToNearClipPlaneCorner = new Vector3(halfWidth, halfHeight, nearPlane).magnitude;
             float screenThickness = dstToNearClipPlaneCorner;
 
             Transform screenT = screen.transform;
@@ -389,9 +650,6 @@ namespace PortalsUnity
             // http://www.terathon.com/lengyel/Lengyel-Oblique.pdf
             Transform clipPlane = transform;
             int dot = System.Math.Sign(Vector3.Dot(clipPlane.forward, transform.position - portalCam.transform.position));
-            /*Vector3 directionToTransform = (transform.position - portalCam.transform.position).normalized;
-            float dotProduct = Vector3.Dot(clipPlane.forward.normalized, directionToTransform);
-            int dot = dotProduct >= 0 ? 1 : -1;*/
 
             Vector3 camSpacePos = portalCam.worldToCameraMatrix.MultiplyPoint(clipPlane.position);
             Vector3 camSpaceNormal = portalCam.worldToCameraMatrix.MultiplyVector(clipPlane.forward) * dot;
@@ -414,13 +672,13 @@ namespace PortalsUnity
                 portalCam.projectionMatrix = playerCam.projectionMatrix;
             }
 
-            if (portalCam.nearClipPlane < 0.00001f)
+            if (portalCam.nearClipPlane < minNearClippingPlane)
             {
-                portalCam.nearClipPlane = 0.00001f;
+                portalCam.nearClipPlane = minNearClippingPlane;
             }
-            if (portalCam.farClipPlane > 1000)
+            if (portalCam.farClipPlane > maxFarClippingPlane)
             {
-                portalCam.farClipPlane = 1000;
+                portalCam.farClipPlane = maxFarClippingPlane;
             }
         }
 

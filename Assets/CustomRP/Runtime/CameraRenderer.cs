@@ -46,8 +46,8 @@ public partial class CameraRenderer
 
 
     // Cached NVIDIA variabled
-    #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
-        bool? cachedDeviceAviable;
+#if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+    bool? cachedDeviceAviable;
         int cachedDLSSQuality = -1;
         Vector2Int cachedDLSSResolution;
         float cachedDLSSSharpness;
@@ -73,13 +73,6 @@ public partial class CameraRenderer
         #endif
 
         CameraDebugger.Initialize(cameraDebuggerShader);
-    }
-
-
-    PortalsUnity.Portal[] portals;
-    public void HandleSceneLoad(PortalsUnity.Portal[] portals)
-    {
-        this.portals = portals;
     }
 
 
@@ -130,17 +123,6 @@ public partial class CameraRenderer
 
         PrepareForSceneWindow(); // Handle Scene camera
 
-        if (portals != null && portals.Length > 0)
-        {
-            for (int i = 0; i < portals.Length; i++)
-            {
-                var portal = portals[i];
-                if (portal == null) continue;
-                portal.PrePortalRender(camera);
-
-                portal.Render(camera);
-            }
-        }
 
         float renderScale = cameraSettings.GetRenderScale(cameraBufferSettings.renderScale);
         // Very slight deviations from 1 will have neither visual nor performance differences that matter. So let's only use scaled rendering if there is at least a 1% difference.
@@ -153,6 +135,8 @@ public partial class CameraRenderer
         {
             return;
         }
+
+
         scriptableCullingParameters.shadowDistance = Mathf.Min(shadowSettings.maxDistance, camera.farClipPlane);
         CullingResults cullingResults = context.Cull(ref scriptableCullingParameters);
 
@@ -305,7 +289,7 @@ public partial class CameraRenderer
             );
 
 
-            MotionVectorPass.Record(renderGraph, camera, textures, cameraBufferSettings, materialMotion, cameraSettings.renderingLayerMask, cullingResults);
+            MotionVectorPass.Record(renderGraph, camera, cameraSettings, textures, cameraBufferSettings, materialMotion, cameraSettings.renderingLayerMask, cullingResults);
 
             VisibleGeometryPass.Record
             (

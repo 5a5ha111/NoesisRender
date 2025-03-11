@@ -4,8 +4,19 @@ using UnityEngine.Rendering;
 
 [Serializable] public class CameraSettings
 {
+    public enum CameraTypeSetting
+    {
+        Normal = 0,
+        Portal = 1,
+        Reflection = 2
+    }
+    public CameraTypeSetting CameraType;
 
     public bool copyColor = true, copyDepth = false;
+    /// <summary>
+    /// Motion vectors can be required for specific effects, specially DLSS
+    /// </summary>
+    public bool renderMotionVectors = true;
 
     [RenderingLayerMaskField] public int renderingLayerMask = -1;
     public bool maskLights = false;
@@ -36,7 +47,7 @@ using UnityEngine.Rendering;
 
     [Space]
     public bool allowFXAA = true;
-    public bool allowDLSS = true;
+    public bool allowDLSS = false;
     [Tooltip("Currently the only reason to keep alpha is when multiple cameras are stacked with transparency. Else, when FXAA enabled, luma that needed for FXAA will be pre-calculated in alpha channel.")]public bool keepAlpha = false;
 
     public float GetRenderScale(float scale)
