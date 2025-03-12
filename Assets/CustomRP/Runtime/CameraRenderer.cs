@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.NVIDIA;
 using UnityEngine.Rendering;
+using static UnityEditor.SceneView;
 
 public partial class CameraRenderer
 {
@@ -80,7 +81,7 @@ public partial class CameraRenderer
     (
         RenderGraph renderGraph,
         ScriptableRenderContext context,
-        Camera camera,
+        Camera camera, CustomRenderPipelineCamera crpCamera,
         CustomRenderPipelineSettings settings
     )
     {
@@ -94,7 +95,12 @@ public partial class CameraRenderer
 
         ProfilingSampler cameraSampler;
         CameraSettings cameraSettings;
-        if (camera.TryGetComponent(out CustomRenderPipelineCamera crpCamera))
+        /*if (camera.TryGetComponent(out CustomRenderPipelineCamera crpCamera))
+        {
+            cameraSampler = crpCamera.Sampler;
+            cameraSettings = crpCamera.Settings;
+        }*/
+        if (crpCamera != null)
         {
             cameraSampler = crpCamera.Sampler;
             cameraSettings = crpCamera.Settings;

@@ -30,7 +30,7 @@ namespace PortalsUnity
             Debug.Log(scene.name);
             //Debug.Log(mode);
 
-            portals = FindObjectsOfType<Portal>();
+            portals = FindObjectsOfType<Portal>(true);
         }
 
         public Portal[] RequestPortals()

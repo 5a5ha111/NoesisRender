@@ -83,6 +83,8 @@ Material:
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
+    - _Quoue: 3000
+    - _QuoueOffset: 1
     - _ReceiveShadows: 1
     - _Shadows: 0
     - _ShaowSlider: 0

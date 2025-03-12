@@ -7,12 +7,14 @@
         _MainTex ("Main tex", 2D) = "white" {} 
         _ShaowSlider ("Shadow subtr", Float) = 0
         _ColorSlider ("Shadow subtr", Vector) = (0, 0, 1, 1)
+        [Enum(Off, 0, On, 1)] _ZWrite ("Z Write", Float) = 1
     }
     SubShader
     {
         Tags { "RenderType"="Transparrent" }
         LOD 100
         Cull Off
+        ZWrite [_ZWrite]
 
         HLSLINCLUDE
         #include "Assets/CustomRP/ShaderLibrary/Common.hlsl"

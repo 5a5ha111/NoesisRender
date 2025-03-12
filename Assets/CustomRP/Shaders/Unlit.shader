@@ -13,6 +13,8 @@ Shader "Custom RP/Unlit"
 		[KeywordEnum(On, Clip, Dither, Off)] _Shadows ("Shadows", Float) = 0
 		[Toggle(_RECEIVE_SHADOWS)] _ReceiveShadows ("Receive Shadows", Float) = 1
 		[Toggle(_VERTEX_COLORS)] _VertexColors ("Vertex Colors", Float) = 0
+		[Enum(UnityEngine.Rendering.RenderQueue)]_Quoue("Queue", Float) = 3000
+		[Queue]_QuoueOffset("QueueOffset", Float) = 1
 	}
 	
 	SubShader 
@@ -23,10 +25,15 @@ Shader "Custom RP/Unlit"
 		#include "UnlitInput.hlsl"
 
 
+
 		ENDHLSL
 		
 		Pass 
 		{
+			Tags 
+			{
+				"Queue" = "_Quoue + _QuoueOffset"
+			}
 
 			Blend [_SrcBlend] [_DstBlend], One OneMinusSrcAlpha
 			ZWrite [_ZWrite]

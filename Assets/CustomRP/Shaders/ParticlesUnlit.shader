@@ -29,6 +29,9 @@ Shader "Custom RP/Particles/Unlit"
 		[NoScaleOffset] _DistortionMap("Distortion Vectors", 2D) = "bumb" {}
 		_DistortionStrength("Distortion Strength", Range(0.0, 0.2)) = 0.1
 		_DistortionBlend("Distortion Blend", Range(0.0, 1.0)) = 1
+
+		[Enum(UnityEngine.Rendering.RenderQueue)]_Quoue("Queue", Float) = 3000
+		[Queue]_QuoueOffset("QueueOffset", Float) = 1
 	}
 	
 	SubShader 
@@ -43,6 +46,10 @@ Shader "Custom RP/Particles/Unlit"
 		
 		Pass 
 		{
+			Tags 
+			{
+				"Queue" = "_Quoue + _QuoueOffset"
+			}
 
 			Blend [_SrcBlend] [_DstBlend], One OneMinusSrcAlpha
 			ZWrite [_ZWrite]

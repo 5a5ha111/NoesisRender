@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor.PackageManager.Requests;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 
 namespace PortalsUnity
@@ -28,6 +29,10 @@ namespace PortalsUnity
         Material firstRecursionMat;
         List<PortalTraveller> trackedTravellers;
         MeshFilter screenMeshFilter;
+        CustomRenderPipelineCamera portalCamType;
+
+        public CustomRenderPipelineCamera _CRP { get {  return portalCamType; } }
+        public Camera _camera { get {  return portalCam; } }
 
         private Matrix4x4? lastLoggedMatrix = null;
 
@@ -39,6 +44,10 @@ namespace PortalsUnity
         private const int shadowWritePass = 0;
 
         private static readonly int ScreenSpaceShadowmapTexture = Shader.PropertyToID("_ScreenSpaceShadowmapTexture");
+        private static readonly int zWrite = Shader.PropertyToID("_ZWrite");
+
+        private static readonly float zWriteOn = 1;
+        private static readonly float zWriteOff = 0;
 
         /// <summary>
         /// Based on thickness of the frame of screen. If camera near clip plane is too big, portal box will be too big, and can be visible outside frame.
@@ -58,7 +67,7 @@ namespace PortalsUnity
             if (portalCam != null)
             {
                 portalCam.enabled = false;
-                var portalCamType = portalCam.GetComponent<CustomRenderPipelineCamera>();
+                portalCamType = portalCam.GetComponent<CustomRenderPipelineCamera>();
                 if (portalCamType != null )
                 {
                     // Portals cameras render to texture, that later will be displayed on mesh and then render to main camera, so it cannot have postFX
@@ -85,8 +94,10 @@ namespace PortalsUnity
         [ContextMenu("Update tex&shadows")]
         public void UptEvr()
         {
-            SetShadowTexture();
-            linkedPortal.UptEvr();
+            /*SetShadowTexture();
+            linkedPortal.UptEvr();*/
+
+            screen.material.SetFloat(zWrite, zWriteOn);
         }
 
         void HandleTravellers()
@@ -267,7 +278,7 @@ namespace PortalsUnity
         /// </summary>
         /// <param name="playerCam"></param>
         /// <returns></returns>
-        public bool CanRender(Camera playerCam)
+        public bool CanRender(Camera playerCam, CameraBufferSettings cameraBufferSettings)
         {
             if (linkedPortal == null || screen == null || portalCam == null || playerCam == null)
             {
@@ -278,16 +289,20 @@ namespace PortalsUnity
             {
                 return false;
             }
-
-            CreateViewTexture();
+            if (portalCamType != null)
+            {
+                
+            }
+            CreateViewTexture(cameraBufferSettings.allowHDR && playerCam.allowHDR, playerCam);
             return true;
         }
-        public (Vector3[] positions, Quaternion[] rotations, int startIndex, int loopSize) GetPosAndRot(Camera playerCam)
+        public (Vector3[] positions, Quaternion[] rotations, int startIndex, int loopSize, bool recusrion) GetPosAndRot(Camera playerCam)
         {
             var localToWorldMatrix = playerCam.transform.localToWorldMatrix;
             var renderPositions = new Vector3[recursionLimit];
             var renderRotations = new Quaternion[recursionLimit];
 
+            bool recur = false;
             int startIndex = 0;
             int loopSize = 0;
             portalCam.projectionMatrix = playerCam.projectionMatrix;
@@ -299,6 +314,10 @@ namespace PortalsUnity
                     if (!PortalCameraUtility.BoundsOverlap(screenMeshFilter, linkedPortal.screenMeshFilter, portalCam))
                     {
                         break;
+                    }
+                    else
+                    {
+                        recur = true;
                     }
                     /*Camera recursiveCam = linkedPortal.portalCam;
                     MeshRenderer portalRenderer = screen;
@@ -312,6 +331,10 @@ namespace PortalsUnity
                         break;
                     }*/
                 }
+                else
+                {
+                    recur = false;
+                }
                 localToWorldMatrix = transform.localToWorldMatrix * linkedPortal.transform.worldToLocalMatrix * localToWorldMatrix;
                 int renderOrderIndex = recursionLimit - i - 1;
                 renderPositions[renderOrderIndex] = localToWorldMatrix.GetColumn(3);
@@ -321,19 +344,44 @@ namespace PortalsUnity
                 startIndex = renderOrderIndex;
             }
 
-            return (renderPositions, renderRotations, startIndex, loopSize);
+            return (renderPositions, renderRotations, startIndex, loopSize, recur);
         }
         public ShadowCastingMode SetPreCamera(Camera playerCam)
         {
             // Hide screen so that camera can see through portal
+            
             var tempShadowCastValue = screen.shadowCastingMode;
             screen.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             screen.enabled = false;
             linkedPortal.screen.material.SetInt("displayMask", 0);
+            linkedPortal.screen.material.SetFloat(zWrite, zWriteOff);
+            screen.material.SetFloat(zWrite, zWriteOff);
             playerCam.fieldOfView = playerCam.fieldOfView;
             return tempShadowCastValue;
         }
-        public (bool canRender, Camera portalCamera) SetCameraRender(Camera playerCam, int index, int startIndex, Vector3[] renderPositions, Quaternion[] renderRotations)
+        public ShadowCastingMode SetPreCamera(Camera playerCam, CustomRenderPipelineCamera pipelineCamera)
+        {
+            // Hide screen so that camera can see through portal
+            if (portalCamType != null && pipelineCamera != null && pipelineCamera.Settings != null && portalCamType.Settings != null)
+            {
+                portalCamType.Settings.copyDepth = pipelineCamera.Settings.copyDepth;
+            }
+            #if UNITY_EDITOR
+            if (playerCam.cameraType == CameraType.SceneView && portalCamType != null)
+            {
+                portalCamType.Settings.copyDepth = true;
+            }
+            #endif
+            var tempShadowCastValue = screen.shadowCastingMode;
+            screen.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            screen.enabled = false;
+            linkedPortal.screen.material.SetInt("displayMask", 0);
+            linkedPortal.screen.material.SetFloat(zWrite, zWriteOff);
+            screen.material.SetFloat(zWrite, zWriteOff);
+            playerCam.fieldOfView = playerCam.fieldOfView;
+            return tempShadowCastValue;
+        }
+        public (bool canRender, Camera portalCamera) SetCameraRender(Camera playerCam, int index, int startIndex, Vector3[] renderPositions, Quaternion[] renderRotations, bool cropped)
         {
             portalCam.transform.SetPositionAndRotation(renderPositions[index], renderRotations[index]);
             SetNearClipPlane(playerCam);
@@ -346,14 +394,22 @@ namespace PortalsUnity
             Rect portalCamRect = new Rect(0, 0f, 0.5f, 0.5f);
             Rect normalRect = new Rect(0f, 0f, 1, 1f);
             //portalCam.ResetProjectionMatrix();
-            var resMeshProj = PortalCameraUtility.ApplyMeshProjection(portalCam, playerCam, portalCam.projectionMatrix, linkedPortal.screenMeshFilter, playerCam.fieldOfView);
-            var meshRect = resMeshProj.rect;
+            Rect meshRect = normalRect;
+            if (cropped)
+            {
+                var resMeshProj = PortalCameraUtility.ApplyMeshProjection(portalCam, playerCam, portalCam.projectionMatrix, linkedPortal.screenMeshFilter, playerCam.fieldOfView);
+                meshRect = resMeshProj.rect;
+                FrustumError |= !resMeshProj.valid;
+            }
+            else
+            {
+                portalCam.rect = normalRect;
+            }
             /*if (Mathf.Max(meshRect.max.x, meshRect.max.y) > 1)
             {
                 Debug.LogError(meshRect);
                 FrustumError = true;
             }*/
-            FrustumError |= !resMeshProj.valid;
 
             //Rect meshViewportRect = PortalCameraUtility.GetMeshViewRect(playerCam, screenMeshFilter);
             //portalCam.rect = meshViewportRect;
@@ -374,7 +430,7 @@ namespace PortalsUnity
                     Debug.Log("Frustrum NaN on Vector #" + j);
                     FrustumError = true;
                 }
-                if (float.IsNaN(frustumCorners[j].y))
+                /*if (float.IsNaN(frustumCorners[j].y))
                 {
                     Debug.Log("Frustrum NaN on Vector #" + j);
                     FrustumError = true;
@@ -383,33 +439,6 @@ namespace PortalsUnity
                 {
                     Debug.Log("Frustrum NaN on Vector #" + j);
                     FrustumError = true;
-                }
-            }
-
-            Rect viewport = meshRect;
-            float viewportXMin = viewport.x;
-            float viewportXMax = viewport.x + viewport.width;
-            float viewportYMin = viewport.y;
-            float viewportYMax = viewport.y + viewport.height;
-            Rect frustumRect = new Rect(viewportXMin, viewportYMin, viewportXMax - viewportXMin, viewportYMax - viewportYMin);
-            portalCam.CalculateFrustumCorners(frustumRect, portalCam.farClipPlane, Camera.MonoOrStereoscopicEye.Mono, frustumCorners);
-
-            foreach (Vector3 corner in frustumCorners)
-            {
-                Vector4 worldPoint = new Vector4(corner.x, corner.y, corner.z, 1.0f);
-                Vector4 projected = portalCam.projectionMatrix * worldPoint;
-
-                if (projected.w == 0)
-                {
-                    Debug.LogError("Invalid projection matrix: division by zero in homogeneous coordinates.");
-                    FrustumError = true;
-                }
-
-                /*Vector3 ndc = new Vector3(projected.x / projected.w, projected.y / projected.w, projected.z / projected.w);
-                if (ndc.x < -1 || ndc.x > 1 || ndc.y < -1 || ndc.y > 1 || ndc.z < 0 || ndc.z > 1)
-                {
-                    Debug.LogError("Projection matrix produces out-of-bounds NDC coordinates.");
-                    FrustumError = true;
                 }*/
             }
             //FrustumError |= PortalCameraUtility.IsMatrixValid();
@@ -417,6 +446,7 @@ namespace PortalsUnity
             if (index == startIndex)
             {
                 linkedPortal.screen.material.SetInt("displayMask", 1);
+                linkedPortal.screen.material.SetFloat(zWrite, zWriteOn);
             }
             //return (true, portalCam);
 
@@ -455,6 +485,9 @@ namespace PortalsUnity
         public void EndRender(ShadowCastingMode tempShadowCastValue)
         {
             linkedPortal.screen.material.SetInt("displayMask", 1);
+            linkedPortal.screen.material.SetFloat(zWrite, zWriteOn);
+            screen.material.SetFloat(zWrite, zWriteOn);
+            //screen.material.SetInt(zWrite, 0);
             screen.shadowCastingMode = tempShadowCastValue;
             screen.enabled = true;
         }
@@ -553,6 +586,28 @@ namespace PortalsUnity
                 viewTexture.autoGenerateMips = false;
                 viewTexture.depth = 0;
                 viewTexture.name = "PortalCam " + gameObject.name + " RenderTexture";
+                // Render the view from the portal camera to the view texture
+                portalCam.targetTexture = viewTexture;
+                // Display the view texture on the screen of the linked portal
+                linkedPortal.screen.material.SetTexture(mainTex, viewTexture);
+            }
+        }
+        void CreateViewTexture(bool useHDR, Camera camera)
+        {
+            if (viewTexture == null || viewTexture.width != Screen.width || viewTexture.height != Screen.height)
+            {
+                if (viewTexture != null)
+                {
+                    viewTexture.Release();
+                }
+                Vector2Int b = CameraRenderer.GetCameraPixelSize(camera);
+                viewTexture = new RenderTexture(b.x, b.y, 32);
+                //UnityEngine.Rendering.RenderQueue.Transparent
+                viewTexture.autoGenerateMips = false;
+                viewTexture.depth = 0;
+                viewTexture.name = "PortalCam " + gameObject.name + " RenderTexture";
+                //viewTexture.format = SystemInfo.GetGraphicsFormat(useHDR ? DefaultFormat.HDR : DefaultFormat.LDR);
+                viewTexture.format = useHDR ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default;
                 // Render the view from the portal camera to the view texture
                 portalCam.targetTexture = viewTexture;
                 // Display the view texture on the screen of the linked portal

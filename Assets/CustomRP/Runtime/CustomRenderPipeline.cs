@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Experimental.Rendering.RenderGraphModule;
+using static UnityEditor.SceneView;
 
 public partial class CustomRenderPipeline : RenderPipeline 
 {
@@ -53,24 +54,49 @@ public partial class CustomRenderPipeline : RenderPipeline
         {
             var camera = cameras[i];
 
+            CustomRenderPipelineCamera crpCamera = null;
+            if (camera.TryGetComponent(out crpCamera))
+            {
+                /*cameraSampler = crpCamera.Sampler;
+                cameraSettings = crpCamera.Settings;*/
+            }
 
             if (portals != null && portals.Length > 1)
             {
                 for (int j = 0; j < portals.Length; j++)
                 {
                     var portal = portals[j];
-                    if (portal.CanRender(camera) && portal.gameObject.activeSelf)
+                    if (portal.CanRender(camera, settings.cameraBuffer) && portal.gameObject.activeSelf)
                     {
                         portal.PrePortalRender(camera);
                         var res = portal.GetPosAndRot(camera);
-                        var preCam = portal.SetPreCamera(camera);
+                        var preCam = portal.SetPreCamera(camera, crpCamera);
                         for (int k = res.startIndex; k < portal.recursionLimit; k++)
                         {
-                            var setupRender = portal.SetCameraRender(camera, k, res.startIndex, res.positions, res.rotations);
+                            (bool canRender, Camera portalCamera) setupRender;
+                            /*if (k == res.startIndex && res.startIndex >= portal.recursionLimit - 1)
+                            {
+                                setupRender = portal.SetCameraRender(camera, k, res.startIndex, res.positions, res.rotations, true);
+                            }
+                            else
+                            {
+                                setupRender = portal.SetCameraRender(camera, k, res.startIndex, res.positions, res.rotations, false);
+                            }*/
+                            Vector3 cameraPos = camera.transform.position;
+                            Vector3 portalPos = portal.linkedPortal.screen.transform.position;
+                            float distance = Vector3.Distance(cameraPos, portalPos);
+                            bool cropRender = distance > 3f;
+                            if (camera.cameraType == CameraType.SceneView)
+                            {
+                                cropRender = true;
+                            }
+                            //Debug.Log(portal.name + " cropRender " + cropRender + " " + distance);
+                            //Debug.Log("camera " + cameraPos + " portal " + portalPos + " Distance " + distance);
+                            setupRender = portal.SetCameraRender(camera, k, res.startIndex, res.positions, res.rotations, cropRender);
                             if (setupRender.canRender)
                             {
                                 //setupRender.portalCamera.ResetProjectionMatrix();
-                                renderer.Render(renderGraph, context, setupRender.portalCamera, settings);
+                                renderer.Render(renderGraph, context, setupRender.portalCamera, portal._CRP, settings);
                             }
                         }
                         portal.EndRender(preCam);
@@ -80,7 +106,7 @@ public partial class CustomRenderPipeline : RenderPipeline
             }
 
 
-            renderer.Render(renderGraph, context, camera, settings);
+            renderer.Render(renderGraph, context, camera, crpCamera, settings);
         }
 
         renderGraph.EndFrame();

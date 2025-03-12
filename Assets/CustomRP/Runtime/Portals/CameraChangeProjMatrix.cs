@@ -18,8 +18,13 @@ public class CameraChangeProjMatrix : MonoBehaviour
         Rect viewRect = new Rect(left, top, right, bottom);
 
         //Matrix4x4 m = PerspectiveOffCenter(left, right, bottom, top, cam.nearClipPlane, cam.farClipPlane);
+        viewRect.width = Mathf.Clamp(viewRect.width, 0.1f, 1);
+        viewRect.height = Mathf.Clamp(viewRect.height, 0.1f, 1);
+        viewRect.x = Mathf.Clamp(viewRect.x, 0, 1 - viewRect.width);
+        viewRect.y = Mathf.Clamp(viewRect.y, 0, 1 - viewRect.height);
         Matrix4x4 m = GetCroppedMatrix(cam.projectionMatrix, viewRect);
         cam.projectionMatrix = m;
+        cam.rect = viewRect;
     }
 
     static Matrix4x4 PerspectiveOffCenter(float left, float right, float bottom, float top, float near, float far)

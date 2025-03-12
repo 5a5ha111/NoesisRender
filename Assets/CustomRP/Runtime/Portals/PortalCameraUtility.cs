@@ -187,6 +187,7 @@ namespace PortalsUnity
             // Compute the mesh's bounding rectangle in normalized viewport coordinates.
             //Rect meshViewportRect = GetScreenRectFromBounds(meshFilter, cam).ToRect();
             Rect meshViewportRect = GetMeshViewRect(origCam, meshFilter);
+            meshViewportRect = ValidateRect(meshViewportRect);
 
             // Calculate the original frustum boundaries at the near clip plane based on originalFOV.
             float near = origCam.nearClipPlane;
@@ -228,6 +229,20 @@ namespace PortalsUnity
 
             // Set the camera's viewport so that the RenderTexture is drawn only to the mesh's area.
             //return meshViewportRect;
+        }
+
+        /// <summary>
+        /// Clamp values to valid range
+        /// </summary>
+        /// <param name="rect"></param>
+        /// <returns></returns>
+        public static Rect ValidateRect(Rect rect)
+        {
+            rect.width = Mathf.Clamp(rect.width, 0.1f, 1);
+            rect.height = Mathf.Clamp(rect.height, 0.1f, 1);
+            rect.x = Mathf.Clamp(rect.x, 0, 1 - rect.width);
+            rect.y = Mathf.Clamp(rect.y, 0, 1 - rect.height);
+            return rect;
         }
 
         public static Matrix4x4 GetCroppedMatrix(Matrix4x4 original, Rect viewRect)
