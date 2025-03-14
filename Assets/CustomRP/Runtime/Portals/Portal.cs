@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.PackageManager.Requests;
+using UnityEditor;
 using UnityEngine;
-using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 
 namespace PortalsUnity
@@ -36,6 +35,13 @@ namespace PortalsUnity
 
         private Matrix4x4? lastLoggedMatrix = null;
 
+        private bool NotCroppedFlag = false;
+
+        public bool _SetNotCroppedFlag { set { NotCroppedFlag = value; } }
+
+
+
+        static Rect normalRect = new Rect(0f, 0f, 1, 1f);
 
         private const string viewTex = "";
         private const string shadowTex = "_ShadowTex";
@@ -98,6 +104,12 @@ namespace PortalsUnity
             linkedPortal.UptEvr();*/
 
             screen.material.SetFloat(zWrite, zWriteOn);
+        }
+
+        public void ResetFlags()
+        {
+            NotCroppedFlag = false;
+            portalCam.rect = normalRect;
         }
 
         void HandleTravellers()
@@ -280,7 +292,7 @@ namespace PortalsUnity
         /// <returns></returns>
         public bool CanRender(Camera playerCam, CameraBufferSettings cameraBufferSettings)
         {
-            if (linkedPortal == null || screen == null || portalCam == null || playerCam == null)
+            if (!IsValid() || portalCam == null)
             {
                 return false;
             }
@@ -289,12 +301,45 @@ namespace PortalsUnity
             {
                 return false;
             }
-            if (portalCamType != null)
-            {
-                
-            }
             CreateViewTexture(cameraBufferSettings.allowHDR && playerCam.allowHDR, playerCam);
             return true;
+        }
+        public bool IsValid()
+        {
+            if (linkedPortal == null || screen == null || portalCam == null || screenMeshFilter == null || linkedPortal.screenMeshFilter == null)
+            {
+                if (linkedPortal.screenMeshFilter == null)
+                {
+                    Debug.LogError(linkedPortal.gameObject.name + " " + " linkedPortal.screenMeshFilter == null");
+                }
+                if (screenMeshFilter == null)
+                {
+                    Debug.LogError(gameObject.name + " " + " screenMeshFilter == null");
+                }
+                return false;
+            }
+            return true;
+        }
+        public bool CallVisible(Camera camera)
+        {
+            linkedPortal.GetPosAndRot(portalCam);
+            bool secondPortalRendered1 = PortalCameraUtility.VisibleFromCamera(screen, linkedPortal._camera);
+            bool secondPortalRendered2 = PortalCameraUtility.VisibleFromCamera(linkedPortal.screen, _camera);
+
+            /*linkedPortal.GetPosAndRot(portalCam);
+            secondPortalRendered1 |= PortalCameraUtility.VisibleFromCamera(screen, linkedPortal._camera);
+            secondPortalRendered2 |= PortalCameraUtility.VisibleFromCamera(linkedPortal.screen, _camera);*/
+
+            /*linkedPortal.GetPosAndRot(camera);
+            secondPortalRendered1 |= PortalCameraUtility.VisibleFromCamera(screen, linkedPortal._camera);
+            secondPortalRendered2 |= PortalCameraUtility.VisibleFromCamera(linkedPortal.screen, _camera);*/
+
+
+            bool final = secondPortalRendered1 || secondPortalRendered2;
+
+            GetPosAndRot(camera);
+
+            return final;
         }
         public (Vector3[] positions, Quaternion[] rotations, int startIndex, int loopSize, bool recusrion) GetPosAndRot(Camera playerCam)
         {
@@ -391,11 +436,9 @@ namespace PortalsUnity
             Vector3[] frustumCorners = new Vector3[4];
             bool FrustumError = false;
 
-            Rect portalCamRect = new Rect(0, 0f, 0.5f, 0.5f);
-            Rect normalRect = new Rect(0f, 0f, 1, 1f);
             //portalCam.ResetProjectionMatrix();
             Rect meshRect = normalRect;
-            if (cropped)
+            if (cropped && !NotCroppedFlag)
             {
                 var resMeshProj = PortalCameraUtility.ApplyMeshProjection(portalCam, playerCam, portalCam.projectionMatrix, linkedPortal.screenMeshFilter, playerCam.fieldOfView);
                 meshRect = resMeshProj.rect;
@@ -806,7 +849,7 @@ namespace PortalsUnity
 
         void OnValidate()
         {
-            if (linkedPortal != null)
+            if (linkedPortal != null && enabled)
             {
                 linkedPortal.linkedPortal = this;
             }

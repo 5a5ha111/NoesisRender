@@ -109,8 +109,11 @@ public partial class CameraRenderer
 
 #else
 
-	const string SampleName = bufferName;
+	//const string SampleName = bufferName;
 
+    public partial void DrawUnsupportedShaders()
+    {
 
+    }
 #endif
 }

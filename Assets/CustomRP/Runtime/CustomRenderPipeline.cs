@@ -2,7 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Experimental.Rendering.RenderGraphModule;
-using static UnityEditor.SceneView;
+using PortalsUnity;
+using UnityEditor;
 
 public partial class CustomRenderPipeline : RenderPipeline 
 {
@@ -22,6 +23,9 @@ public partial class CustomRenderPipeline : RenderPipeline
 
     CameraRenderer renderer;
     PortalsUnity.Portal[] portals;
+
+    // To do: make a setting
+    private const float minDistanceToFullRender = 3f;
 
     public CustomRenderPipeline(CustomRenderPipelineSettings settings)
     {
@@ -49,6 +53,14 @@ public partial class CustomRenderPipeline : RenderPipeline
                 portals = inst.RequestPortals();
             }
         }
+        else
+        {
+            for (var i = 0; i < portals.Length; i++)
+            {
+                var portal = portals[i];
+                portal.ResetFlags();
+            }
+        }
 
         for (int i = 0; i < cameras.Count; i++)
         {
@@ -66,7 +78,7 @@ public partial class CustomRenderPipeline : RenderPipeline
                 for (int j = 0; j < portals.Length; j++)
                 {
                     var portal = portals[j];
-                    if (portal.CanRender(camera, settings.cameraBuffer) && portal.gameObject.activeSelf)
+                    if (portal.gameObject.activeSelf && portal.linkedPortal.gameObject.activeSelf && portal.IsValid() && portal.linkedPortal.IsValid() && portal.CanRender(camera, settings.cameraBuffer))
                     {
                         portal.PrePortalRender(camera);
                         var res = portal.GetPosAndRot(camera);
@@ -84,12 +96,32 @@ public partial class CustomRenderPipeline : RenderPipeline
                             }*/
                             Vector3 cameraPos = camera.transform.position;
                             Vector3 portalPos = portal.linkedPortal.screen.transform.position;
+                            Vector3 portalPos2 = portal.screen.transform.position;
                             float distance = Vector3.Distance(cameraPos, portalPos);
-                            bool cropRender = distance > 3f;
+                            float distance2 = Vector3.Distance(cameraPos, portalPos2);
+                            distance = Mathf.Min(distance, distance2);
+                            bool cropRender = distance > minDistanceToFullRender;
                             if (camera.cameraType == CameraType.SceneView)
                             {
                                 cropRender = true;
                             }
+                            //bool secondPortalRendered = portal.linkedPortal.CanRender(portal.linkedPortal._camera, settings.cameraBuffer);
+                            bool secondPortalRendered = true;
+                            /*secondPortalRendered |= portal.CanRender(portal._camera, settings.cameraBuffer);
+                            secondPortalRendered |= portal.CanRender(portal.linkedPortal._camera, settings.cameraBuffer);*/
+
+                            /*bool secondPortalRendered1 = PortalCameraUtility.VisibleFromCamera(portal.screen, portal.linkedPortal._camera);
+                            bool secondPortalRendered2 = PortalCameraUtility.VisibleFromCamera(portal.linkedPortal.screen, portal._camera);
+                            Debug.Log(portal.gameObject.name + " secondPortalRendered1 " + secondPortalRendered1 + " secondPortalRendered2 " + secondPortalRendered2 + " final " + (secondPortalRendered2 || secondPortalRendered1));*/
+                            bool visible = portal.CallVisible(camera) || portal.linkedPortal.CallVisible(camera);
+                            visible = res.recusrion;
+                            secondPortalRendered = visible;
+                            if (secondPortalRendered || !cropRender)
+                            {
+                                portal.linkedPortal._SetNotCroppedFlag = true;
+                                portal._SetNotCroppedFlag = true;
+                            }
+                            //cropRender &= !secondPortalRendered;
                             //Debug.Log(portal.name + " cropRender " + cropRender + " " + distance);
                             //Debug.Log("camera " + cameraPos + " portal " + portalPos + " Distance " + distance);
                             setupRender = portal.SetCameraRender(camera, k, res.startIndex, res.positions, res.rotations, cropRender);

@@ -149,7 +149,8 @@ public class ColorLUTPass
         var desc = new TextureDesc(lutWidth, lutHeight)
         {
             colorFormat = colorFormat,
-            name = "Color LUT"
+            name = "Color LUT",
+            depthBufferBits = 0
         };
         pass.colorLUT = builder.WriteTexture(renderGraph.CreateTexture(desc));
         builder.SetRenderFunc<ColorLUTPass>(static (pass, context) => pass.Render(context));

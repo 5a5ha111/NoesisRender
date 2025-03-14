@@ -135,7 +135,8 @@ public class BloomPass
             (
                 stack.BufferSettings.allowHDR ? DefaultFormat.HDR : DefaultFormat.LDR
             ),
-            name = "Bloom Prefilter"
+            name = "Bloom Prefilter",
+            depthBufferBits = 0
         };
         TextureHandle[] pyramid = pass.pyramid;
         pyramid[0] = builder.CreateTransientTexture(desc);
@@ -151,9 +152,9 @@ public class BloomPass
             }
             desc.width = size.x;
             desc.height = size.y;
-            desc.name = "Bloom Pyramid H";
+            desc.name = "Bloom Pyramid H " + i;
             pyramid[pyramidIndex] = builder.CreateTransientTexture(desc);
-            desc.name = "Bloom Pyramid V";
+            desc.name = "Bloom Pyramid V " + i;
             pyramid[pyramidIndex + 1] = builder.CreateTransientTexture(desc);
             size /= 2;
         }

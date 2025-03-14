@@ -20,16 +20,36 @@ public class CustomRenderPipelineSettings
         useSRPBatcher = true,
         useLightsPerObject = true;
 
+    [Space]
+    [Space]
+    [Space]
     public ShadowSettings shadows;
+
+
+    [Space]
+    [Space]
     public PostFXSettings postFXSettings;
 
     public enum ColorLUTResolution
     { _16 = 16, _32 = 32, _64 = 64 }
     public ColorLUTResolution colorLUTResolution = ColorLUTResolution._32;
 
+    [Space]
+    [Space]
+    [Space]
     public ForwardPlusSettings forwardPlus;
 
-    public Shader cameraRendererShader, cameraDebuggerShader, cameraMotionShader, depthOnlyShader, motionVectorDebug;
+    [Space]
+    [Space]
+    [Space]
+    public DeferredSettings deferredSettings;
+
+
+    [Space]
+    [Space]
+    [Space]
+    public Shader cameraRendererShader;
+    public Shader cameraDebuggerShader, cameraMotionShader, depthOnlyShader, motionVectorDebug;
 }
 
 
@@ -47,4 +67,11 @@ public struct ForwardPlusSettings
     [Range(0, 256)]
     [Tooltip("Maximum allowed lights per tile, 0 means default, which is 31.")]
     public int maxLightsPerTile;
+}
+
+[System.Serializable]
+public struct DeferredSettings
+{
+    [Tooltip("If enabled, override ForwardPlus and (deprecated)Lights Per Object")]
+    public bool enabled; // true
 }

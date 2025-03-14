@@ -91,8 +91,8 @@ float4 UnlitPassFragment(Varyings input) : SV_TARGET
 	#if defined(_SOFT_PARTICLES)
 		config.softParticles = true;
 	#endif
-	//return float4(config.fragment.depth.xxx / 20.0, 1.0); //Debug depth
-	//return float4(config.fragment.bufferDepth.xxx / 40.0, 1.0); //Debug frame buffer depth
+	//return float4(config.fragment.depth.xxx / 40.0, 1.0); //Debug depth
+	//return float4(config.fragment.bufferDepth.xxx / 200.0, 1.0); //Debug frame buffer depth
 	//return float4(GetMotion(config.fragment).rgb / 40.0, 1.0); //Debug frame buffer motion
 	//return GetBufferColor(config.fragment, 0.05); Debug color buffer
 	UNITY_SETUP_INSTANCE_ID(input);

@@ -54,6 +54,16 @@ namespace PortalsUnity
             MinMax3D minMax = new MinMax3D(float.MaxValue, float.MinValue);
 
             Vector3[] screenBoundsExtents = new Vector3[8];
+            if (renderer == null)
+            {
+                Debug.LogError("renderer == null");
+                return new MinMax3D();
+            }
+            if (renderer.sharedMesh == null)
+            {
+                Debug.LogError("renderer.sharedMesh == null");
+                return new MinMax3D();
+            }
             var localBounds = renderer.sharedMesh.bounds;
             bool anyPointIsInFrontOfCamera = false;
 
@@ -187,7 +197,7 @@ namespace PortalsUnity
             // Compute the mesh's bounding rectangle in normalized viewport coordinates.
             //Rect meshViewportRect = GetScreenRectFromBounds(meshFilter, cam).ToRect();
             Rect meshViewportRect = GetMeshViewRect(origCam, meshFilter);
-            meshViewportRect = ValidateRect(meshViewportRect);
+            meshViewportRect = ValidateRect(meshViewportRect, origCam);
 
             // Calculate the original frustum boundaries at the near clip plane based on originalFOV.
             float near = origCam.nearClipPlane;
@@ -209,7 +219,8 @@ namespace PortalsUnity
             float newTop = Mathf.Lerp(bottom, top, meshViewportRect.yMax);
 
             // Build an off-center projection matrix using these new boundaries.
-            Matrix4x4 newProj = PerspectiveOffCenter(newLeft, newRight, newBottom, newTop, near, far);
+            //Matrix4x4 newProj = PerspectiveOffCenter(newLeft, newRight, newBottom, newTop, near, far);
+            Matrix4x4 newProj = GetCroppedMatrix(origCam.projectionMatrix, meshViewportRect);
             //Matrix4x4 crop = GetCroppedMatrix(origProj, meshViewportRect);
             newProj.m20 = origProj.m20;
             newProj.m21 = origProj.m21;
@@ -240,6 +251,21 @@ namespace PortalsUnity
         {
             rect.width = Mathf.Clamp(rect.width, 0.1f, 1);
             rect.height = Mathf.Clamp(rect.height, 0.1f, 1);
+            float maxDim = Mathf.Max(rect.width, rect.height);
+            rect.width = maxDim;
+            rect.height = maxDim;
+            rect.x = Mathf.Clamp(rect.x, 0, 1 - rect.width);
+            rect.y = Mathf.Clamp(rect.y, 0, 1 - rect.height);
+            return rect;
+        }
+        public static Rect ValidateRect(Rect rect, Camera camera)
+        {
+            // To avoid renderTexture errors pixel size of camera should be at least 250px
+            float minWidth = 250f / (float)camera.pixelWidth;
+            float minHeight = 250f / (float)camera.pixelHeight;
+            rect.width = Mathf.Clamp(rect.width, minWidth, 1f);
+            rect.height = Mathf.Clamp(rect.height, minHeight, 1f);
+            float maxDim = Mathf.Max(rect.width, rect.height);
             rect.x = Mathf.Clamp(rect.x, 0, 1 - rect.width);
             rect.y = Mathf.Clamp(rect.y, 0, 1 - rect.height);
             return rect;
@@ -247,22 +273,33 @@ namespace PortalsUnity
 
         public static Matrix4x4 GetCroppedMatrix(Matrix4x4 original, Rect viewRect)
         {
-            // Extract original projection matrix properties
-            float near = original.m22 / (original.m32 + 1f);  // Near plane distance
-            float far = original.m22 / (original.m32 - 1f);   // Far plane distance
-            float top = near / original.m11;                  // Top extent in view space
-            float bottom = -top;                              // Bottom extent in view space
-            float right = top * (1f / original.m00);          // Right extent based on aspect ratio
-            float left = -right;                              // Left extent
+            // Convert the viewRect boundaries to normalized device coordinates (NDC: -1 to 1).
+            float left = viewRect.x * 2f - 1f;
+            float right = (viewRect.x + viewRect.width) * 2f - 1f;
+            float bottom = viewRect.y * 2f - 1f;
+            float top = (viewRect.y + viewRect.height) * 2f - 1f;
 
-            // Compute new extents for the cropped view
-            float newLeft = Mathf.Lerp(left, right, viewRect.xMin);
-            float newRight = Mathf.Lerp(left, right, viewRect.xMax);
-            float newBottom = Mathf.Lerp(bottom, top, viewRect.yMin);
-            float newTop = Mathf.Lerp(bottom, top, viewRect.yMax);
+            // Compute scale factors and offsets for remapping the sub-rectangle to [-1, 1]
+            // For x:
+            //   We want a linear transform: newX = A * oldX + B
+            //   such that when oldX = left, newX = -1, and when oldX = right, newX = 1.
+            //   Solving gives A = 2 / (right - left) and B = - (right + left) / (right - left).
+            float scaleX = 2f / (right - left); // This is equivalent to 1/viewRect.width.
+            float offsetX = -(right + left) / (right - left);
+            // Similarly for y:
+            float scaleY = 2f / (top - bottom);   // This is equivalent to 1/viewRect.height.
+            float offsetY = -(top + bottom) / (top - bottom);
 
-            // Construct the new off-axis projection matrix
-            return Matrix4x4.Frustum(newLeft, newRight, newBottom, newTop, near, far);
+            // Create a crop matrix that will scale and translate the x and y coordinates.
+            Matrix4x4 crop = Matrix4x4.identity;
+            crop.m00 = scaleX;
+            crop.m03 = offsetX;
+            crop.m11 = scaleY;
+            crop.m13 = offsetY;
+
+            // The new projection matrix is the crop matrix multiplied by the original.
+            // Note: Multiplication order matters. Here, the crop transform is applied after the original projection.
+            return crop * original;
         }
 
         public static bool IsMatrixValid(Matrix4x4 matrix)

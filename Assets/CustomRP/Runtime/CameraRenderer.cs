@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.NVIDIA;
 using UnityEngine.Rendering;
-using static UnityEditor.SceneView;
 
 public partial class CameraRenderer
 {
@@ -351,7 +350,14 @@ public partial class CameraRenderer
 
 
         context.ExecuteCommandBuffer(renderGraphParameters.commandBuffer);
-        context.Submit();
+        try
+        {
+            context.Submit();
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+        }
         CommandBufferPool.Release(renderGraphParameters.commandBuffer);
     }
 
