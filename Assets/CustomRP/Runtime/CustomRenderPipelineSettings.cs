@@ -74,4 +74,7 @@ public struct DeferredSettings
 {
     [Tooltip("If enabled, override ForwardPlus and (deprecated)Lights Per Object")]
     public bool enabled; // true
+
+    [Tooltip("Assign Hidden/Custom RP/Deferred Calculate shader")]
+    public Shader deferredShader;
 }

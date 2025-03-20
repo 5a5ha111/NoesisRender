@@ -13,7 +13,7 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _RECEIVE_SHADOWS
-  - _SHADOWS_RIEMERESMA_DITHER
+  - _SHADOWS_DITHER
   m_InvalidKeywords:
   - _SHADOWS_RIEMERESMADITHER
   m_LightmapFlags: 1
@@ -86,7 +86,7 @@ Material:
     m_Floats:
     - _BumpScale: 1
     - _Clipping: 0
-    - _Cutoff: 0.6
+    - _Cutoff: 0
     - _DetailAlbedo: 1
     - _DetailMapToggle: 0
     - _DetailNormalMapScale: 1
@@ -109,7 +109,7 @@ Material:
     - _ReceiveShadows: 1
     - _ReflectionCubemap: 0
     - _ShadowDither: 0.5
-    - _Shadows: 3
+    - _Shadows: 2
     - _Smoothness: 0
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
@@ -117,7 +117,7 @@ Material:
     - _UVSec: 0
     - _ZWrite: 0
     m_Colors:
-    - _BaseColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.7019608}
-    - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 0.7019608}
+    - _BaseColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.5882353}
+    - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 0.5882353}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []

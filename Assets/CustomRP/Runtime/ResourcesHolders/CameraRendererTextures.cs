@@ -7,6 +7,8 @@ public readonly ref struct CameraRendererTextures
         colorCopy, depthCopy,
         motionVectorsTexture, motionVectorDepth;
 
+    //public readonly TextureHandle[] gBuffers;
+
     public CameraRendererTextures
     (
         TextureHandle colorAttachment,
@@ -23,5 +25,7 @@ public readonly ref struct CameraRendererTextures
         this.depthCopy = depthCopy;
         this.motionVectorsTexture = motionVectorsTexture;
         this.motionVectorDepth = motionVectorDepth;
+
+        //this.gBuffers = gBuffers;
     }
 }

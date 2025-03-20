@@ -33,6 +33,9 @@ public class PostFXPass
     TextureHandle colorSource, colorGradingResult, scaledResult, motionSource;
     Material motionDebug;
 
+#if UNITY_EDITOR
+    CameraType cameraType;
+#endif
 
 
     void ConfigureFXAA(CommandBuffer buffer)
@@ -64,7 +67,12 @@ public class PostFXPass
         stack.ConfigureSplitToning(buffer);
         stack.ConfigureChannelMixer(buffer);
         stack.ConfigureShadowsMidtonesHighlights(buffer);
+#if UNITY_EDITOR
+        stack.ConfigureDither(buffer, cameraType);
+#else
         stack.ConfigureDither(buffer);
+#endif
+
 
         RenderTargetIdentifier finalSource;
         Pass finalPass;
@@ -165,6 +173,10 @@ public class PostFXPass
                 pass.scaledResult = builder.CreateTransientTexture(desc);
             }
         }
+
+#if UNITY_EDITOR
+        pass.cameraType = stack.camera.cameraType;
+#endif
 
         builder.SetRenderFunc<PostFXPass>(static (pass, context) => pass.Render(context));
     }

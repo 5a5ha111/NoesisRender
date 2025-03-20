@@ -36,7 +36,7 @@ public partial class LightingPass
     static readonly GlobalKeyword lightsPerObjectKeyword =
         GlobalKeyword.Create("_LIGHTS_PER_OBJECT");
 
-    static readonly int
+    public static readonly int
         dirLightCountId = Shader.PropertyToID("_DirectionalLightCount"),
         dirLightDataId = Shader.PropertyToID("_DirectionalLightData");
 

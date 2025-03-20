@@ -28,7 +28,7 @@ MonoBehaviour:
         subpixelBlending: 1
         quality: 2
       dlss:
-        enabled: 1
+        enabled: 0
         useMipBias: 0
         useMotionVectors: 1
         useOptimalSettings: 1
@@ -54,12 +54,15 @@ MonoBehaviour:
         cascadeFade: 0.2
       other:
         atlasSize: 512
-        filter: 1
+        filter: 2
     postFXSettings: {fileID: 11400000, guid: 11740a70adc48e240b302b42654909be, type: 2}
     colorLUTResolution: 32
     forwardPlus:
       tileSize: 64
       maxLightsPerTile: 31
+    deferredSettings:
+      enabled: 1
+      deferredShader: {fileID: 4800000, guid: 76d40f853cf6d434ab46aaf3227d3cf3, type: 3}
     cameraRendererShader: {fileID: 4800000, guid: a8c485989315f784d84be2f1a37388a5, type: 3}
     cameraDebuggerShader: {fileID: 4800000, guid: 0c9248d52e2afbb47b4821ebdfc9cebe, type: 3}
     cameraMotionShader: {fileID: 4800000, guid: bbd6f41c1ff5bb34a8bbfe7f9d4eca72, type: 3}

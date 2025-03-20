@@ -1,42 +1,39 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Experimental.GlobalIllumination;
 using UnityEngine.Experimental.Rendering.RenderGraphModule;
-using UnityEngine.Rendering;
 using UnityEngine.Rendering.RendererUtils;
+using UnityEngine.Rendering;
 using static Unity.Burst.Intrinsics.X86.Avx;
 
-public class VisibleGeometryPass
+public class GBufferPass
 {
-    static readonly ProfilingSampler
-        samplerOpaque = new("Opaque Geometry"),
-        samplerTransparent = new("Transparent Geometry");
+    static readonly ProfilingSampler samplerGbuffer = new("GBuffer Pass");
 
-    static readonly ShaderTagId[] shaderTagIds = 
+    static readonly ShaderTagId[] shaderTagIds =
     {
-        new("SRPDefaultUnlit"),
-        new("CustomLit")
+        new("CustomGBuffer")
     };
 
     RendererListHandle list;
     CameraRenderer renderer;
 
-    bool useDynamicBatching, useGPUInstancing, useLightsPerObject;
-    bool setTarget = false;
+    bool useDynamicBatching, useGPUInstancing;
 
     int renderingLayerMask;
-    TextureHandle colorTex, depthTex;
+    TextureHandle[] gBufferTexs;
+    RenderTargetIdentifier[] gBuffersTarget;
+    TextureHandle depthTex;
 
     void Render(RenderGraphContext context)
     {
-        if (setTarget)
-        {
-            context.cmd.SetRenderTarget
-            (
-                colorTex, RenderBufferLoadAction.Load, RenderBufferStoreAction.Store,
-                depthTex, RenderBufferLoadAction.Load, RenderBufferStoreAction.Store
-            );
-        }
-        
+        context.cmd.SetRenderTarget(gBuffersTarget, depthTex);
+        context.cmd.ClearRenderTarget
+        (
+            clearDepth: true,
+            clearColor: true,
+            backgroundColor: Color.clear
+        );
         context.cmd.DrawRendererList(list);
         context.renderContext.ExecuteCommandBuffer(context.cmd);
         context.cmd.Clear();
@@ -45,16 +42,14 @@ public class VisibleGeometryPass
     public static void Record
     (
         RenderGraph renderGraph, Camera camera, CullingResults cullingResults,
-        bool useLightsPerObject, int renderingLayerMask, bool opaque, bool setTarget,
-        in CameraRendererTextures textures,
-        in LightResources lightData
+        int renderingLayerMask,
+        in CameraRendererTextures textures, in RenderTargetIdentifier[] renderTargets, bool useLightsPerObject
     )
     {
-        ProfilingSampler sampler = opaque ? samplerOpaque : samplerTransparent;
+        ProfilingSampler sampler = samplerGbuffer;
 
         using RenderGraphBuilder builder = renderGraph.AddRenderPass
-            (sampler.name, out VisibleGeometryPass pass, sampler);
-        pass.useLightsPerObject = useLightsPerObject;
+            (sampler.name, out GBufferPass pass, sampler);
         pass.renderingLayerMask = renderingLayerMask;
 
         pass.list = builder.UseRendererList
@@ -63,7 +58,7 @@ public class VisibleGeometryPass
             (
                 new RendererListDesc(shaderTagIds, cullingResults, camera)
                 {
-                    sortingCriteria = opaque ? SortingCriteria.CommonOpaque : SortingCriteria.CommonTransparent,
+                    sortingCriteria = SortingCriteria.CommonOpaque,
                     rendererConfiguration =
                         PerObjectData.ReflectionProbes |
                         PerObjectData.Lightmaps |
@@ -75,47 +70,50 @@ public class VisibleGeometryPass
                         (useLightsPerObject ?
                             PerObjectData.LightData | PerObjectData.LightIndices :
                             PerObjectData.None),
-                    renderQueueRange = opaque ? RenderQueueRange.opaque : RenderQueueRange.transparent,
+                    renderQueueRange = RenderQueueRange.opaque,
                     renderingLayerMask = (uint)renderingLayerMask
                 }
             )
         );
 
 
-        if (lightData.tilesBuffer.IsValid())
+        /*if (lightData.tilesBuffer.IsValid())
         {
             builder.ReadComputeBuffer(lightData.tilesBuffer);
-        }
+        }*/
 
 
         // Readwrite not change renderTarget. Also allow RenderBufferLoadAction.DontCare
         builder.ReadWriteTexture(textures.colorAttachment);
         builder.ReadWriteTexture(textures.depthAttachment);
-        pass.colorTex = textures.colorAttachment;
+        //pass.colorTex = textures.colorAttachment;
         pass.depthTex = textures.depthAttachment;
-        pass.setTarget = opaque;
+        pass.gBuffersTarget = renderTargets;
+        //pass.gdepth = gdepth;
 
-        if (!opaque)
-        {
-            if (textures.colorCopy.IsValid())
-            {
-                builder.ReadTexture(textures.colorCopy);
-            }
-            if (textures.depthCopy.IsValid())
-            {
-                builder.ReadTexture(textures.depthCopy);
-            }
-        }
-
+        
         // Indicate that this resources is needed
-        builder.ReadComputeBuffer(lightData.directionalLightDataBuffer);
+        /*builder.ReadComputeBuffer(lightData.directionalLightDataBuffer);
         builder.ReadComputeBuffer(lightData.otherLightDataBuffer);
         builder.ReadTexture(lightData.shadowResources.directionalAtlas);
         builder.ReadTexture(lightData.shadowResources.otherAtlas);
         builder.ReadComputeBuffer(lightData.shadowResources.directionalShadowCascadesBuffer);
         builder.ReadComputeBuffer(lightData.shadowResources.directionalShadowMatricesBuffer);
-        builder.ReadComputeBuffer(lightData.shadowResources.otherShadowDataBuffer);
+        builder.ReadComputeBuffer(lightData.shadowResources.otherShadowDataBuffer);*/
 
-        builder.SetRenderFunc<VisibleGeometryPass>(static (pass, context) => pass.Render(context));
+
+        // GBuffers
+        /*var gBuffers = textures.gBuffers;
+        pass.gBuffersTarget = new RenderTargetIdentifier[gBuffers.Length];
+        for (int i = 0; i < gBuffers.Length; i++)
+        {
+            var gBufferTex = gBuffers[i];
+            builder.WriteTexture(gBufferTex);
+            pass.gBuffersTarget[i] = gBufferTex;
+        }*/
+
+
+        builder.AllowPassCulling(false);
+        builder.SetRenderFunc<GBufferPass>(static (pass, context) => pass.Render(context));
     }
 }

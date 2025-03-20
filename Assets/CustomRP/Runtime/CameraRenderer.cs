@@ -46,8 +46,8 @@ public partial class CameraRenderer
 
 
     // Cached NVIDIA variabled
-#if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
-    bool? cachedDeviceAviable;
+    #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+        bool? cachedDeviceAviable;
         int cachedDLSSQuality = -1;
         Vector2Int cachedDLSSResolution;
         float cachedDLSSSharpness;
@@ -55,7 +55,15 @@ public partial class CameraRenderer
     #endif
 
 
-    public CameraRenderer(Shader shader, Shader cameraDebuggerShader, Shader cameraMotionShader, Shader depthOnlyShader, Shader motionDebug)
+    // GBuffer textures
+    /*private const int amountOfGBuffers = 2;
+    RenderTexture[] gbuffers = new RenderTexture[amountOfGBuffers];
+    RenderTargetIdentifier[] gbufferID = new RenderTargetIdentifier[amountOfGBuffers];*/
+
+    Material deferredMat;
+
+
+    public CameraRenderer(Shader shader, Shader cameraDebuggerShader, Shader cameraMotionShader, Shader depthOnlyShader, Shader motionDebug, Shader deferredShader)
     {
         material = CoreUtils.CreateEngineMaterial(shader);
         materialMotion = CoreUtils.CreateEngineMaterial(cameraMotionShader);
@@ -70,7 +78,20 @@ public partial class CameraRenderer
         missingTexture.Apply(true, true);
         #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
             cachedDLSSQuality = -1;
-        #endif
+#endif
+
+
+        // GBuffer setup
+        /*int gBufferDepth = (int)DepthBits.None;
+        gbuffers[0] = new RenderTexture(Screen.width, Screen.height, gBufferDepth, RenderTextureFormat.DefaultHDR, RenderTextureReadWrite.Linear);
+        gbuffers[0].name = "GBuffer1 (RGB color A metallic)";
+        gbufferID[0] = gbuffers[0];
+        gbuffers[1] = new RenderTexture(Screen.width, Screen.height, gBufferDepth, RenderTextureFormat.Default, RenderTextureReadWrite.Linear);
+        gbuffers[1].name = "GBuffer2 R smoothness GB normal A occlustion";
+        gbufferID[1] = gbuffers[1];*/
+
+        deferredMat = CoreUtils.CreateEngineMaterial(deferredShader);
+
 
         CameraDebugger.Initialize(cameraDebuggerShader);
     }
@@ -290,18 +311,33 @@ public partial class CameraRenderer
             CameraRendererTextures textures = SetupPass.Record
             (
                 renderGraph, useIntermediateBuffer, 
-                useColorTexture, useDepthTexture, useHDR, bufferSize, camera
+                useColorTexture, useDepthTexture, useHDR, settings.deferredSettings.enabled, bufferSize, camera
             );
 
 
             MotionVectorPass.Record(renderGraph, camera, cameraSettings, textures, cameraBufferSettings, materialMotion, cameraSettings.renderingLayerMask, cullingResults);
 
-            VisibleGeometryPass.Record
-            (
-                renderGraph, camera,
-                cullingResults, useLightsPerObject, cameraSettings.renderingLayerMask, opaque: true, 
-                textures, lightResources
-            );
+
+            
+            if (settings.deferredSettings.enabled)
+            {
+                var gbResources = GBufferResources.GetGBResources(camera, bufferSize);
+                var gbufferID = gbResources._getTargets;
+                var gbufferTexs = gbResources._getTextures;
+                GBufferPass.Record(renderGraph, camera, cullingResults, cameraSettings.renderingLayerMask, textures, gbufferID, useLightsPerObject);
+                DeferredPass.Record(renderGraph, camera, cullingResults, textures, ref gbufferTexs, deferredMat, lightResources, cameraSettings.renderingLayerMask);
+            }
+            else
+            {
+                VisibleGeometryPass.Record
+                (
+                    renderGraph, camera,
+                    cullingResults, useLightsPerObject, cameraSettings.renderingLayerMask, 
+                    opaque: true, setTarget: !cameraSettings.renderMotionVectors,
+                    textures, lightResources
+                );
+            }
+            
             UnsupportedShadersPass.Record(renderGraph, camera, cullingResults);
             if (camera.clearFlags == CameraClearFlags.Skybox)
             {
@@ -318,7 +354,8 @@ public partial class CameraRenderer
             VisibleGeometryPass.Record
             (
                 renderGraph, camera,
-                cullingResults, useLightsPerObject, cameraSettings.renderingLayerMask, opaque: false, 
+                cullingResults, useLightsPerObject, cameraSettings.renderingLayerMask,
+                opaque: false, setTarget: false,
                 textures, lightResources
             );
 
@@ -383,6 +420,13 @@ public partial class CameraRenderer
         CoreUtils.Destroy(motionVectorDebugMaterial);
         CoreUtils.Destroy(materialMotion);
         CoreUtils.Destroy(depthOnlyMaterial);
+
+        /*CoreUtils.Destroy(gbuffers[0]);
+        CoreUtils.Destroy(gbuffers[1]);*/
+        //Debug.Log("================Global dispose==============");
+        GBufferResources._instance.Dispose();
+        CoreUtils.Destroy(deferredMat);
+
         CameraDebugger.Cleanup();
     }
     

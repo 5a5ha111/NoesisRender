@@ -2,6 +2,8 @@
 #define CUSTOM_LIGHTING_INCLUDED
 
 
+#include "ModularLight/Specular.hlsl"
+#include "ModularLight/Diffuse.hlsl"
 
 float3 IncomingLight (Surface surface, Light light) 
 {
@@ -48,6 +50,10 @@ float3 GetLighting (Fragment fragment, Surface surfaceWS, BRDF brdf, GI gi)
 		if (RenderingLayersOverlap(surfaceWS, light)) 
 		{
 			color += GetLighting(surfaceWS, brdf, light);
+			//color = light.attenuation;
+			//color += SpecularBlinn(surfaceWS.viewDirection, -light.direction, surfaceWS.normal, surfaceWS.smoothness) * light.color;
+			//color *= DiffuseLambert(surfaceWS.normal, -light.direction);
+			//color += light.attenuation;
 		}
 	}
 	
@@ -70,6 +76,7 @@ float3 GetLighting (Fragment fragment, Surface surfaceWS, BRDF brdf, GI gi)
 			if (RenderingLayersOverlap(surfaceWS, light)) 
 			{
 				color += GetLighting(surfaceWS, brdf, light);
+				//color += light.attenuation;
 			}
 		}
 	#endif
@@ -77,6 +84,41 @@ float3 GetLighting (Fragment fragment, Surface surfaceWS, BRDF brdf, GI gi)
 	return color;
 }
 
+float3 GetAllLighting (Fragment fragment, Surface surfaceWS, BRDF brdf, GI gi) 
+{
+	ShadowData shadowData = GetShadowData(surfaceWS);
+	shadowData.shadowMask = gi.shadowMask;
+	
+	float3 color = IndirectBRDF(surfaceWS, brdf, gi.diffuse, gi.specular);
+	for (int i = 0; i < GetDirectionalLightCount(); i++) 
+	{
+		Light light = GetDirectionalLight(i, surfaceWS, shadowData);
+		color += GetLighting(surfaceWS, brdf, light);
+		//color += SpecularBlinn(surfaceWS.viewDirection, light.direction, surfaceWS.normal, surfaceWS.smoothness) * light.color;
+		//color *= DiffuseLambert(surfaceWS.normal, -light.direction);
+		//color = 0.5;
+		//color = light.attenuation;
+	}
+	
+	#if defined(_LIGHTS_PER_OBJECT)
+		for (int j = 0; j < min(unity_LightData.y, 8); j++) 
+		{
+			int lightIndex = unity_LightIndices[(uint)j / 4][(uint)j % 4];
+			Light light = GetOtherLight(lightIndex, surfaceWS, shadowData);
+			color += GetLighting(surfaceWS, brdf, light);
+		}
+	#else
+		ForwardPlusTile tile = GetForwardPlusTile(fragment.screenUV);
+		int lastLightIndex = tile.GetLastLightIndexInTile();
+		for (int j = tile.GetFirstLightIndexInTile(); j <= lastLightIndex; j++) 
+		{
+			Light light = GetOtherLight(tile.GetLightIndex(j), surfaceWS, shadowData);
+			color += GetLighting(surfaceWS, brdf, light);
+		}
+	#endif
+	//return gi.shadowMask.shadows.rgb; //Debug GI
+	return color;
+}
 
 
 #endif

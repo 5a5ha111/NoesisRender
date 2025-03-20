@@ -121,17 +121,19 @@ float4 LitPassFragment(Varyings input) : SV_TARGET
 
 	Surface surface = (Surface)0;
 	surface.position = input.positionWS;
+	//surface.position = float3(0,0,0);
 	#if defined(_NORMAL_MAP)
 		surface.normal = NormalTangentToWorld(
 			GetNormalTS(config),
 			input.normalWS, input.tangentWS
 		);
-		surface.interpolatedNormal = input.normalWS;
+		//surface.interpolatedNormal = input.normalWS;
 	#else
 		surface.normal = normalize(input.normalWS);
 		surface.interpolatedNormal = surface.normal;
 	#endif
-	surface.interpolatedNormal = input.normalWS;
+	surface.interpolatedNormal = surface.normal;
+	//surface.normal = surface.interpolatedNormal;
 	surface.viewDirection = normalize(_WorldSpaceCameraPos - input.positionWS);
 	surface.depth = -TransformWorldToView(input.positionWS).z;
 	surface.color = base.rgb;
@@ -152,8 +154,105 @@ float4 LitPassFragment(Varyings input) : SV_TARGET
 
 	GI gi = GetGI(GI_FRAGMENT_DATA(input), surface, brdf);
 	float3 color = GetLighting(config.fragment, surface, brdf, gi);
-	color += GetEmission(config);
+	//color += GetEmission(config);
+
+	float3 normals = TransformWorldToView(surface.interpolatedNormal);
+
 	return float4(color, GetFinalAlpha(surface.alpha));
+	//return float4(surface.metallic,0,0, GetFinalAlpha(surface.alpha));
 	//return float4(gi.diffuse, 1);
 }
+
+
+// gBuffer0 RGB color, A metallic
+// gBuffer1 R smoothness, GB normals, A occlusion
+void GBufferFragment(Varyings input, out float4 gBuffer0 : SV_Target0, out float4 gBuffer1 : SV_Target1, out float4 gBuffer2 : SV_Target2)
+{
+	InputConfig config = GetInputConfig(input.positionCS_SS, input.baseUV, 0);
+	#if defined(_MASK_MAP)
+		config.useMask = true;
+	#endif
+	#if defined(_DETAIL_MAP)
+		config.detailUV = input.detailUV;
+		config.useDetail = true;
+	#endif
+
+	float4 base = GetBase(config);
+	float metallic = GetMetallic(config);
+	float4 packedGB0 = float4(base.rgb, metallic);
+
+
+	
+
+	#if defined(_CLIPPING)
+		clip(base.a - GetCutoff(config));
+	#endif
+
+	#if defined(LOD_FADE_CROSSFADE)
+		//ClipLOD(input.positionCS.xy, unity_LODFade.x);
+		ClipLOD(config.fragment, unity_LODFade.x);
+	#endif
+
+	Surface surface = (Surface)0;
+	surface.position = input.positionWS;
+	//surface.position = float3(0,0,0);
+	#if defined(_NORMAL_MAP)
+		surface.normal = NormalTangentToWorld(
+			GetNormalTS(config),
+			input.normalWS, input.tangentWS
+		);
+		//surface.interpolatedNormal = input.normalWS;
+	#else
+		surface.normal = normalize(input.normalWS);
+		surface.interpolatedNormal = surface.normal;
+	#endif
+	surface.interpolatedNormal = input.normalWS;
+	surface.viewDirection = normalize(_WorldSpaceCameraPos - input.positionWS);
+	surface.depth = -TransformWorldToView(input.positionWS).z;
+	surface.color = base.rgb + GetEmission(config);
+	surface.alpha = base.a;
+	surface.metallic = GetMetallic(config);
+	surface.occlusion = GetOcclusion(config);
+	surface.smoothness = GetSmoothness(config);
+	surface.fresnelStrength = GetFresnel(config);
+	// InterleavedGradientNoise is the easiest function from the Core RP Library, which generates a rotated tiled dither pattern given a screen-space XY position. It also requires a second argument which is used to animate it, which we don't need.
+	surface.dither = InterleavedGradientNoise(config.fragment.positionSS.xy, 0);
+	surface.renderingLayerMask = asuint(unity_RenderingLayer.x);
+
+
+	float smoothness = GetSmoothness(config);
+	float3 normal;
+	#if defined(_NORMAL_MAP)
+		normal = NormalTangentToWorld(GetNormalTS(config), input.normalWS, input.tangentWS);
+	#else
+		normal = normalize(input.normalWS);
+	#endif
+	//normal = normalize(input.normalWS);
+	float occlusion = GetOcclusion(config);
+	float4 packedGB1 = float4(smoothness, normal);
+
+
+	float2 posView = TransformWorldToView(input.positionWS.xyz).xy;
+	float fresnel = GetFresnel(config);
+	float renderingLayerMask = unity_RenderingLayer.x;
+	//float4 packedGB2 = float4(posView, fresnel, renderingLayerMask);
+	#if defined(_PREMULTIPLY_ALPHA)
+		BRDF brdf = GetBRDF(surface, true);
+	#else
+		BRDF brdf = GetBRDF(surface);
+	#endif
+	GI gi = GetGI(GI_FRAGMENT_DATA(input), surface, brdf);
+	ShadowData shadowData = GetShadowData(surface);
+	shadowData.shadowMask = gi.shadowMask;
+	float2 lightmapUV = GI_FRAGMENT_DATA(input);
+	float4 packedGB2 = float4(input.positionWS, occlusion);
+	//packedGB2.rgb = lightColor;
+
+
+	gBuffer0 = packedGB0;
+	gBuffer1 = packedGB1;
+	gBuffer2 = packedGB2;
+}
+
+
 #endif

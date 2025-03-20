@@ -141,6 +141,48 @@ Shader "Custom RP/Lit"
 			#include "MetaPass.hlsl"
 			ENDHLSL
 		}
+
+
+		Pass 
+		{
+			Tags 
+			{
+				"LightMode" = "CustomGBuffer"
+			}
+
+			Name "GBuffer pass"
+
+			//Cull Off
+
+			HLSLPROGRAM
+			#pragma target 4.5
+
+			#pragma multi_compile_instancing
+
+			#pragma shader_feature _CLIPPING
+			#pragma shader_feature _RECEIVE_SHADOWS
+			#pragma multi_compile _ _DIRECTIONAL_PCF3 _DIRECTIONAL_PCF5 _DIRECTIONAL_PCF7
+			#pragma multi_compile _ _CASCADE_BLEND_SOFT _CASCADE_BLEND_DITHER
+			#pragma shader_feature _PREMULTIPLY_ALPHA
+			#pragma shader_feature _REFLECTION_CUBEMAP
+			#pragma multi_compile _ LIGHTMAP_ON
+			#pragma multi_compile _ _SHADOW_MASK_ALWAYS _SHADOW_MASK_DISTANCE
+			#pragma multi_compile _ LOD_FADE_CROSSFADE
+			#pragma multi_compile _ _LIGHTS_PER_OBJECT
+
+			// Other light shadows
+			#pragma multi_compile _ _OTHER_PCF3 _OTHER_PCF5 _OTHER_PCF7
+
+
+			#pragma shader_feature _MASK_MAP
+			#pragma shader_feature _DETAIL_MAP
+			#pragma shader_feature _NORMAL_MAP
+
+			#pragma vertex LitPassVertex
+			#pragma fragment GBufferFragment
+			#include "LitPass.hlsl"
+			ENDHLSL
+		}
 	}
 
 

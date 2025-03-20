@@ -642,6 +642,31 @@ public partial class PostFXStack
             }
         }
     }
+#if UNITY_EDITOR
+    public void ConfigureDither(CommandBuffer buffer, CameraType cameraType)
+    {
+        if (settings.Material != null)
+        {
+            var mat = settings.Material;
+            if (settings.dither.mode == 0 || (cameraType == CameraType.SceneView && !settings.dither.useInScene))
+            {
+                mat.DisableKeyword(ditherKeyword);
+            }
+            else
+            {
+                mat.EnableKeyword(ditherKeyword);
+                if (settings.dither.mode == Dither.Mode.HighQuality)
+                {
+                    mat.EnableKeyword(ditherHQKeyword);
+                }
+                else
+                {
+                    mat.DisableKeyword(ditherHQKeyword);
+                }
+            }
+        }
+    }
+#endif
 
     void ConfigureFXAA()
     {

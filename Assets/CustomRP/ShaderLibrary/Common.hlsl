@@ -82,6 +82,42 @@ float3 NormalTangentToWorld (float3 normalTS, float3 normalWS, float4 tangentWS)
 	return TransformTangentToWorld(normalTS, tangentToWorld);
 }
 
+float3 TrasformViewToWorld(float3 view)
+{
+	float3 _Transform_Out = mul(UNITY_MATRIX_I_V, float4(view, 1)).xyz;
+	return _Transform_Out;
+}
+float3 NormalReconstructZ(float2 In)
+{
+	float reconstructZ = sqrt(1.0 - saturate(dot(In.xy, In.xy)));
+    float3 normalVector = float3(In.x, In.y, reconstructZ);
+    float3 Out = normalize(normalVector);
+    return Out;
+}
+float3 ReconstructViewPos(float2 positionViewXY, float rawDepth, float4x4 projMatrix)
+{
+    // Extract near and far plane values from the projection matrix
+    float near = projMatrix[3][2] / (projMatrix[2][2] - 1.0);
+    float far  = projMatrix[3][2] / (projMatrix[2][2] + 1.0);
+
+    // Convert raw depth (0 to 1) back to view-space Z
+    float viewZ = near * far / (far + rawDepth * (near - far));
+
+    // Full view-space position
+    return float3(positionViewXY * viewZ, viewZ);
+}
+
+float FresnelEffect(float3 Normal, float3 ViewDir, float Power)
+{
+    return pow((1.0 - saturate(dot(normalize(Normal), normalize(ViewDir)))), Power);
+}
+
+
+// Remap smooth from linear to exponential
+float AdjustSmoothness(float smoothnessLinear)
+{
+	return exp2((smoothnessLinear * 10) + 1);
+}
 
 
 

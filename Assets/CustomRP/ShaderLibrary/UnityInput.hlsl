@@ -31,10 +31,11 @@ CBUFFER_START(UnityPerDraw)
 	float4 unity_ProbeVolumeSizeInv;
 	float4 unity_ProbeVolumeMin;
 
-	float4 unity_RenderingLayer;
+	float4 unity_RenderingLayer; // X asuint rendering layer
 CBUFFER_END
 
 float4x4 unity_MatrixVP;
+float4x4 UNITY_MATRIX_P;
 float4x4 unity_MatrixV;
 float4x4 UNITY_MATRIX_I_V;
 float4x4 unity_MatrixInvV;

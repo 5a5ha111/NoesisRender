@@ -140,9 +140,14 @@ float3 SampleEnvironment (Surface surfaceWS, BRDF brdf)
 	);
 	#else
 	{
-		environment = 0.02;
+		//environment = 0.02;
+		environment = SAMPLE_TEXTURECUBE_LOD(
+			unity_SpecCube0, samplerunity_SpecCube0, uvw, mip
+		);
+		//environment = 0.02;
 	}
 	#endif
+	//environment = 0.02;
 	/*float4 environment = SAMPLE_TEXTURECUBE_LOD(
 		unity_SpecCube0, samplerunity_SpecCube0, uvw, 0.0
 	);*/

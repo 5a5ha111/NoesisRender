@@ -34,7 +34,7 @@ public partial class CustomRenderPipeline : RenderPipeline
             settings.useSRPBatcher;
         GraphicsSettings.lightsUseLinearIntensity = true;
         InitializeForEditor();
-        renderer = new(settings.cameraRendererShader, settings.cameraDebuggerShader, settings.cameraMotionShader, settings.depthOnlyShader, settings.motionVectorDebug);
+        renderer = new(settings.cameraRendererShader, settings.cameraDebuggerShader, settings.cameraMotionShader, settings.depthOnlyShader, settings.motionVectorDebug, settings.deferredSettings.deferredShader);
     }
 
 
