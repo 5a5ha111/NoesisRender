@@ -2,7 +2,6 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.Rendering;
-using static UnityEditor.ObjectChangeEventStream;
 
 /// <summary>
 /// Setup pass invokes Setup, which creates intermediate buffers if needed and clears the render target.

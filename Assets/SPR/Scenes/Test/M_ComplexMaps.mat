@@ -109,6 +109,7 @@ Material:
     - _Parallax: 0.02
     - _PremulAlpha: 0
     - _ReceiveShadows: 1
+    - _ReflectionCubemap: 0
     - _ShadowDither: 0
     - _Shadows: 0
     - _Smoothness: 0.5
@@ -120,5 +121,5 @@ Material:
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
+    - _EmissionColor: {r: 2, g: 2, b: 2, a: 1}
   m_BuildTextureStacks: []

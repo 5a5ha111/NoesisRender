@@ -325,7 +325,7 @@ public partial class CameraRenderer
                 var gbufferID = gbResources._getTargets;
                 var gbufferTexs = gbResources._getTextures;
                 GBufferPass.Record(renderGraph, camera, cullingResults, cameraSettings.renderingLayerMask, textures, gbufferID, useLightsPerObject);
-                DeferredPass.Record(renderGraph, camera, cullingResults, textures, ref gbufferTexs, deferredMat, lightResources, cameraSettings.renderingLayerMask);
+                DeferredPass.Record(renderGraph, camera, cullingResults, textures, ref gbufferTexs, deferredMat, lightResources, cameraSettings.renderingLayerMask, settings.deferredSettings.reflectionCubemap);
             }
             else
             {

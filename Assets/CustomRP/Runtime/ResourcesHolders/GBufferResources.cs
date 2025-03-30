@@ -92,7 +92,7 @@ public class GBufferResources : IDisposable
         * 
         */
 
-        private const int amountOfGBuffers = 3;
+        private const int amountOfGBuffers = 4;
         private const int gBufferDepth = (int)DepthBits.None;
         RenderTexture[] gbuffers = new RenderTexture[amountOfGBuffers];
         readonly RenderTargetIdentifier[] gbufferID = new RenderTargetIdentifier[amountOfGBuffers];
@@ -105,22 +105,32 @@ public class GBufferResources : IDisposable
         {
             this.bufferSize = bufferSize;
 
+            //TextureFormat format = TextureFormat.RGBAHalf;
+            //var support = SystemInfo.SupportsTextureFormat(format);
+            //Debug.Log("support " + support);
+
             // By some reson, Unity dont want use multiple TextureHandle in cmd.SetRenderTarget(RenderTargetIdentifier[])
             // So, if we want in one drawCall fill all GBuffers, we must stick to RenderTexture
-            this.gbuffers[0] = new RenderTexture(bufferSize.x, bufferSize.y, gBufferDepth, RenderTextureFormat.DefaultHDR, RenderTextureReadWrite.Linear);
-            this.gbuffers[0].name = "GBuffer0 (RGB color A metallic)";
+            this.gbuffers[0] = new RenderTexture(bufferSize.x, bufferSize.y, gBufferDepth, RenderTextureFormat.RGB565, RenderTextureReadWrite.Linear);
+            this.gbuffers[0].name = "GBuffer0 (RGB color)";
             this.gbuffers[0].Create();
             this.gbufferID[0] = gbuffers[0];
 
             this.gbuffers[1] = new RenderTexture(bufferSize.x, bufferSize.y, gBufferDepth, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
-            this.gbuffers[1].name = "GBuffer1 R smoothness GB normal A occlustion";
+            this.gbuffers[1].name = "GBuffer1 RGB normal A smoothness";
             this.gbuffers[1].Create();
             this.gbufferID[1] = gbuffers[1];
 
             this.gbuffers[2] = new RenderTexture(bufferSize.x, bufferSize.y, gBufferDepth, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
-            this.gbuffers[2].name = "GBuffer2 RG posView B fresnelStrenght A renderingLayerMask";
+            // We want to pack positionWS relative to camera, bocause we want to avoid precission errors of 16 bit float
+            this.gbuffers[2].name = "GBuffer2 RGB positionWS relative to camera A occlusion";
             this.gbuffers[2].Create();
             this.gbufferID[2] = gbuffers[2];
+
+            this.gbuffers[3] = new RenderTexture(bufferSize.x, bufferSize.y, gBufferDepth, RenderTextureFormat.DefaultHDR, RenderTextureReadWrite.Linear);
+            this.gbuffers[3].name = "GBuffer3 RGB emission A metallic";
+            this.gbuffers[3].Create();
+            this.gbufferID[3] = gbuffers[3];
 
             //Debug.Log("New resources " + camera.name + " " + bufferSize);
         }

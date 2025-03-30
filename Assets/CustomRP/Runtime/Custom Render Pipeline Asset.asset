@@ -31,21 +31,21 @@ MonoBehaviour:
         enabled: 0
         useMipBias: 0
         useMotionVectors: 1
-        useOptimalSettings: 1
+        useOptimalSettings: 0
         dlssQuality: 2
-        useDLAA: 0
+        useDLAA: 1
         sharpness: 1
         useJitter: 1
         jitterScale: 1
-        jitterRand: 0.01
-    useSRPBatcher: 1
+        jitterRand: 0.1
+    useSRPBatcher: 0
     useLightsPerObject: 0
     shadows:
-      maxDistance: 25
+      maxDistance: 15
       distanceFade: 0.1
       directional:
-        atlasSize: 1024
-        filter: 2
+        atlasSize: 2048
+        filter: 3
         cascadeBlend: 1
         cascadeCount: 4
         cascadeRatio1: 0.15
@@ -53,16 +53,17 @@ MonoBehaviour:
         cascadeRatio3: 0.5
         cascadeFade: 0.2
       other:
-        atlasSize: 512
-        filter: 2
+        atlasSize: 2048
+        filter: 3
     postFXSettings: {fileID: 11400000, guid: 11740a70adc48e240b302b42654909be, type: 2}
     colorLUTResolution: 32
     forwardPlus:
-      tileSize: 64
+      tileSize: 256
       maxLightsPerTile: 31
     deferredSettings:
-      enabled: 1
+      enabled: 0
       deferredShader: {fileID: 4800000, guid: 76d40f853cf6d434ab46aaf3227d3cf3, type: 3}
+      reflectionCubemap: {fileID: 8900000, guid: ef8d8fbf4a226c14486fe5a02493549e, type: 3}
     cameraRendererShader: {fileID: 4800000, guid: a8c485989315f784d84be2f1a37388a5, type: 3}
     cameraDebuggerShader: {fileID: 4800000, guid: 0c9248d52e2afbb47b4821ebdfc9cebe, type: 3}
     cameraMotionShader: {fileID: 4800000, guid: bbd6f41c1ff5bb34a8bbfe7f9d4eca72, type: 3}

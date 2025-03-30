@@ -100,7 +100,7 @@ namespace PortalsUnity
 
         public static Rect GetMeshViewRect(MeshFilter meshFilter, Camera camera)
         {
-            // Compute the bounding box of the mesh in local space.
+            // Compute the bounding box of the triangleMesh in local space.
             Bounds localBounds = meshFilter.sharedMesh.bounds;
             // Transform all 8 corners from local to world space.
             Vector3[] worldCorners = new Vector3[8];
@@ -125,7 +125,7 @@ namespace PortalsUnity
             }
 
             // Create a viewport rectangle from the computed min and max values.
-            // This rectangle represents the mesh's area in normalized viewport coordinates.
+            // This rectangle represents the triangleMesh's area in normalized viewport coordinates.
             Rect meshViewportRect = new Rect(minViewport.x, minViewport.y, maxViewport.x - minViewport.x, maxViewport.y - minViewport.y);
 
             // --- Adjust the camera's projection ---
@@ -141,7 +141,7 @@ namespace PortalsUnity
             float bottom = -halfHeight;
             float top = halfHeight;
 
-            // Use the mesh's viewport rectangle to compute new frustum bounds.
+            // Use the triangleMesh's viewport rectangle to compute new frustum bounds.
             float newLeft = Mathf.Lerp(left, right, meshViewportRect.xMin);
             float newRight = Mathf.Lerp(left, right, meshViewportRect.xMax);
             float newBottom = Mathf.Lerp(bottom, top, meshViewportRect.yMin);
@@ -153,7 +153,7 @@ namespace PortalsUnity
 
             Matrix4x4 proj = PerspectiveOffCenter(newLeft, newRight, newBottom, newTop, near, far);
 
-            // Compute offset from the mesh's center to the screen center.
+            // Compute offset from the triangleMesh's center to the screen center.
             Vector2 meshCenterViewport = meshViewportRect.center;
             Vector2 offset = meshCenterViewport - new Vector2(0.5f, 0.5f);
             // Apply a compensating offset to the projection matrix.
@@ -194,7 +194,7 @@ namespace PortalsUnity
 
         public static (Rect rect, bool valid) ApplyMeshProjection(Camera cam, Camera origCam, Matrix4x4 origProj, MeshFilter meshFilter, float originalFOV)
         {
-            // Compute the mesh's bounding rectangle in normalized viewport coordinates.
+            // Compute the triangleMesh's bounding rectangle in normalized viewport coordinates.
             //Rect meshViewportRect = GetScreenRectFromBounds(meshFilter, cam).ToRect();
             Rect meshViewportRect = GetMeshViewRect(origCam, meshFilter);
             meshViewportRect = ValidateRect(meshViewportRect, origCam);
@@ -238,7 +238,7 @@ namespace PortalsUnity
                 return (meshViewportRect, false);
             }
 
-            // Set the camera's viewport so that the RenderTexture is drawn only to the mesh's area.
+            // Set the camera's viewport so that the RenderTexture is drawn only to the triangleMesh's area.
             //return meshViewportRect;
         }
 

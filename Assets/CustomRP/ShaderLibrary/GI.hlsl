@@ -73,28 +73,39 @@ float3 SampleLightProbe (Surface surfaceWS)
 	#if defined(LIGHTMAP_ON)
 		return 0.0;
 	#else
-		if (unity_ProbeVolumeParams.x) 
-		{
-			return SampleProbeVolumeSH4(
-				TEXTURE3D_ARGS(unity_ProbeVolumeSH, samplerunity_ProbeVolumeSH),
-				surfaceWS.position, surfaceWS.normal,
-				unity_ProbeVolumeWorldToObject,
-				unity_ProbeVolumeParams.y, unity_ProbeVolumeParams.z,
-				unity_ProbeVolumeMin.xyz, unity_ProbeVolumeSizeInv.xyz
-			);
-		}
-		else 
-		{
-			float4 coefficients[7];
-			coefficients[0] = unity_SHAr;
-			coefficients[1] = unity_SHAg;
-			coefficients[2] = unity_SHAb;
-			coefficients[3] = unity_SHBr;
-			coefficients[4] = unity_SHBg;
-			coefficients[5] = unity_SHBb;
-			coefficients[6] = unity_SHC;
-			return max(0.0, SampleSH9(coefficients, surfaceWS.normal));
-		}
+		#if !defined(_DEFFERED_LIGHTNING)
+			if (unity_ProbeVolumeParams.x) 
+			{
+				return SampleProbeVolumeSH4(
+					TEXTURE3D_ARGS(unity_ProbeVolumeSH, samplerunity_ProbeVolumeSH),
+					surfaceWS.position, surfaceWS.normal,
+					unity_ProbeVolumeWorldToObject,
+					unity_ProbeVolumeParams.y, unity_ProbeVolumeParams.z,
+					unity_ProbeVolumeMin.xyz, unity_ProbeVolumeSizeInv.xyz
+				);
+			}
+			else 
+			{
+				float4 coefficients[7];
+				coefficients[0] = unity_SHAr;
+				coefficients[1] = unity_SHAg;
+				coefficients[2] = unity_SHAb;
+				coefficients[3] = unity_SHBr;
+				coefficients[4] = unity_SHBg;
+				coefficients[5] = unity_SHBb;
+				coefficients[6] = unity_SHC;
+				return max(0.0, SampleSH9(coefficients, surfaceWS.normal));
+			}
+		#else
+			float3 uvw = reflect(-surfaceWS.viewDirection, surfaceWS.normal);
+			uvw = float3(0.5,0.5,0.5);
+			float mip = 32;
+			/*float4 environment = SAMPLE_TEXTURECUBE_LOD(
+				_BaseRefl, sampler_BaseRefl, uvw, mip
+			);*/
+			float3 environment = float3(0.094525, 0.1201509, 0.199);
+			return environment * _DeferredEnvParams.y;
+		#endif
 	#endif
 }
 
@@ -131,30 +142,55 @@ float4 SampleBakedShadows (float2 lightMapUV, Surface surfaceWS)
 float3 SampleEnvironment (Surface surfaceWS, BRDF brdf) 
 {
 	float3 uvw = reflect(-surfaceWS.viewDirection, surfaceWS.normal);
-	float mip = PerceptualRoughnessToMipmapLevel(brdf.perceptualRoughness);
+
+	float mip;
+	//float mip = PerceptualRoughnessToMipmapLevel(brdf.perceptualRoughness);
+	//float perceptualRoughness = RoughnessToPerceptualRoughness(1 - surfaceWS.smoothness);
+	//float mip = PerceptualRoughnessToMipmapLevel(perceptualRoughness);
+	#if defined(_DEFFERED_LIGHTNING)
+		float perceptualRoughness = RoughnessToPerceptualRoughness(1 - surfaceWS.smoothness);
+		mip = PerceptualRoughnessToMipmapLevel(perceptualRoughness);
+		mip += 2; // In my case reflSkybox is too highres, so i add a indent 
+	#else
+		mip = PerceptualRoughnessToMipmapLevel(brdf.perceptualRoughness);
+		mip -= 0.1;
+	#endif
 
 	float4 environment;
 	#if defined(_REFLECTION_CUBEMAP)
 		environment = SAMPLE_TEXTURECUBE_LOD(
 			_BaseRefl, sampler_BaseRefl, uvw, mip
-	);
+		);
+		//environment = 100;
 	#else
 	{
-		//environment = 0.02;
-		environment = SAMPLE_TEXTURECUBE_LOD(
-			unity_SpecCube0, samplerunity_SpecCube0, uvw, mip
-		);
-		//environment = 0.02;
+		// override for deffered procedural geometry
+		#if defined(_DEFFERED_LIGHTNING)
+			environment = SAMPLE_TEXTURECUBE_LOD(
+				_BaseRefl, sampler_BaseRefl, uvw, mip
+			);
+		#else
+			//environment = 0.02;
+			environment = SAMPLE_TEXTURECUBE_LOD(
+				unity_SpecCube0, samplerunity_SpecCube0, uvw, mip
+			);
+			//environment = 10;
+		#endif
 	}
 	#endif
-	//environment = 0.02;
-	/*float4 environment = SAMPLE_TEXTURECUBE_LOD(
-		unity_SpecCube0, samplerunity_SpecCube0, uvw, 0.0
-	);*/
-	//return 0;
-	//return environment.rgb;
 
-	return DecodeHDREnvironment(environment, unity_SpecCube0_HDR);
+	//return DecodeHDREnvironment(environment, unity_SpecCube0_HDR);
+	real4 decodeInstructions;
+	#if defined(_DEFFERED_LIGHTNING)
+		decodeInstructions = _DeferredEnvParams;
+	#else
+		decodeInstructions = unity_SpecCube0_HDR;
+	#endif
+	real4 encodedIrradiance = environment;
+	// Take into account texture alpha if decodeInstructions.w is true(the alpha value affects the RGB channels)
+    real alpha = max(decodeInstructions.w * (encodedIrradiance.a - 1.0) + 1.0, 0.0);
+    // If Linear mode is not supported we can skip exponent part
+    return (decodeInstructions.x * PositivePow(alpha, decodeInstructions.y)) * encodedIrradiance.rgb;
 }
 
 

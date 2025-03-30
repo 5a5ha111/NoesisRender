@@ -14,6 +14,7 @@ CBUFFER_START(UnityPerDraw)
 	float4 unity_LightmapST;
 	float4 unity_DynamicLightmapST;
 
+	// Plain ambient light contain in the L0 coefficient of spherical harmonic. You can get it with half3(unity_SHAr.w, unity_SHAg.w, unity_SHAb.w);
 	float4 unity_SHAr;
 	float4 unity_SHAg;
 	float4 unity_SHAb;

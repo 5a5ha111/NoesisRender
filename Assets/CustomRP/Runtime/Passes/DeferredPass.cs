@@ -5,7 +5,6 @@ using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.RendererUtils;
 using UnityEngine.Rendering;
 using System;
-using UnityEngine.Experimental.GlobalIllumination;
 
 public class DeferredPass
 {
@@ -49,6 +48,27 @@ public class DeferredPass
     readonly int _GbufferTex0 = Shader.PropertyToID("_GBuffer0");
     readonly int _GbufferTex1 = Shader.PropertyToID("_GBuffer1");
     readonly int _GbufferTex2 = Shader.PropertyToID("_GBuffer2");
+    readonly int _GbufferTex3 = Shader.PropertyToID("_GBuffer3");
+
+
+    readonly int _ReflectinSkybox = Shader.PropertyToID("_BaseRefl");
+    readonly int _ReciveShadows = Shader.PropertyToID("_RECEIVE_SHADOWS");
+
+    readonly int _DirectionalShadowAtlas = Shader.PropertyToID("_DirectionalShadowAtlas");
+    readonly int _OtherShadowAtlas = Shader.PropertyToID("_OtherShadowAtlas");
+    readonly int _DeferredEnvParams = Shader.PropertyToID("_DeferredEnvParams");
+    Cubemap reflCubemap;
+
+    private static readonly Mesh triangleMesh = new Mesh
+    {
+        vertices = new[] {
+                new Vector3(0, 0, 0),    // Bottom-left
+                new Vector3(1, 0, 0),    // Bottom-right
+                new Vector3(0, 1, 0)     // Top-left
+            },
+        triangles = new[] { 0, 2, 1 },  // Winding order
+        uv = new[] { Vector2.zero, Vector2.right, Vector2.up }
+    };
 
     void Render(RenderGraphContext context)
     {
@@ -56,37 +76,46 @@ public class DeferredPass
         cmd.SetGlobalTexture(_GbufferTex0, gBuffersTarget[0]);
         cmd.SetGlobalTexture(_GbufferTex1, gBuffersTarget[1]);
         cmd.SetGlobalTexture(_GbufferTex2, gBuffersTarget[2]);
+        cmd.SetGlobalTexture(_GbufferTex3, gBuffersTarget[3]);
+
 
         Matrix4x4 viewMatrix = camera.worldToCameraMatrix;
         Matrix4x4 projMatrix = GL.GetGPUProjectionMatrix(camera.projectionMatrix, false);
         Matrix4x4 vpMatrix = projMatrix * viewMatrix;
         Matrix4x4 vpMatrixInv = vpMatrix.inverse;
-        //Shader.SetGlobalMatrix(_vpMatrixInv, vpMatrixInv);
         cmd.SetGlobalMatrix(_vpMatrixInv, vpMatrixInv);
-        LocalKeyword enableShadows = new LocalKeyword(deferredMat.shader, "_RECEIVE_SHADOWS");
+        Vector4 _DefEnvParams = new Vector4();
+        var reflIntensity =  RenderSettings.reflectionIntensity;
+        var envLightingInt = RenderSettings.ambientIntensity;
+        float decodeInstructions = 1;
+        _DefEnvParams.x = reflIntensity * reflIntensity;
+        _DefEnvParams.y = envLightingInt;
+        _DefEnvParams.z = 1; 
+        _DefEnvParams.w = -5;
+        cmd.SetGlobalVector(_DeferredEnvParams, _DefEnvParams);
+        /*LocalKeyword enableShadows = new LocalKeyword(deferredMat.shader, "_RECEIVE_SHADOWS");
+        MaterialPropertyBlock materialPropertyBlock = new MaterialPropertyBlock();
+        materialPropertyBlock.SetInt(_ReciveShadows, 1);
         deferredMat.SetKeyword(enableShadows, true);
+        deferredMat.EnableKeyword(enableShadows);*/
         /*LocalKeyword enableReflCub = new LocalKeyword(deferredMat.shader, "_REFLECTION_CUBEMAP");
         deferredMat.SetKeyword(enableReflCub, true);*/
+        deferredMat.SetTexture(_ReflectinSkybox, reflCubemap);
+        context.renderContext.ExecuteCommandBuffer(context.cmd);
+        context.cmd.Clear();
+        //var skybox = RenderSettings.skybox;
         /*LocalKeyword enableShadowFilter = new LocalKeyword(deferredMat.shader, "DIRECTIONAL_FILTER_SETUP");
         deferredMat.SetKeyword(enableShadowFilter, true);
         LocalKeyword enableOthShadowFilter = new LocalKeyword(deferredMat.shader, "OTHER_FILTER_SETUP");
         deferredMat.SetKeyword(enableShadowFilter, true);*/
-
-        //cmd.SetGlobalBuffer(LightingPass.dirLightDataId, directionalLightDataBuffer);
-
-        //cmd.SetGlobalBuffer
-
-        /*deferredMat.SetTexture(_GbufferTex0, gBuffersTarget[0]);
-        deferredMat.SetTexture(_GbufferTex1, gBuffersTarget[1]);
-        deferredMat.SetTexture(_GbufferTex2, gBuffersTarget[2]);*/
 
         cmd.SetRenderTarget
         (
             colorHandle, RenderBufferLoadAction.Load, RenderBufferStoreAction.Store, 
             depthTex, RenderBufferLoadAction.Load, RenderBufferStoreAction.Store
         );
-        //GraphicsBuffer defferedBuffer = directionalLightDataBuffer;
         cmd.DrawProcedural(Matrix4x4.identity, deferredMat, 0, MeshTopology.Triangles, 3);
+        //cmd.DrawMesh(triangleMesh, Matrix4x4.identity, deferredMat, 0, 0);
         context.renderContext.ExecuteCommandBuffer(context.cmd);
         context.cmd.Clear();
     }
@@ -95,7 +124,7 @@ public class DeferredPass
     (
         RenderGraph renderGraph, Camera camera, CullingResults cullingResults,
         in CameraRendererTextures textures, ref RenderTexture[] renderTargets, Material deferredMat,
-        in LightResources lightData, int renderingLayerMask
+        in LightResources lightData, int renderingLayerMask, Cubemap reflCubemap
     )
     {
         ProfilingSampler sampler = samplerDeferred;
@@ -112,6 +141,7 @@ public class DeferredPass
         pass.depthTex = builder.ReadWriteTexture(textures.depthAttachment);
         pass.gBuffersTarget = renderTargets;
         pass.camera = camera;
+        pass.reflCubemap = reflCubemap;
 
 
         bool tilesBufferValid = lightData.tilesBuffer.IsValid();
@@ -153,14 +183,6 @@ public class DeferredPass
         pass.directionalShadowCascadesBuffer = builder.ReadComputeBuffer(lightData.shadowResources.directionalShadowCascadesBuffer);
         pass.directionalShadowMatricesBuffer = builder.ReadComputeBuffer(lightData.shadowResources.directionalShadowMatricesBuffer);
         pass.otherShadowDataBuffer = builder.ReadComputeBuffer(lightData.shadowResources.otherShadowDataBuffer);
-
-        builder.ReadComputeBuffer(lightData.directionalLightDataBuffer);
-        builder.ReadComputeBuffer(lightData.otherLightDataBuffer);
-        builder.ReadTexture(lightData.shadowResources.directionalAtlas);
-        builder.ReadTexture(lightData.shadowResources.otherAtlas);
-        builder.ReadComputeBuffer(lightData.shadowResources.directionalShadowCascadesBuffer);
-        builder.ReadComputeBuffer(lightData.shadowResources.directionalShadowMatricesBuffer);
-        builder.ReadComputeBuffer(lightData.shadowResources.otherShadowDataBuffer);
 
         builder.AllowRendererListCulling(false);
 

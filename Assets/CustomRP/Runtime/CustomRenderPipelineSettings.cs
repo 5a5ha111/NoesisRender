@@ -77,4 +77,6 @@ public struct DeferredSettings
 
     [Tooltip("Assign Hidden/Custom RP/Deferred Calculate shader")]
     public Shader deferredShader;
+
+    public Cubemap reflectionCubemap; // In deferred shader, wu currently does not support procedural skybox reflections () 
 }

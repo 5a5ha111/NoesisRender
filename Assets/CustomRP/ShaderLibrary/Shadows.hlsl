@@ -324,7 +324,12 @@ float MixBakedAndRealtimeShadows (
 float GetDirectionalShadowAttenuation (DirectionalShadowData directional, ShadowData global, Surface surfaceWS) 
 {
 	#if !defined(_RECEIVE_SHADOWS)
-		return 1.0;
+		// Override for deferred shading on procedural geometry
+		#if defined(_DEFFERED_LIGHTNING)
+
+		#else
+			return 1.0;
+		#endif
 	#endif
 
 	float shadow;
@@ -347,7 +352,12 @@ float GetDirectionalShadowAttenuation (DirectionalShadowData directional, Shadow
 float GetOtherShadowAttenuation (OtherShadowData other, ShadowData global, Surface surfaceWS) 
 {
 	#if !defined(_RECEIVE_SHADOWS)
-		return 1.0;
+		// Override for deferred shading on procedural geometry
+		#if defined(_DEFFERED_LIGHTNING)
+			
+		#else
+			return 1.0;
+		#endif
 	#endif
 	
 	float shadow;

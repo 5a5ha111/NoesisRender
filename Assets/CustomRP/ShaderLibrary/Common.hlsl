@@ -112,6 +112,30 @@ float FresnelEffect(float3 Normal, float3 ViewDir, float Power)
     return pow((1.0 - saturate(dot(normalize(Normal), normalize(ViewDir)))), Power);
 }
 
+float3 GetObjectScale()
+{
+	float3 scale = float3(length(float3(UNITY_MATRIX_M[0].x, UNITY_MATRIX_M[1].x, UNITY_MATRIX_M[2].x)),
+                             length(float3(UNITY_MATRIX_M[0].y, UNITY_MATRIX_M[1].y, UNITY_MATRIX_M[2].y)),
+                             length(float3(UNITY_MATRIX_M[0].z, UNITY_MATRIX_M[1].z, UNITY_MATRIX_M[2].z)));
+
+	return scale;
+}
+float3 GetCameraDirection()
+{
+	#pragma warning (disable : 3206) // Disable warning "implicit truncation of vector type", everything as intended and works well (Unity use same code)
+	return -1 * mul(UNITY_MATRIX_M, transpose(mul(UNITY_MATRIX_I_M, UNITY_MATRIX_I_V)) [2].xyz);
+	#pragma warning (default : 3206)
+}
+
+float PointInBounds(float3 minBounds, float3 maxBounds, float3 _point)
+{
+	    float Out = 
+        _point.x >= minBounds.x && _point.x <= maxBounds.x &&
+        _point.y >= minBounds.y && _point.y <= maxBounds.y &&
+        _point.z >= minBounds.z && _point.z <= maxBounds.z;
+        return Out;
+}
+
 
 // Remap smooth from linear to exponential
 float AdjustSmoothness(float smoothnessLinear)

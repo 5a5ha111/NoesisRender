@@ -169,7 +169,7 @@ public class MotionVectorPass
         pass.rlp = new RendererListParams(cullingResults, drawSettingsMotionVector, filterSettingsMotionVector);
         //RendererList rl = context.CreateRendererList(ref rlp);
 
-
+        builder.AllowPassCulling(true);
         builder.SetRenderFunc<MotionVectorPass>
         (
             static (pass, context) => pass.Render(context)

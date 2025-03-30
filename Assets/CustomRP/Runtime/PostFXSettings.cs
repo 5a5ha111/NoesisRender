@@ -129,7 +129,14 @@ public class PostFXSettings : ScriptableObject
         [Tooltip("Becouse scene camera render one frame and freeze, dithering become obvious")]public bool useInScene;
 #endif
     }
-    [SerializeField] public Dither dither = new Dither { mode = Dither.Mode.HighQuality, useInScene = false };
+    [SerializeField] public Dither dither = new Dither 
+    { 
+        mode = Dither.Mode.HighQuality
+        #if UNITY_EDITOR
+            ,
+            useInScene = false
+        #endif
+    };
 
 
 
