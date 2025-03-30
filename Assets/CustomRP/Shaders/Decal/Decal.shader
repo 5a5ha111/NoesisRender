@@ -5,13 +5,19 @@ Shader "Custom/DecalReconstructedShaderUnity"
         _ColorTexture ("Color", 2D) = "white" {}
         _NormalTexture ("Normal", 2D) = "bump" {}
         //_DepthTexture ("Depth", 2D) = "gray" {}
-        _EffectParams ("Effect Params", Vector) = (1,1,1,1)
+        [Enum(UnityEngine.Rendering.RenderQueue)]_Quoue("Queue", Float) = 3000
+        [Queue]_QuoueOffset("QueueOffset", Float) = 1
     }
 
     SubShader 
     {
         Pass 
         {
+            Tags 
+            {
+                "Queue" = "_Quoue + _QuoueOffset"
+            }
+
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -71,14 +77,6 @@ Shader "Custom/DecalReconstructedShaderUnity"
                 float4 clipPos = float4(screenNDC, depth, 1.0);
                 float4x4 unity_CameraInvProjection = Inverse(UNITY_MATRIX_P);
                 float4 viewPos = mul(unity_CameraInvProjection, clipPos);
-                //viewPos /= viewPos.w;
-
-                // Convert to world space using inverse view matrix
-                float3 worldPos = mul(unity_MatrixInvV, float4(viewPos.xyz, 1.0)).xyz;
-                //worldPos += _WorldSpaceCameraPos;
-                float3 worldPos2 = mul(UNITY_MATRIX_I_V, float4(viewPos.xyz, 1)).xyz;
-
-                float3 worldObjPos = mul(UNITY_MATRIX_I_V, float4(i.pos.xyz, 1) ).xyz;
 
                 float3 viewDirection = normalize(_WorldSpaceCameraPos - i.posWS.xyz);
                 float3 cameraDir = GetCameraDirection();
@@ -93,18 +91,10 @@ Shader "Custom/DecalReconstructedShaderUnity"
                 float3 maxBoundsPoint = float3(0.5,0.5,0.5) * scale;
 
                 // Clip if surface point outside box mesh
-                float inBounds = PointInBounds(minBoundsPoint, maxBoundsPoint, objectPos) - 0.5;
+                float inBounds =PointInBounds(minBoundsPoint, maxBoundsPoint, objectPos) - 0.5;
                 clip(inBounds);
 
-
-                // Bounds check using world position
-                /*float3 posComponents = float3(1,-1,1) * worldPos;
-                float maxComponent = max(abs(posComponents.x), 
-                                       max(abs(posComponents.y), abs(posComponents.z)));
-                if ((0.5 - maxComponent) < 0) discard;*/
-
                 // Calculate texture coordinates using view position
-                //float2 baseUV = viewPos.xz * _EffectParams.zw + _EffectParams.xy;
                 float2 baseUV = objectPos.xz + float2(0.5,0.5);
                 
                 // Edge detection and sampling
