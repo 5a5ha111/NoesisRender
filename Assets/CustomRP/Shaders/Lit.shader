@@ -57,7 +57,6 @@ Shader "Custom RP/Lit"
 		HLSLINCLUDE
 			#include "../ShaderLibrary/Common.hlsl"
 			#include "LitInput.hlsl"
-
 		ENDHLSL
 		
 		Pass 

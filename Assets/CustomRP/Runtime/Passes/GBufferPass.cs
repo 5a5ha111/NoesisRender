@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.RendererUtils;
 using UnityEngine.Rendering;
-using static Unity.Burst.Intrinsics.X86.Avx;
 
 public class GBufferPass
 {
@@ -59,17 +58,6 @@ public class GBufferPass
                 new RendererListDesc(shaderTagIds, cullingResults, camera)
                 {
                     sortingCriteria = SortingCriteria.CommonOpaque,
-                    rendererConfiguration =
-                        PerObjectData.ReflectionProbes |
-                        PerObjectData.Lightmaps |
-                        PerObjectData.ShadowMask |
-                        PerObjectData.LightProbe |
-                        PerObjectData.OcclusionProbe |
-                        PerObjectData.LightProbeProxyVolume |
-                        PerObjectData.OcclusionProbeProxyVolume |
-                        (useLightsPerObject ?
-                            PerObjectData.LightData | PerObjectData.LightIndices :
-                            PerObjectData.None),
                     renderQueueRange = RenderQueueRange.opaque,
                     renderingLayerMask = (uint)renderingLayerMask
                 }

@@ -32,8 +32,8 @@ MonoBehaviour:
     hueShift: 0
     saturation: 5
   whiteBalance:
-    temperature: -14
-    tint: 19.6
+    temperature: -15
+    tint: 10
   splitToning:
     shadows: {r: 0.5019608, g: 0.5019608, b: 0.5019608, a: 1}
     highlights: {r: 0.5, g: 0.5, b: 0.5, a: 1}

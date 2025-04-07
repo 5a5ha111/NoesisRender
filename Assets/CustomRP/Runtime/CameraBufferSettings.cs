@@ -40,6 +40,7 @@ using UnityEngine.NVIDIA;
 
         public enum Quality { Low, Medium, High }
 
+        [Tooltip("Mostly affect how long lines are treated")]
         public Quality quality;
     }
 

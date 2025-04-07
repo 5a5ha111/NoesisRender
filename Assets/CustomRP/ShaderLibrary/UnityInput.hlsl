@@ -39,12 +39,15 @@ float4x4 unity_MatrixVP;
 float4x4 UNITY_MATRIX_P;
 float4x4 unity_MatrixV;
 float4x4 UNITY_MATRIX_I_V;
+float4x4 UNITY_MATRIX_I_P;
+float4x4 UNITY_MATRIX_I_VP;
 float4x4 unity_MatrixInvV;
+float4x4 unity_CameraInvProjection;
 float4x4 unity_prev_MatrixM;
 float4x4 unity_prev_MatrixIM;
 float4x4 glstate_matrix_projection;
 float3 _WorldSpaceCameraPos;
-float4 _ScreenParams;
+float4 _ScreenParams; //x is the width of the camera’s target texture in pixels, y is the height of the camera’s target texture in pixels, z is 1.0 + 1.0/width and w is 1.0 + 1.0/height.
 float4 _Time;
 float4 _ProjectionParams;
 float4 unity_OrthoParams;

@@ -21,11 +21,8 @@ Shader "Custom RP/Unlit"
 	{
 
 		HLSLINCLUDE
-		#include "../ShaderLibrary/Common.hlsl"
-		#include "UnlitInput.hlsl"
-
-
-
+			#include "../ShaderLibrary/Common.hlsl"
+			#include "UnlitInput.hlsl"
 		ENDHLSL
 		
 		Pass 

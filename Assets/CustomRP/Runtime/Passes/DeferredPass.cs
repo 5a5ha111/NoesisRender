@@ -87,7 +87,6 @@ public class DeferredPass
         Vector4 _DefEnvParams = new Vector4();
         var reflIntensity =  RenderSettings.reflectionIntensity;
         var envLightingInt = RenderSettings.ambientIntensity;
-        float decodeInstructions = 1;
         _DefEnvParams.x = reflIntensity * reflIntensity;
         _DefEnvParams.y = envLightingInt;
         _DefEnvParams.z = 1; 

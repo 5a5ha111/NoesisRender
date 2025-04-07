@@ -349,7 +349,16 @@ public partial class CameraRenderer
                 renderGraph, useColorTexture, useDepthTexture, copier, textures
             );
 
-
+            if (settings.deferredSettings.enabled)
+            {
+                var gbResources = GBufferResources.GetGBResources(camera, bufferSize);
+                var normalBuffer = gbResources.GetNormalBuffer();
+                DecalPass.Record(renderGraph, camera, cullingResults, cameraSettings.renderingLayerMask, textures, settings.decals, true, normalBuffer);
+            }
+            else
+            {
+                DecalPass.Record(renderGraph, camera, cullingResults, cameraSettings.renderingLayerMask, textures, settings.decals, false, null);
+            }
 
             VisibleGeometryPass.Record
             (

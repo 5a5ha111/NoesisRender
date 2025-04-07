@@ -11,7 +11,8 @@ Material:
   m_Shader: {fileID: 4800000, guid: ad6aafda5583759488bc6307f87c731e, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
+  m_ValidKeywords:
+  - _USE_ANGLE_FADE
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -33,8 +34,11 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _AngleFadeEnd: 0.6
+    - _AngleFadeStart: 0.4
     - _Quoue: 3000
-    - _QuoueOffset: -1000
+    - _QuoueOffset: 0
+    - _USE_ANGLE_FADE: 1
     m_Colors:
     - _EffectParams: {r: -0.53, g: 0.78, b: 0.44, a: 0.2}
   m_BuildTextureStacks: []

@@ -36,6 +36,8 @@ public class DecalProjector : MonoBehaviour
     private Quaternion lastTransformRotation;
     private Vector3 lastTransformScale;
 
+    private Vector3 referenceScale;
+
 #if UNITY_EDITOR
     private void OnValidate()
     {
@@ -61,10 +63,6 @@ public class DecalProjector : MonoBehaviour
             currentIndex = System.Array.IndexOf(components, this);
         }
 
-        /*position = transform.position;
-        rotation = transform.localRotation.eulerAngles;
-        scale = transform.localScale;*/
-
         InitializeTrackers();
     }
 #endif
@@ -77,17 +75,28 @@ public class DecalProjector : MonoBehaviour
 
     void Update()
     {
-        if (!targetCamera || !meshRenderer) return;
-
-        // Only apply transformations if something has changed
-        /*if (position != lastPosition || rotation != lastRotation || scale != lastScale || pivotPoint != lastPivotPoint)
+        Camera camRef;
+        camRef = targetCamera;
+        /*#if UNITY_EDITOR
+            if (Application.isEditor)
+            {
+                var scene = EditorWindow.GetWindow<SceneView>();
+                if (scene != null)
+                {
+                    camRef = scene.camera;
+                    if (scene.camera != null)
+                    {
+                        float dist = scene.cameraDistance;
+                        Debug.Log("Scene.camera pos " + camRef.transform.position + " dist " + dist);
+                        // Unity dont properly update scene.camera.transform.position, so i need to pass position somehow else.
+                    }
+                }
+            }
+        #endif*/
+        if (camRef == null || meshRenderer == null) 
         {
-            PivotTransform.ApplyTransformation(this.transform, pivotPoint, position, rotation, scale);
-            lastPosition = position;
-            lastRotation = rotation;
-            lastScale = scale;
-            lastPivotPoint = pivotPoint;
-        }*/
+            return; 
+        }
 
         // Check for external Transform changes or pivot point changes
         if (TransformHasChanged() || PivotPointHasChanged())
@@ -105,11 +114,8 @@ public class DecalProjector : MonoBehaviour
 
 
         // Calculate near clip plane
-        Vector3 cameraPoint = targetCamera.transform.position + targetCamera.transform.forward * (targetCamera.nearClipPlane);
-        Plane nearPlane = new Plane(targetCamera.transform.forward, cameraPoint);
-
-        
-
+        Vector3 cameraPoint = camRef.transform.position + camRef.transform.forward * (camRef.nearClipPlane);
+        Plane nearPlane = new Plane(camRef.transform.forward, cameraPoint);
 
         // Check plane intersection
         if (PointInCube(cameraPoint))
@@ -132,7 +138,7 @@ public class DecalProjector : MonoBehaviour
         }
         else
         {
-            scale.y = 1;
+            scale.y = referenceScale.y;
             pivotPoint.y = 0;
         }
     }
@@ -179,6 +185,8 @@ public class DecalProjector : MonoBehaviour
         lastTransformPosition = transform.position;
         lastTransformRotation = transform.rotation;
         lastTransformScale = transform.localScale;
+
+        referenceScale = transform.localScale;
 
         /*lastPosition = position;
         lastRotation = rotation;

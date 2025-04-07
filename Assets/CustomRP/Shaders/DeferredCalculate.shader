@@ -81,6 +81,7 @@ Shader "Hidden/Custom RP/Deferred Calculate"
                 worldPos /= worldPos.w;
                 //float3 position = worldPos.xyz;
                 float3 position = packedGB2.xyz + _WorldSpaceCameraPos;
+                worldPos.xyz = position;
                 float4 positionSS = TransformWorldToHClip(position);
                 Fragment fragment = GetFragment(positionSS);
                 fragment.screenUV = uv;

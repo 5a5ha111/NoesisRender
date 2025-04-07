@@ -44,6 +44,9 @@ public class CustomRenderPipelineSettings
     [Space]
     public DeferredSettings deferredSettings;
 
+    [Space]
+    [Space]
+    public DecalsSettings decals = new DecalsSettings { forwardNormalReconstructQuality = DecalsSettings.DecalForwardNormalQuality._ACCURATE };
 
     [Space]
     [Space]
@@ -79,4 +82,15 @@ public struct DeferredSettings
     public Shader deferredShader;
 
     public Cubemap reflectionCubemap; // In deferred shader, wu currently does not support procedural skybox reflections () 
+}
+
+[System.Serializable]
+public struct DecalsSettings
+{
+    public enum DecalForwardNormalQuality
+    {
+        DDX, Tap3, Tap4, _IMPROVED, _ACCURATE
+    }
+    [Tooltip("How quality will be normal reconstruction method in forward render. In deferred path it not used, since we have normal buffer. \n\nDDX - fastest, but worsest quality. \n\nTap3 - naive normal reconstruction. Accurate mid triangle normals, slightly diagonally offset on edges. Artifacts on depth disparities. \n41 math, 3 tex \n\nTap4 - no diagonal offset on edges, but sharp details are softened. Worse artifacts on depth disparities than 3 tap. Probably little reason to use this over the 3 tap approach. \n50 math, 4 tex \n\n_IMPROVED - sharpness of 3 tap with better handling of depth disparities. Worse artifacts on convex edges than either 3 tap or 4 tap. \n62 math, 5 tex \n\n_ACCURATE - basically as accurate as you can get! No artifacts on depth disparities. No artifacts on edges. Artifacts only on triangles that are <3 pixels across. \n66 math, 9 tex")]
+    public DecalForwardNormalQuality forwardNormalReconstructQuality;
 }

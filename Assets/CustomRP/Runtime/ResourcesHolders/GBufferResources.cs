@@ -135,6 +135,15 @@ public class GBufferResources : IDisposable
             //Debug.Log("New resources " + camera.name + " " + bufferSize);
         }
 
+        public RenderTexture GetNormalBuffer()
+        {
+            if (gbuffers == null || gbuffers.Length == 0)
+            {
+                return null;
+            }
+            return this.gbuffers[1];
+        }
+
         public bool ValideBuffer(Vector2Int bufferSize)
         {
             if (this.bufferSize != bufferSize || gbuffers.Length == 0)

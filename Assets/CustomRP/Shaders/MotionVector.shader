@@ -109,7 +109,7 @@ Shader "Hidden/Custom RP/MotionVector"
         };
 
 
-        float4 ComputeScreenPos (float4 pos) 
+        float4 ComputeScreenPosMotion (float4 pos) 
         {
             float4 o = pos * 0.5f;
             #if defined(UNITY_HALF_TEXEL_OFFSET)
@@ -133,7 +133,7 @@ Shader "Hidden/Custom RP/MotionVector"
             #ifdef UNITY_HALF_TEXEL_OFFSET
                 o.pos.xy += (_ScreenParams.zw - 1.0) * float2(-1, 1) * o.pos.w;
             #endif
-            o.uv = ComputeScreenPos(o.pos).xy;
+            o.uv = ComputeScreenPosMotion(o.pos).xy;
             // we know we are rendering a quad,
             // and the normal passed from C++ is the raw ray.
             o.ray = v.normal;

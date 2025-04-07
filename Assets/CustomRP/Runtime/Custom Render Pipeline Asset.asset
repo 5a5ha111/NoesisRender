@@ -31,13 +31,13 @@ MonoBehaviour:
         enabled: 0
         useMipBias: 0
         useMotionVectors: 1
-        useOptimalSettings: 0
+        useOptimalSettings: 1
         dlssQuality: 2
-        useDLAA: 1
-        sharpness: 1
+        useDLAA: 0
+        sharpness: 0
         useJitter: 1
         jitterScale: 1
-        jitterRand: 0.1
+        jitterRand: 0.05
     useSRPBatcher: 0
     useLightsPerObject: 0
     shadows:
@@ -61,9 +61,11 @@ MonoBehaviour:
       tileSize: 256
       maxLightsPerTile: 31
     deferredSettings:
-      enabled: 0
+      enabled: 1
       deferredShader: {fileID: 4800000, guid: 76d40f853cf6d434ab46aaf3227d3cf3, type: 3}
       reflectionCubemap: {fileID: 8900000, guid: ef8d8fbf4a226c14486fe5a02493549e, type: 3}
+    decals:
+      forwardNormalReconstructQuality: 4
     cameraRendererShader: {fileID: 4800000, guid: a8c485989315f784d84be2f1a37388a5, type: 3}
     cameraDebuggerShader: {fileID: 4800000, guid: 0c9248d52e2afbb47b4821ebdfc9cebe, type: 3}
     cameraMotionShader: {fileID: 4800000, guid: bbd6f41c1ff5bb34a8bbfe7f9d4eca72, type: 3}
