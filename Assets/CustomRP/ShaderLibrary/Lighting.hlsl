@@ -93,7 +93,9 @@ float3 GetAllLighting (Fragment fragment, Surface surfaceWS, BRDF brdf, GI gi)
 	for (int i = 0; i < GetDirectionalLightCount(); i++) 
 	{
 		Light light = GetDirectionalLight(i, surfaceWS, shadowData);
+		light.attenuation = min(light.attenuation, gi.ao);
 		color += GetLighting(surfaceWS, brdf, light);
+		color *= gi.ao;
 		//color += SpecularBlinn(surfaceWS.viewDirection, light.direction, surfaceWS.normal, surfaceWS.smoothness) * light.color;
 		//color *= DiffuseLambert(surfaceWS.normal, -light.direction);
 		//color = 0.5;
@@ -105,6 +107,7 @@ float3 GetAllLighting (Fragment fragment, Surface surfaceWS, BRDF brdf, GI gi)
 		{
 			int lightIndex = unity_LightIndices[(uint)j / 4][(uint)j % 4];
 			Light light = GetOtherLight(lightIndex, surfaceWS, shadowData);
+			light.attenuation *= gi.ao;
 			color += GetLighting(surfaceWS, brdf, light);
 		}
 	#else
@@ -113,6 +116,7 @@ float3 GetAllLighting (Fragment fragment, Surface surfaceWS, BRDF brdf, GI gi)
 		for (int j = tile.GetFirstLightIndexInTile(); j <= lastLightIndex; j++) 
 		{
 			Light light = GetOtherLight(tile.GetLightIndex(j), surfaceWS, shadowData);
+			light.attenuation *= gi.ao;
 			color += GetLighting(surfaceWS, brdf, light);
 		}
 	#endif

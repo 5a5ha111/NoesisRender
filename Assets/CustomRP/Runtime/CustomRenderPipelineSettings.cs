@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 [System.Serializable]
@@ -46,13 +47,58 @@ public class CustomRenderPipelineSettings
 
     [Space]
     [Space]
-    public DecalsSettings decals = new DecalsSettings { forwardNormalReconstructQuality = DecalsSettings.DecalForwardNormalQuality._ACCURATE };
+    public DecalsSettings decalsSettings = new DecalsSettings { forwardNormalReconstructQuality = DecalsSettings.DecalForwardNormalQuality._ACCURATE };
 
     [Space]
     [Space]
     [Space]
     public Shader cameraRendererShader;
     public Shader cameraDebuggerShader, cameraMotionShader, depthOnlyShader, motionVectorDebug;
+
+    [System.Serializable]
+    public class XeGTAOSettings
+    {
+        public bool enabled = true;
+        // some constants reduce performance if provided as dynamic values; if these constants are not required to be dynamic and they match default values, 
+        // set XE_GTAO_USE_DEFAULT_CONSTANTS and the code will compile into a more efficient shader
+        private const float XE_GTAO_DEFAULT_RADIUS_MULTIPLIER =             1.457f; // allows us to use different value as compared to ground truth radius to counter inherent screen space biases
+        private const float XE_GTAO_DEFAULT_FALLOFF_RANGE =                 0.615f; // distant samples contribute less
+        private const float XE_GTAO_DEFAULT_SAMPLE_DISTRIBUTION_POWER =     2.0f;   // small crevices more important than big surfaces
+        //private const float XE_GTAO_DEFAULT_THIN_OCCLUDER_COMPENSATION =    0.0f;   // the new 'thickness heuristic' approach
+        private const float XE_GTAO_DEFAULT_THIN_OCCLUDER_COMPENSATION =    3.3f;   // the new 'thickness heuristic' approach
+        private const float XE_GTAO_DEFAULT_FINAL_VALUE_POWER =             2.2f;   // modifies the final ambient occlusion value using power function - this allows some of the above heuristics to do different things
+        private const float XE_GTAO_DEFAULT_DEPTH_MIP_SAMPLING_OFFSET=      3.30f;  // main trade-off between performance (memory bandwidth) and quality (temporal stability is the first affected, thin objects next)
+
+        private const float XE_GTAO_OCCLUSION_TERM_SCALE =                  1.5f;   // for packing in UNORM (because raw, pre-denoised occlusion term can overshoot 1 but will later average out to 1)
+
+        [Header("Shaders")]
+        public ComputeShader computeShader;
+        public Shader XeGTAOApply;
+
+        public enum GTAOQuality 
+        {
+            low = 0, medium = 1,hight = 2, ultra = 3 
+        }
+
+        [Header("Settings")]
+        [Tooltip("Render effect at half resolution or not. Recommend enable if res > 1080, effect pretty smooth anyway.")] public bool HalfRes = true;
+        [Tooltip("Better leave on hight, it pretty fast")][SerializeField]public GTAOQuality QualityLevel = GTAOQuality.hight;
+        [Tooltip("0: disabled; 1: sharp; 2: medium; 3: soft")][Range(0, 5)][SerializeField] public int DenoisePasses = 1;
+        [Tooltip("[0.0,  ~ ]   World (view) space size of the occlusion sphere.")][Range(0, 2)][SerializeField] public float Radius = 0.5f;
+
+
+
+
+        // auto-tune-d settings
+        [NonSerialized] public readonly float RadiusMultiplier = XE_GTAO_DEFAULT_RADIUS_MULTIPLIER;
+        [NonSerialized] public readonly float FalloffRange = XE_GTAO_DEFAULT_FALLOFF_RANGE;
+        [NonSerialized] public readonly float SampleDistributionPower = XE_GTAO_DEFAULT_SAMPLE_DISTRIBUTION_POWER;
+        [NonSerialized] public readonly float ThinOccluderCompensation = XE_GTAO_DEFAULT_THIN_OCCLUDER_COMPENSATION;
+        [Tooltip(" modifies the final ambient occlusion value using power function. Default value = 2.2f")][SerializeField]public float FinalValuePower = XE_GTAO_DEFAULT_FINAL_VALUE_POWER;
+        [NonSerialized] public readonly float DepthMIPSamplingOffset = XE_GTAO_DEFAULT_DEPTH_MIP_SAMPLING_OFFSET;
+    }
+
+    [Space] public XeGTAOSettings xeGTAOsettings;
 }
 
 

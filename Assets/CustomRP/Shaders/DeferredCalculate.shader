@@ -40,6 +40,8 @@ Shader "Hidden/Custom RP/Deferred Calculate"
             TEXTURE2D(_GBuffer2);
             TEXTURE2D(_GBuffer3);
 
+            TEXTURE2D(_XeGTAOValue);
+
             SAMPLER(sampler_CameraDepthTexture);
             float4x4 _vpMatrixInv;
 
@@ -107,6 +109,13 @@ Shader "Hidden/Custom RP/Deferred Calculate"
                 lightMapUV = float2(0,0);
                 BRDF brdf = GetBRDF(surface);
                 GI gi = GetGI(lightMapUV, surface, brdf);
+
+                #ifdef _AO
+                    gi.ao = SAMPLE_TEXTURE2D_LOD(_XeGTAOValue, sampler_linear_clamp, uv, 0).r;
+                    gi.ao = pow(gi.ao, 1.5);
+                    //gi.ao = gi.ao;
+                #endif
+
                 float3 color = GetAllLighting(fragment, surface, brdf, gi);
                 color += emission;
 
@@ -142,6 +151,9 @@ Shader "Hidden/Custom RP/Deferred Calculate"
 
                 // Other light shadows
                 #pragma multi_compile _ _OTHER_PCF3 _OTHER_PCF5 _OTHER_PCF7
+
+                // AO
+                #pragma shader_feature _ _AO
 
 
                 #pragma vertex DefaultPassVertex

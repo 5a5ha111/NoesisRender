@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.NVIDIA;
 using UnityEngine.Rendering;
@@ -40,7 +41,7 @@ public partial class CameraRenderer
 
     // Temp variables which created and destroyed with CameraRenderer class
     Material material;
-    Material materialMotion, depthOnlyMaterial, motionVectorDebugMaterial;
+    Material materialMotion, depthOnlyMaterial, motionVectorDebugMaterial, materialXeGTAO;
     Texture2D missingTexture;
     PostFXStack postFXStack = new PostFXStack();
 
@@ -56,19 +57,20 @@ public partial class CameraRenderer
 
 
     // GBuffer textures
-    /*private const int amountOfGBuffers = 2;
-    RenderTexture[] gbuffers = new RenderTexture[amountOfGBuffers];
-    RenderTargetIdentifier[] gbufferID = new RenderTargetIdentifier[amountOfGBuffers];*/
+    /*private const int amountOfGTempTex = 2;
+    RenderTexture[] tempTexs = new RenderTexture[amountOfGTempTex];
+    RenderTargetIdentifier[] gbufferID = new RenderTargetIdentifier[amountOfGTempTex];*/
 
     Material deferredMat;
 
 
-    public CameraRenderer(Shader shader, Shader cameraDebuggerShader, Shader cameraMotionShader, Shader depthOnlyShader, Shader motionDebug, Shader deferredShader)
+    public CameraRenderer(Shader shader, Shader cameraDebuggerShader, Shader cameraMotionShader, Shader depthOnlyShader, Shader motionDebug, Shader deferredShader, Shader xeGTAOApply)
     {
         material = CoreUtils.CreateEngineMaterial(shader);
         materialMotion = CoreUtils.CreateEngineMaterial(cameraMotionShader);
         depthOnlyMaterial = CoreUtils.CreateEngineMaterial(depthOnlyShader);
         motionVectorDebugMaterial = CoreUtils.CreateEngineMaterial(motionDebug);
+        materialXeGTAO = CoreUtils.CreateEngineMaterial(xeGTAOApply);
         missingTexture = new Texture2D(1, 1)
         {
             hideFlags = HideFlags.HideAndDontSave,
@@ -83,12 +85,12 @@ public partial class CameraRenderer
 
         // GBuffer setup
         /*int gBufferDepth = (int)DepthBits.None;
-        gbuffers[0] = new RenderTexture(Screen.width, Screen.height, gBufferDepth, RenderTextureFormat.DefaultHDR, RenderTextureReadWrite.Linear);
-        gbuffers[0].name = "GBuffer1 (RGB color A metallic)";
-        gbufferID[0] = gbuffers[0];
-        gbuffers[1] = new RenderTexture(Screen.width, Screen.height, gBufferDepth, RenderTextureFormat.Default, RenderTextureReadWrite.Linear);
-        gbuffers[1].name = "GBuffer2 R smoothness GB normal A occlustion";
-        gbufferID[1] = gbuffers[1];*/
+        tempTexs[0] = new RenderTexture(Screen.width, Screen.height, gBufferDepth, RenderTextureFormat.DefaultHDR, RenderTextureReadWrite.Linear);
+        tempTexs[0].name = "GBuffer1 (RGB color A metallic)";
+        gbufferID[0] = tempTexs[0];
+        tempTexs[1] = new RenderTexture(Screen.width, Screen.height, gBufferDepth, RenderTextureFormat.Default, RenderTextureReadWrite.Linear);
+        tempTexs[1].name = "GBuffer2 R smoothness GB normal A occlustion";
+        gbufferID[1] = tempTexs[1];*/
 
         deferredMat = CoreUtils.CreateEngineMaterial(deferredShader);
 
@@ -315,7 +317,11 @@ public partial class CameraRenderer
             );
 
 
-            MotionVectorPass.Record(renderGraph, camera, cameraSettings, textures, cameraBufferSettings, materialMotion, cameraSettings.renderingLayerMask, cullingResults);
+            // Now motion Vectors required only dlss
+            if (cameraBufferSettings.dlss.enabled)
+            {
+                MotionVectorPass.Record(renderGraph, camera, cameraSettings, textures, cameraBufferSettings, materialMotion, cameraSettings.renderingLayerMask, cullingResults);
+            }
 
 
             
@@ -325,7 +331,20 @@ public partial class CameraRenderer
                 var gbufferID = gbResources._getTargets;
                 var gbufferTexs = gbResources._getTextures;
                 GBufferPass.Record(renderGraph, camera, cullingResults, cameraSettings.renderingLayerMask, textures, gbufferID, useLightsPerObject);
-                DeferredPass.Record(renderGraph, camera, cullingResults, textures, ref gbufferTexs, deferredMat, lightResources, cameraSettings.renderingLayerMask, settings.deferredSettings.reflectionCubemap);
+
+                bool xeGTAOEnabled = XeGTAO.CanRender(settings.xeGTAOsettings, materialXeGTAO);
+                TextureHandle xeHBAO;
+                if (xeGTAOEnabled && gbufferTexs.Length > 1 && gbufferTexs[1] != null)
+                {
+                    var xeGTAOResources = XeGTAOResources.GetGTAOesources(camera, !settings.xeGTAOsettings.HalfRes ? bufferSize : bufferSize / 2);
+                    xeHBAO = XeGTAO.Record(renderGraph, camera, in textures, settings.xeGTAOsettings, xeGTAOResources, bufferSize, materialXeGTAO, !settings.deferredSettings.enabled, gbufferTexs[1]);
+                }
+                else
+                {
+                    xeHBAO = new TextureHandle();
+                }
+
+                DeferredPass.Record(renderGraph, camera, cullingResults, textures, ref gbufferTexs, deferredMat, lightResources, cameraSettings.renderingLayerMask, settings.deferredSettings.reflectionCubemap, xeGTAOEnabled, xeHBAO);
             }
             else
             {
@@ -353,11 +372,11 @@ public partial class CameraRenderer
             {
                 var gbResources = GBufferResources.GetGBResources(camera, bufferSize);
                 var normalBuffer = gbResources.GetNormalBuffer();
-                DecalPass.Record(renderGraph, camera, cullingResults, cameraSettings.renderingLayerMask, textures, settings.decals, true, normalBuffer);
+                DecalPass.Record(renderGraph, camera, cullingResults, cameraSettings.renderingLayerMask, textures, settings.decalsSettings, true, normalBuffer);
             }
             else
             {
-                DecalPass.Record(renderGraph, camera, cullingResults, cameraSettings.renderingLayerMask, textures, settings.decals, false, null);
+                DecalPass.Record(renderGraph, camera, cullingResults, cameraSettings.renderingLayerMask, textures, settings.decalsSettings, false, null);
             }
 
             VisibleGeometryPass.Record
@@ -369,7 +388,7 @@ public partial class CameraRenderer
             );
 
             #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
-                DLSSPass.Record(renderGraph, camera, textures, cameraBufferSettings, bufferSize, useHDR);
+            DLSSPass.Record(renderGraph, camera, textures, cameraBufferSettings, bufferSize, useHDR);
             #endif
 
             if (hasActivePostFX)
@@ -429,9 +448,10 @@ public partial class CameraRenderer
         CoreUtils.Destroy(motionVectorDebugMaterial);
         CoreUtils.Destroy(materialMotion);
         CoreUtils.Destroy(depthOnlyMaterial);
+        CoreUtils.Destroy(materialXeGTAO);
 
-        /*CoreUtils.Destroy(gbuffers[0]);
-        CoreUtils.Destroy(gbuffers[1]);*/
+        /*CoreUtils.Destroy(tempTexs[0]);
+        CoreUtils.Destroy(tempTexs[1]);*/
         //Debug.Log("================Global dispose==============");
         GBufferResources._instance.Dispose();
         CoreUtils.Destroy(deferredMat);

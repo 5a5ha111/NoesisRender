@@ -41,20 +41,20 @@ MonoBehaviour:
     useSRPBatcher: 0
     useLightsPerObject: 0
     shadows:
-      maxDistance: 15
+      maxDistance: 40
       distanceFade: 0.1
       directional:
-        atlasSize: 2048
+        atlasSize: 1024
         filter: 3
         cascadeBlend: 1
-        cascadeCount: 4
+        cascadeCount: 1
         cascadeRatio1: 0.15
         cascadeRatio2: 0.25
         cascadeRatio3: 0.5
         cascadeFade: 0.2
       other:
-        atlasSize: 2048
-        filter: 3
+        atlasSize: 1024
+        filter: 2
     postFXSettings: {fileID: 11400000, guid: 11740a70adc48e240b302b42654909be, type: 2}
     colorLUTResolution: 32
     forwardPlus:
@@ -64,13 +64,22 @@ MonoBehaviour:
       enabled: 1
       deferredShader: {fileID: 4800000, guid: 76d40f853cf6d434ab46aaf3227d3cf3, type: 3}
       reflectionCubemap: {fileID: 8900000, guid: ef8d8fbf4a226c14486fe5a02493549e, type: 3}
-    decals:
+    decalsSettings:
       forwardNormalReconstructQuality: 4
     cameraRendererShader: {fileID: 4800000, guid: a8c485989315f784d84be2f1a37388a5, type: 3}
     cameraDebuggerShader: {fileID: 4800000, guid: 0c9248d52e2afbb47b4821ebdfc9cebe, type: 3}
     cameraMotionShader: {fileID: 4800000, guid: bbd6f41c1ff5bb34a8bbfe7f9d4eca72, type: 3}
     depthOnlyShader: {fileID: 4800000, guid: 5df1e3b7d59fd934f829cb8d0f029df8, type: 3}
     motionVectorDebug: {fileID: 4800000, guid: 023a4501ca74f9f4d97bb8baeae9fda8, type: 3}
+    xeGTAOsettings:
+      enabled: 1
+      computeShader: {fileID: 7200000, guid: f9866655892b7814f8bffb1bdbf3b61c, type: 3}
+      XeGTAOApply: {fileID: 4800000, guid: 9599961e6e539cc4ba6544b6e5025a7b, type: 3}
+      HalfRes: 1
+      QualityLevel: 3
+      DenoisePasses: 1
+      Radius: 0.1
+      FinalValuePower: 10
   cameraBufferSettings:
     allowHDR: 1
     copyColor: 1

@@ -46,6 +46,7 @@ struct GI
 {
 	float3 diffuse;
 	float3 specular;
+	float ao;
 	ShadowMask shadowMask;
 };
 
@@ -200,6 +201,7 @@ GI GetGI (float2 lightMapUV, Surface surfaceWS, BRDF brdf)
 	GI gi;
 	gi.diffuse = SampleLightMap(lightMapUV) + SampleLightProbe(surfaceWS);
 	gi.specular = SampleEnvironment(surfaceWS, brdf);
+	gi.ao = 1;
 	//gi.specular = 0;
 	
 	gi.shadowMask.always = false;

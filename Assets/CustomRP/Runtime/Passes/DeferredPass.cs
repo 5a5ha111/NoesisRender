@@ -27,6 +27,9 @@ public class DeferredPass
     RenderTexture[] gBuffersTarget;
     TextureHandle depthTex;
 
+    TextureHandle xeGTAOValue;
+    bool xeGTAOEnabled;
+
     TextureHandle colorHandle;
     Camera camera;
 
@@ -49,6 +52,8 @@ public class DeferredPass
     readonly int _GbufferTex1 = Shader.PropertyToID("_GBuffer1");
     readonly int _GbufferTex2 = Shader.PropertyToID("_GBuffer2");
     readonly int _GbufferTex3 = Shader.PropertyToID("_GBuffer3");
+
+    readonly int _XeGTAOValue = Shader.PropertyToID("_XeGTAOValue");
 
 
     readonly int _ReflectinSkybox = Shader.PropertyToID("_BaseRefl");
@@ -105,8 +110,16 @@ public class DeferredPass
         //var skybox = RenderSettings.skybox;
         /*LocalKeyword enableShadowFilter = new LocalKeyword(deferredMat.shader, "DIRECTIONAL_FILTER_SETUP");
         deferredMat.SetKeyword(enableShadowFilter, true);
-        LocalKeyword enableOthShadowFilter = new LocalKeyword(deferredMat.shader, "OTHER_FILTER_SETUP");
+        LocalKeyword useXeGTAO = new LocalKeyword(deferredMat.shader, "OTHER_FILTER_SETUP");
         deferredMat.SetKeyword(enableShadowFilter, true);*/
+
+        LocalKeyword useXeGTAO = new LocalKeyword(deferredMat.shader, "_AO");
+        deferredMat.SetKeyword(useXeGTAO, xeGTAOEnabled);
+
+        if (xeGTAOEnabled)
+        {
+            cmd.SetGlobalTexture(_XeGTAOValue, xeGTAOValue);
+        }
 
         cmd.SetRenderTarget
         (
@@ -123,7 +136,7 @@ public class DeferredPass
     (
         RenderGraph renderGraph, Camera camera, CullingResults cullingResults,
         in CameraRendererTextures textures, ref RenderTexture[] renderTargets, Material deferredMat,
-        in LightResources lightData, int renderingLayerMask, Cubemap reflCubemap
+        in LightResources lightData, int renderingLayerMask, Cubemap reflCubemap, bool xeGTAOEnabled, TextureHandle xeGTAOValue
     )
     {
         ProfilingSampler sampler = samplerDeferred;
@@ -173,6 +186,12 @@ public class DeferredPass
                 }
             )
         );
+
+        if (xeGTAOEnabled)
+        {
+            pass.xeGTAOValue = builder.ReadTexture(xeGTAOValue);
+        }
+        pass.xeGTAOEnabled = xeGTAOEnabled;
 
 
         pass.directionalLightDataBuffer = builder.ReadComputeBuffer(lightData.directionalLightDataBuffer);

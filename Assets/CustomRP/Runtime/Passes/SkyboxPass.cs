@@ -10,9 +10,9 @@ public class SkyboxPass
 
     void Render(RenderGraphContext context)
     {
+        context.renderContext.DrawSkybox(camera);
         context.renderContext.ExecuteCommandBuffer(context.cmd);
         context.cmd.Clear();
-        context.renderContext.DrawSkybox(camera);
     }
 
     public static void Record(RenderGraph renderGraph, Camera camera, in CameraRendererTextures textures)

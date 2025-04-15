@@ -122,7 +122,7 @@ Shader "Custom/DecalReconstructedShaderUnity"
                     float3 normalWS = float3(0,1,0);
                     float3 normalOS = float3(0,1,0);
                     #ifdef _DEFFERED_LIGHTNING
-                        normalWS = SAMPLE_TEXTURE2D_LOD(_GBuffer1, sampler_linear_clamp, screenUV, 0);
+                        normalWS = SAMPLE_TEXTURE2D_LOD(_GBuffer1, sampler_linear_clamp, screenUV, 0).xyz;
                     #else
                         #if defined(_ACCURATE)
                             float3 normalView = ReconstructNormalTap9(screenUV).xyz;

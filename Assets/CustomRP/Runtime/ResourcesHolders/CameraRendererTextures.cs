@@ -7,7 +7,6 @@ public readonly ref struct CameraRendererTextures
         colorCopy, depthCopy,
         motionVectorsTexture, motionVectorDepth;
 
-    //public readonly TextureHandle[] gBuffers;
 
     public CameraRendererTextures
     (

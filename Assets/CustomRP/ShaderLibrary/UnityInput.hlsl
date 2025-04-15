@@ -36,13 +36,16 @@ CBUFFER_START(UnityPerDraw)
 CBUFFER_END
 
 float4x4 unity_MatrixVP;
+float4x4 unity_worldToProjection;
 float4x4 UNITY_MATRIX_P;
 float4x4 unity_MatrixV;
+float4x4 unity_WorldToCamera; // unity_MatrixV in postProc are identity, but it will be always camera transfrom matrix
 float4x4 UNITY_MATRIX_I_V;
+float4x4 unity_CameraToWorld;
 float4x4 UNITY_MATRIX_I_P;
+float4x4 unity_CameraInvProjection;
 float4x4 UNITY_MATRIX_I_VP;
 float4x4 unity_MatrixInvV;
-float4x4 unity_CameraInvProjection;
 float4x4 unity_prev_MatrixM;
 float4x4 unity_prev_MatrixIM;
 float4x4 glstate_matrix_projection;

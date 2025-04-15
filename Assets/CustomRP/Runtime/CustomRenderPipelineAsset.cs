@@ -104,4 +104,23 @@ public partial class CustomRenderPipelineAsset : RenderPipelineAsset
 
         return new CustomRenderPipeline(settings);
     }
+
+#if UNITY_EDITOR
+
+    public override Material defaultMaterial
+    {
+        get { return UnityEditor.AssetDatabase.LoadAssetAtPath<Material>("Assets/CustomRP/Shaders/m_DefaultOpaque.mat"); }
+    }
+
+    public override Material defaultParticleMaterial
+    {
+        get { return UnityEditor.AssetDatabase.LoadAssetAtPath<Material>("Assets/CustomRP/Shaders/m_DefaultParticle.mat"); }
+    }
+
+    public override Shader defaultShader
+    {
+        get { return UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/CustomRP/Shaders/Lit.shader"); }
+    }
+
+#endif
 }

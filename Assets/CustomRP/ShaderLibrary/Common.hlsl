@@ -177,6 +177,13 @@ float3 NormalReconstructZ(float2 In)
     float3 Out = normalize(normalVector);
     return Out;
 }
+
+float3 NormalStrength(float3 In, float Strength)
+{
+    float3 Out = float3(In.rg * Strength, lerp(1, In.b, saturate(Strength)));
+    return Out;
+}
+
 float3 ReconstructViewPos(float2 positionViewXY, float rawDepth, float4x4 projMatrix)
 {
     // Extract near and far plane values from the projection matrix

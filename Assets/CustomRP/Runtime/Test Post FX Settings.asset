@@ -16,7 +16,7 @@ MonoBehaviour:
   enabled: 1
   bloom:
     ignoreRenderScale: 0
-    maxIterations: 16
+    maxIterations: 0
     downscaleLimit: 1
     bicubicUpsampling: 1
     threshold: 1.1
@@ -51,7 +51,7 @@ MonoBehaviour:
     highlightsStart: 0.55
     highLightsEnd: 1
   toneMapping:
-    mode: 3
+    mode: 0
   dither:
     mode: 2
     useInScene: 0
