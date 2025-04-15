@@ -92,7 +92,7 @@ public class GBufferResources : IDisposable
         * 
         */
 
-        private const int amountOfGBuffers = 4;
+        public const int amountOfGBuffers = 4;
         private const int gBufferDepth = (int)DepthBits.None;
         RenderTexture[] gbuffers = new RenderTexture[amountOfGBuffers];
         readonly RenderTargetIdentifier[] gbufferID = new RenderTargetIdentifier[amountOfGBuffers];

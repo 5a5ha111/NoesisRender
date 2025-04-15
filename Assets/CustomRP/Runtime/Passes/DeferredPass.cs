@@ -5,6 +5,8 @@ using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.RendererUtils;
 using UnityEngine.Rendering;
 using System;
+using static GBufferResources;
+using System.Text;
 
 public class DeferredPass
 {
@@ -139,6 +141,36 @@ public class DeferredPass
         in LightResources lightData, int renderingLayerMask, Cubemap reflCubemap, bool xeGTAOEnabled, TextureHandle xeGTAOValue
     )
     {
+        if (deferredMat == null || renderTargets == null || renderTargets.Length < GBufferTextures.amountOfGBuffers || renderTargets[0] == null || !renderTargets[0].IsCreated())
+        {
+            //Debug.Log("Deferred invalid ");
+            StringBuilder debugMessage = new StringBuilder("Deferred rendering invalid - ");
+
+            if (deferredMat == null)
+            {
+                debugMessage.Append("Deferred material is null. ");
+            }
+
+            if (renderTargets == null)
+            {
+                debugMessage.Append("Render targets array is null. ");
+            }
+            else if (renderTargets.Length < GBufferTextures.amountOfGBuffers)
+            {
+                debugMessage.Append($"Render targets array length ({renderTargets.Length}) is less than required GBuffers ({GBufferTextures.amountOfGBuffers}). ");
+            }
+            else if (renderTargets[0] == null)
+            {
+                debugMessage.Append("First render target is null. ");
+            }
+            else if (!renderTargets[0].IsCreated())
+            {
+                debugMessage.Append("First render target texture is not created. ");
+            }
+
+            Debug.Log(debugMessage.ToString());
+            return;
+        }
         ProfilingSampler sampler = samplerDeferred;
 
         using RenderGraphBuilder builder = renderGraph.AddRenderPass

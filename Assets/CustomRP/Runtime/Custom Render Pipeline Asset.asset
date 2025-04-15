@@ -44,7 +44,7 @@ MonoBehaviour:
       maxDistance: 40
       distanceFade: 0.1
       directional:
-        atlasSize: 1024
+        atlasSize: 2048
         filter: 3
         cascadeBlend: 1
         cascadeCount: 1
@@ -77,9 +77,9 @@ MonoBehaviour:
       XeGTAOApply: {fileID: 4800000, guid: 9599961e6e539cc4ba6544b6e5025a7b, type: 3}
       HalfRes: 1
       QualityLevel: 3
-      DenoisePasses: 1
-      Radius: 0.1
-      FinalValuePower: 10
+      DenoisePasses: 3
+      Radius: 0.5
+      FinalValuePower: 2.2
   cameraBufferSettings:
     allowHDR: 1
     copyColor: 1

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Experimental.Rendering.RenderGraphModule;
@@ -330,18 +331,44 @@ public partial class CameraRenderer
                 var gbResources = GBufferResources.GetGBResources(camera, bufferSize);
                 var gbufferID = gbResources._getTargets;
                 var gbufferTexs = gbResources._getTextures;
+#if UNITY_EDITOR
+                // When switching unity scenes with scene camera active, we can get invalid renderer textures.
+                if (gbufferTexs[0] == null)
+                {
+                    GBufferResources._instance.Dispose();
+                    gbResources = GBufferResources.GetGBResources(camera, bufferSize);
+                    gbufferID = gbResources._getTargets;
+                    gbufferTexs = gbResources._getTextures;
+                    //EditorApplication.ExecuteMenuItem("Window/General/Game");
+
+                    UnityEditor.EditorUtility.DisplayDialog("Scene camera can be invalid.",
+                                    "Renderer textures can be uninitialized. Render loop can be broken there. It can happend after you switch scenes with scene camera."
+                                    , "OK");
+
+                    EditorUtility.RequestScriptReload();
+
+                    /*SceneView[] openSceneViews = Resources.FindObjectsOfTypeAll<SceneView>();
+
+                    foreach (SceneView sceneView in openSceneViews)
+                    {
+                        sceneView.Close();
+                    }
+                    Debug.Log("Closed all Scene Views.");*/
+                }
+#endif
                 GBufferPass.Record(renderGraph, camera, cullingResults, cameraSettings.renderingLayerMask, textures, gbufferID, useLightsPerObject);
 
                 bool xeGTAOEnabled = XeGTAO.CanRender(settings.xeGTAOsettings, materialXeGTAO);
-                TextureHandle xeHBAO;
+
+                TextureDesc whiteDesc = new TextureDesc(1, 1);
+                whiteDesc.clearColor = Color.white;
+                whiteDesc.depthBufferBits = 0;
+                whiteDesc.colorFormat = GraphicsFormat.B8G8R8A8_SRGB;
+                TextureHandle xeHBAO = renderGraph.CreateTexture(whiteDesc);
                 if (xeGTAOEnabled && gbufferTexs.Length > 1 && gbufferTexs[1] != null)
                 {
                     var xeGTAOResources = XeGTAOResources.GetGTAOesources(camera, !settings.xeGTAOsettings.HalfRes ? bufferSize : bufferSize / 2);
                     xeHBAO = XeGTAO.Record(renderGraph, camera, in textures, settings.xeGTAOsettings, xeGTAOResources, bufferSize, materialXeGTAO, !settings.deferredSettings.enabled, gbufferTexs[1]);
-                }
-                else
-                {
-                    xeHBAO = new TextureHandle();
                 }
 
                 DeferredPass.Record(renderGraph, camera, cullingResults, textures, ref gbufferTexs, deferredMat, lightResources, cameraSettings.renderingLayerMask, settings.deferredSettings.reflectionCubemap, xeGTAOEnabled, xeHBAO);
@@ -387,9 +414,9 @@ public partial class CameraRenderer
                 textures, lightResources
             );
 
-            #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+#if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
             DLSSPass.Record(renderGraph, camera, textures, cameraBufferSettings, bufferSize, useHDR);
-            #endif
+#endif
 
             if (hasActivePostFX)
             {
@@ -415,14 +442,7 @@ public partial class CameraRenderer
 
 
         context.ExecuteCommandBuffer(renderGraphParameters.commandBuffer);
-        try
-        {
-            context.Submit();
-        }
-        catch (Exception e)
-        {
-            Debug.LogException(e);
-        }
+        context.Submit();
         CommandBufferPool.Release(renderGraphParameters.commandBuffer);
     }
 
@@ -449,12 +469,13 @@ public partial class CameraRenderer
         CoreUtils.Destroy(materialMotion);
         CoreUtils.Destroy(depthOnlyMaterial);
         CoreUtils.Destroy(materialXeGTAO);
+        CoreUtils.Destroy(deferredMat);
 
         /*CoreUtils.Destroy(tempTexs[0]);
         CoreUtils.Destroy(tempTexs[1]);*/
         //Debug.Log("================Global dispose==============");
         GBufferResources._instance.Dispose();
-        CoreUtils.Destroy(deferredMat);
+        XeGTAOResources._instance.Dispose();
 
         CameraDebugger.Cleanup();
     }

@@ -1,3 +1,4 @@
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -28,5 +29,5 @@ public class CustomRenderPipelineCamera : MonoBehaviour
             Camera camera = GetComponent<Camera>();
             camera.ResetProjectionMatrix();
         }
-    #endif
+#endif
 }

@@ -51,7 +51,6 @@ public class XeGTAOResources
 
     public void Dispose()
     {
-        Debug.Log("Dispose HBAO");
         if (keyValuePairs == null)
         {
             return;

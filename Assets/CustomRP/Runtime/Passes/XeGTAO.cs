@@ -188,8 +188,8 @@ public class XeGTAO
         cmd.SetComputeVectorParam(vaXeGTAO, _Packed2, Packed2);
         cmd.SetComputeVectorParam(vaXeGTAO, _Packed3, Packed3);
         cmd.SetComputeIntParam(vaXeGTAO, _NoiseIndex, NoiseIndex);
-        cmd.SetComputeIntParam(vaXeGTAO, _generateNormals, generateNormals ? 1 : 0);
-        //cmd.SetComputeIntParam(vaXeGTAO, _generateNormals, 1);
+        //cmd.SetComputeIntParam(vaXeGTAO, _generateNormals, generateNormals ? 1 : 0);
+        cmd.SetComputeIntParam(vaXeGTAO, _generateNormals, 1);
 
 
         numTheadsX = (attachmentSize.x + 16 - 1) / 16;
