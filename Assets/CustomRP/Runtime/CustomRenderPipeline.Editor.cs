@@ -3,18 +3,22 @@ using UnityEngine;
 using UnityEngine.Experimental.GlobalIllumination;
 using LightType = UnityEngine.LightType;
 
-public partial class CustomRenderPipeline
+
+namespace NoesisRender
 {
 
-    partial void InitializeForEditor();
+    public partial class CustomRenderPipeline
+    {
 
-    partial void DisposeForEditor();
+        partial void InitializeForEditor();
+
+        partial void DisposeForEditor();
 
 
 
 #if UNITY_EDITOR
 
-    partial void InitializeForEditor()
+        partial void InitializeForEditor()
         {
             Lightmapping.SetDelegate(lightsDelegate);
         }
@@ -23,8 +27,8 @@ public partial class CustomRenderPipeline
             Lightmapping.ResetDelegate();
         }
 
-        static Lightmapping.RequestLightsDelegate lightsDelegate = 
-        (Light[] lights, NativeArray<LightDataGI> output) => 
+        static Lightmapping.RequestLightsDelegate lightsDelegate =
+        (Light[] lights, NativeArray<LightDataGI> output) =>
         {
             var lightData = new LightDataGI();
             for (int i = 0; i < lights.Length; i++)
@@ -68,5 +72,6 @@ public partial class CustomRenderPipeline
             }
         };
 
-    #endif
+#endif
+    }
 }

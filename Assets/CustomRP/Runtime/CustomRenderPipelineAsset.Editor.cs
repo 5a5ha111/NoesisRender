@@ -1,7 +1,9 @@
-partial class CustomRenderPipelineAsset
+namespace NoesisRender
 {
+    partial class CustomRenderPipelineAsset
+    {
 
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
 
         static string[] renderingLayerNames;
 
@@ -16,5 +18,6 @@ partial class CustomRenderPipelineAsset
 
         public override string[] renderingLayerMaskNames => renderingLayerNames;
 
-    #endif
+#endif
+    }
 }

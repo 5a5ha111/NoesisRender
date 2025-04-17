@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace PortalsUnity
+namespace NoesisRender.Portals
 {
     public class Portal : MonoBehaviour
     {

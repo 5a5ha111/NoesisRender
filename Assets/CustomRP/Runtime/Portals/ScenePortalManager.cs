@@ -1,11 +1,7 @@
-using PortalsUnity;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace PortalsUnity
+namespace NoesisRender.Portals
 {
     public class ScenePortalManager : MonoBehaviour
     {

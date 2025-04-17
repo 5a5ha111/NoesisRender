@@ -1,3 +1,6 @@
 using UnityEngine;
 
-public class RenderingLayerMaskFieldAttribute : PropertyAttribute { }
+namespace NoesisRender
+{
+    public class RenderingLayerMaskFieldAttribute : PropertyAttribute { }
+}

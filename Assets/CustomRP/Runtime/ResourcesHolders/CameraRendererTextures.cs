@@ -1,30 +1,34 @@
 using UnityEngine.Experimental.Rendering.RenderGraphModule;
 
-public readonly ref struct CameraRendererTextures
+
+namespace NoesisRender.ResourcesHolders
 {
-    public readonly TextureHandle
-        colorAttachment, depthAttachment,
-        colorCopy, depthCopy,
-        motionVectorsTexture, motionVectorDepth;
-
-
-    public CameraRendererTextures
-    (
-        TextureHandle colorAttachment,
-        TextureHandle depthAttachment,
-        TextureHandle colorCopy,
-        TextureHandle depthCopy,
-        TextureHandle motionVectorsTexture,
-        TextureHandle motionVectorDepth
-    )
+    public readonly ref struct CameraRendererTextures
     {
-        this.colorAttachment = colorAttachment;
-        this.depthAttachment = depthAttachment;
-        this.colorCopy = colorCopy;
-        this.depthCopy = depthCopy;
-        this.motionVectorsTexture = motionVectorsTexture;
-        this.motionVectorDepth = motionVectorDepth;
+        public readonly TextureHandle
+            colorAttachment, depthAttachment,
+            colorCopy, depthCopy,
+            motionVectorsTexture, motionVectorDepth;
 
-        //this.gBuffers = gBuffers;
+
+        public CameraRendererTextures
+        (
+            TextureHandle colorAttachment,
+            TextureHandle depthAttachment,
+            TextureHandle colorCopy,
+            TextureHandle depthCopy,
+            TextureHandle motionVectorsTexture,
+            TextureHandle motionVectorDepth
+        )
+        {
+            this.colorAttachment = colorAttachment;
+            this.depthAttachment = depthAttachment;
+            this.colorCopy = colorCopy;
+            this.depthCopy = depthCopy;
+            this.motionVectorsTexture = motionVectorsTexture;
+            this.motionVectorDepth = motionVectorDepth;
+
+            //this.gBuffers = gBuffers;
+        }
     }
 }

@@ -772,7 +772,7 @@ void OutputGenericData( const in float row[SHADERGLOBAL_GENERICDATACAPTURE_COLUM
 
 float Equal(float3 a, float3 b)
 {
-    if (a.x == b.x || a.y == b.y || a.z == b.z)
+    if (a.x == b.x && a.y == b.y && a.z == b.z)
     {
         return 1;
     }

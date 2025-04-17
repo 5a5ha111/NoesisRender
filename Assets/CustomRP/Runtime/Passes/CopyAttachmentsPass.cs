@@ -1,81 +1,86 @@
+using NoesisRender.ResourcesHolders;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.Rendering;
 
-public class CopyAttachmentsPass
+
+namespace NoesisRender.Passes
 {
-    static readonly ProfilingSampler sampler = new("Copy Attachments");
-
-    static readonly int
-        colorCopyID = Shader.PropertyToID("_CameraColorTexture"),
-        depthCopyID = Shader.PropertyToID("_CameraDepthTexture");
-
-
-    bool copyColor, copyDepth;
-    CameraRendererCopier copier;
-    TextureHandle colorAttachment, depthAttachment, colorCopy, depthCopy;
-
-    void Render(RenderGraphContext context)
+    public class CopyAttachmentsPass
     {
-        CommandBuffer buffer = context.cmd;
-        if (copyColor)
-        {
-            copier.Copy(buffer, colorAttachment, colorCopy, false);
-            buffer.SetGlobalTexture(colorCopyID, colorCopy);
-        }
-        if (copyDepth)
-        {
-            copier.Copy(buffer, depthAttachment, depthCopy, true);
-            buffer.SetGlobalTexture(depthCopyID, depthCopy);
-        }
-        if (CameraRendererCopier.RequiresRenderTargetResetAfterCopy)
-        {
-            buffer.SetRenderTarget
-            (
-                colorAttachment,
-                RenderBufferLoadAction.Load, RenderBufferStoreAction.Store,
-                depthAttachment,
-                RenderBufferLoadAction.Load, RenderBufferStoreAction.Store
-            );
-        }
-        context.renderContext.ExecuteCommandBuffer(buffer);
-        buffer.Clear();
-    }
+        static readonly ProfilingSampler sampler = new("Copy Attachments");
 
-    public static void Record
-    (
-        RenderGraph renderGraph,
-        bool copyColor,
-        bool copyDepth,
-        CameraRendererCopier copier,
-        in CameraRendererTextures textures
-    )
-    {
-        if (copyColor || copyDepth)
-        {
-            using RenderGraphBuilder builder = renderGraph.AddRenderPass
-            (
-                sampler.name, out CopyAttachmentsPass pass, sampler
-            );
-            pass.copyColor = copyColor;
-            pass.copyDepth = copyDepth;
-            pass.copier = copier;
+        static readonly int
+            colorCopyID = Shader.PropertyToID("_CameraColorTexture"),
+            depthCopyID = Shader.PropertyToID("_CameraDepthTexture");
 
-            pass.colorAttachment = builder.ReadTexture(textures.colorAttachment);
-            pass.depthAttachment = builder.ReadTexture(textures.depthAttachment);
+
+        bool copyColor, copyDepth;
+        CameraRendererCopier copier;
+        TextureHandle colorAttachment, depthAttachment, colorCopy, depthCopy;
+
+        void Render(RenderGraphContext context)
+        {
+            CommandBuffer buffer = context.cmd;
             if (copyColor)
             {
-                pass.colorCopy = builder.WriteTexture(textures.colorCopy);
+                copier.Copy(buffer, colorAttachment, colorCopy, false);
+                buffer.SetGlobalTexture(colorCopyID, colorCopy);
             }
             if (copyDepth)
             {
-                pass.depthCopy = builder.WriteTexture(textures.depthCopy);
+                copier.Copy(buffer, depthAttachment, depthCopy, true);
+                buffer.SetGlobalTexture(depthCopyID, depthCopy);
             }
+            if (CameraRendererCopier.RequiresRenderTargetResetAfterCopy)
+            {
+                buffer.SetRenderTarget
+                (
+                    colorAttachment,
+                    RenderBufferLoadAction.Load, RenderBufferStoreAction.Store,
+                    depthAttachment,
+                    RenderBufferLoadAction.Load, RenderBufferStoreAction.Store
+                );
+            }
+            context.renderContext.ExecuteCommandBuffer(buffer);
+            buffer.Clear();
+        }
 
-            builder.SetRenderFunc<CopyAttachmentsPass>
-            (
-                static (pass, context) => pass.Render(context)
-            );
+        public static void Record
+        (
+            RenderGraph renderGraph,
+            bool copyColor,
+            bool copyDepth,
+            CameraRendererCopier copier,
+            in CameraRendererTextures textures
+        )
+        {
+            if (copyColor || copyDepth)
+            {
+                using RenderGraphBuilder builder = renderGraph.AddRenderPass
+                (
+                    sampler.name, out CopyAttachmentsPass pass, sampler
+                );
+                pass.copyColor = copyColor;
+                pass.copyDepth = copyDepth;
+                pass.copier = copier;
+
+                pass.colorAttachment = builder.ReadTexture(textures.colorAttachment);
+                pass.depthAttachment = builder.ReadTexture(textures.depthAttachment);
+                if (copyColor)
+                {
+                    pass.colorCopy = builder.WriteTexture(textures.colorCopy);
+                }
+                if (copyDepth)
+                {
+                    pass.depthCopy = builder.WriteTexture(textures.depthCopy);
+                }
+
+                builder.SetRenderFunc<CopyAttachmentsPass>
+                (
+                    static (pass, context) => pass.Render(context)
+                );
+            }
         }
     }
 }

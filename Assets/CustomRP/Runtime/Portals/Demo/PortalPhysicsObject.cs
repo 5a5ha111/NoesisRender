@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-namespace PortalsUnity
+namespace NoesisRender.Portals
 {
     [RequireComponent(typeof(Rigidbody))]
     public class PortalPhysicsObject : PortalTraveller

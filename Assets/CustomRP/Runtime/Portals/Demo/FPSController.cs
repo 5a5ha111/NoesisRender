@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace PortalsUnity
+namespace NoesisRender.Portals
 {
     public class FPSController : PortalTraveller
     {

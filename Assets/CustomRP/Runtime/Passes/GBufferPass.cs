@@ -5,103 +5,77 @@ using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.RendererUtils;
 using UnityEngine.Rendering;
 
-public class GBufferPass
-{
-    static readonly ProfilingSampler samplerGbuffer = new("GBuffer Pass");
 
-    static readonly ShaderTagId[] shaderTagIds =
+namespace NoesisRender.Passes
+{
+    using NoesisRender.ResourcesHolders;
+
+    public class GBufferPass
     {
+        static readonly ProfilingSampler samplerGbuffer = new("GBuffer Pass");
+
+        static readonly ShaderTagId[] shaderTagIds =
+        {
         new("CustomGBuffer")
     };
 
-    RendererListHandle list;
-    CameraRenderer renderer;
+        RendererListHandle list;
 
-    bool useDynamicBatching, useGPUInstancing;
+        bool useDynamicBatching, useGPUInstancing;
 
-    int renderingLayerMask;
-    TextureHandle[] gBufferTexs;
-    RenderTargetIdentifier[] gBuffersTarget;
-    TextureHandle depthTex;
+        int renderingLayerMask;
+        RenderTargetIdentifier[] gBuffersTarget;
+        TextureHandle depthTex;
 
-    void Render(RenderGraphContext context)
-    {
-        context.cmd.SetRenderTarget(gBuffersTarget, depthTex);
-        context.cmd.ClearRenderTarget
-        (
-            clearDepth: true,
-            clearColor: true,
-            backgroundColor: Color.clear
-        );
-        context.cmd.DrawRendererList(list);
-        context.renderContext.ExecuteCommandBuffer(context.cmd);
-        context.cmd.Clear();
-    }
-
-    public static void Record
-    (
-        RenderGraph renderGraph, Camera camera, CullingResults cullingResults,
-        int renderingLayerMask,
-        in CameraRendererTextures textures, in RenderTargetIdentifier[] renderTargets, bool useLightsPerObject
-    )
-    {
-        ProfilingSampler sampler = samplerGbuffer;
-
-        using RenderGraphBuilder builder = renderGraph.AddRenderPass
-            (sampler.name, out GBufferPass pass, sampler);
-        pass.renderingLayerMask = renderingLayerMask;
-
-        pass.list = builder.UseRendererList
-        (
-            renderGraph.CreateRendererList
+        void Render(RenderGraphContext context)
+        {
+            context.cmd.SetRenderTarget(gBuffersTarget, depthTex);
+            context.cmd.ClearRenderTarget
             (
-                new RendererListDesc(shaderTagIds, cullingResults, camera)
-                {
-                    sortingCriteria = SortingCriteria.CommonOpaque,
-                    renderQueueRange = RenderQueueRange.opaque,
-                    renderingLayerMask = (uint)renderingLayerMask
-                }
-            )
-        );
+                clearDepth: true,
+                clearColor: true,
+                backgroundColor: Color.clear
+            );
+            context.cmd.DrawRendererList(list);
+            context.renderContext.ExecuteCommandBuffer(context.cmd);
+            context.cmd.Clear();
+        }
 
-
-        /*if (lightData.tilesBuffer.IsValid())
+        public static void Record
+        (
+            RenderGraph renderGraph, Camera camera, CullingResults cullingResults,
+            int renderingLayerMask,
+            in CameraRendererTextures textures, in RenderTargetIdentifier[] renderTargets, bool useLightsPerObject
+        )
         {
-            builder.ReadComputeBuffer(lightData.tilesBuffer);
-        }*/
+            ProfilingSampler sampler = samplerGbuffer;
+
+            using RenderGraphBuilder builder = renderGraph.AddRenderPass
+                (sampler.name, out GBufferPass pass, sampler);
+            pass.renderingLayerMask = renderingLayerMask;
+
+            pass.list = builder.UseRendererList
+            (
+                renderGraph.CreateRendererList
+                (
+                    new RendererListDesc(shaderTagIds, cullingResults, camera)
+                    {
+                        sortingCriteria = SortingCriteria.CommonOpaque,
+                        renderQueueRange = RenderQueueRange.opaque,
+                        renderingLayerMask = (uint)renderingLayerMask
+                    }
+                )
+            );
 
 
-        // Readwrite not change renderTarget. Also allow RenderBufferLoadAction.DontCare
-        builder.ReadWriteTexture(textures.colorAttachment);
-        builder.ReadWriteTexture(textures.depthAttachment);
-        //pass.colorTex = textures.colorAttachment;
-        pass.depthTex = textures.depthAttachment;
-        pass.gBuffersTarget = renderTargets;
-        //pass.gdepth = gdepth;
+            builder.ReadWriteTexture(textures.colorAttachment);
+            builder.ReadWriteTexture(textures.depthAttachment);
+            pass.depthTex = textures.depthAttachment;
+            pass.gBuffersTarget = renderTargets;
 
-        
-        // Indicate that this resources is needed
-        /*builder.ReadComputeBuffer(lightData.directionalLightDataBuffer);
-        builder.ReadComputeBuffer(lightData.otherLightDataBuffer);
-        builder.ReadTexture(lightData.shadowResources.directionalAtlas);
-        builder.ReadTexture(lightData.shadowResources.otherAtlas);
-        builder.ReadComputeBuffer(lightData.shadowResources.directionalShadowCascadesBuffer);
-        builder.ReadComputeBuffer(lightData.shadowResources.directionalShadowMatricesBuffer);
-        builder.ReadComputeBuffer(lightData.shadowResources.otherShadowDataBuffer);*/
-
-
-        // GBuffers
-        /*var gBuffers = textures.gBuffers;
-        pass.gBuffersTarget = new RenderTargetIdentifier[gBuffers.Length];
-        for (int i = 0; i < gBuffers.Length; i++)
-        {
-            var gBufferTex = gBuffers[i];
-            builder.WriteTexture(gBufferTex);
-            pass.gBuffersTarget[i] = gBufferTex;
-        }*/
-
-
-        builder.AllowPassCulling(false);
-        builder.SetRenderFunc<GBufferPass>(static (pass, context) => pass.Render(context));
+            builder.AllowPassCulling(false);
+            builder.SetRenderFunc<GBufferPass>(static (pass, context) => pass.Render(context));
+        }
     }
+
 }

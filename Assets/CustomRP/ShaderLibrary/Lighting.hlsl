@@ -95,7 +95,6 @@ float3 GetAllLighting (Fragment fragment, Surface surfaceWS, BRDF brdf, GI gi)
 		Light light = GetDirectionalLight(i, surfaceWS, shadowData);
 		light.attenuation = min(light.attenuation, gi.ao);
 		color += GetLighting(surfaceWS, brdf, light);
-		color *= gi.ao;
 		//color += SpecularBlinn(surfaceWS.viewDirection, light.direction, surfaceWS.normal, surfaceWS.smoothness) * light.color;
 		//color *= DiffuseLambert(surfaceWS.normal, -light.direction);
 		//color = 0.5;
@@ -120,6 +119,7 @@ float3 GetAllLighting (Fragment fragment, Surface surfaceWS, BRDF brdf, GI gi)
 			color += GetLighting(surfaceWS, brdf, light);
 		}
 	#endif
+	color *= saturate(lerp(1,gi.ao * gi.ao, 0.8));
 	//return gi.shadowMask.shadows.rgb; //Debug GI
 	return color;
 }

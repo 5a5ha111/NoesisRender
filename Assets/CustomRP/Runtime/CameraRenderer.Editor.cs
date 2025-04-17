@@ -3,6 +3,10 @@ using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.Rendering;
 
+
+namespace NoesisRender
+{
+
 public partial class CameraRenderer
 {
 
@@ -116,4 +120,6 @@ public partial class CameraRenderer
 
     }
 #endif
+}
+
 }

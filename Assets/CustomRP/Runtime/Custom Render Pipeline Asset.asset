@@ -76,10 +76,11 @@ MonoBehaviour:
       computeShader: {fileID: 7200000, guid: f9866655892b7814f8bffb1bdbf3b61c, type: 3}
       XeGTAOApply: {fileID: 4800000, guid: 9599961e6e539cc4ba6544b6e5025a7b, type: 3}
       HalfRes: 1
-      QualityLevel: 3
+      BicubicRescale: 1
+      QualityLevel: 2
       DenoisePasses: 3
       Radius: 0.5
-      FinalValuePower: 2.2
+      FinalValuePower: 6
   cameraBufferSettings:
     allowHDR: 1
     copyColor: 1

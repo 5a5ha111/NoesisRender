@@ -1345,22 +1345,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
-    - target: {fileID: 1535381019623673784, guid: f760351d2eb0f3f489c048c83b4c9125, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1535381019623673786, guid: f760351d2eb0f3f489c048c83b4c9125, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1535381019623673786, guid: f760351d2eb0f3f489c048c83b4c9125, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1535381019623673786, guid: f760351d2eb0f3f489c048c83b4c9125, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 1535381019623673786, guid: f760351d2eb0f3f489c048c83b4c9125, type: 3}
       propertyPath: m_LocalPosition.x
       value: 6.29
@@ -1401,29 +1385,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 1535381019623673786, guid: f760351d2eb0f3f489c048c83b4c9125, type: 3}
-      propertyPath: m_ConstrainProportionsScale
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1535381020191089681, guid: f760351d2eb0f3f489c048c83b4c9125, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.675
-      objectReference: {fileID: 0}
-    - target: {fileID: 1535381020191089686, guid: f760351d2eb0f3f489c048c83b4c9125, type: 3}
-      propertyPath: m_ClearFlags
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7665427741182837592, guid: f760351d2eb0f3f489c048c83b4c9125, type: 3}
-      propertyPath: m_CastShadows
-      value: 0
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1535381020191089684, guid: f760351d2eb0f3f489c048c83b4c9125, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1772118425}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f760351d2eb0f3f489c048c83b4c9125, type: 3}
 --- !u!1 &287108380
 GameObject:
@@ -13867,40 +13832,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1753711930}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1772118422 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1535381020191089684, guid: f760351d2eb0f3f489c048c83b4c9125, type: 3}
-  m_PrefabInstance: {fileID: 281907657}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1772118425
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1772118422}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dce0e2f2b3a93fd4cb33fd84e9fe800e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  settings:
-    CameraType: 0
-    copyColor: 1
-    copyDepth: 1
-    renderMotionVectors: 1
-    renderingLayerMask: -1
-    maskLights: 0
-    overridePostFX: 0
-    postFXSettings: {fileID: 0}
-    renderScaleMode: 0
-    renderScale: 1
-    finalBlendMode:
-      source: 1
-      destination: 0
-    allowFXAA: 1
-    allowDLSS: 1
-    keepAlpha: 0
 --- !u!1 &1782004217
 GameObject:
   m_ObjectHideFlags: 0

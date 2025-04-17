@@ -4,15 +4,17 @@ using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RendererUtils;
 
-public class UnsupportedShadersPass
+namespace NoesisRender.Passes
 {
-    #if UNITY_EDITOR
+    public class UnsupportedShadersPass
+    {
+#if UNITY_EDITOR
 
         static readonly ProfilingSampler sampler = new("UnsupportedShaders");
 
         CameraRenderer renderer;
 
-        void Render(RenderGraphContext context) 
+        void Render(RenderGraphContext context)
         {
             //renderer.DrawUnsupportedShaders();
 
@@ -23,10 +25,10 @@ public class UnsupportedShadersPass
             context.cmd.Clear();
         }
 
-    #endif
+#endif
 
-    static readonly ShaderTagId[] shaderTagIds = 
-    {
+        static readonly ShaderTagId[] shaderTagIds =
+        {
         new("Always"),
         new("ForwardBase"),
         new("PrepassBase"),
@@ -35,13 +37,13 @@ public class UnsupportedShadersPass
         new("VertexLM")
     };
 
-    static Material errorMaterial;
-    RendererListHandle list;
+        static Material errorMaterial;
+        RendererListHandle list;
 
-    [Conditional("UNITY_EDITOR")]
-    public static void Record(RenderGraph renderGraph, Camera camera, CullingResults cullingResults)
-    {
-        #if UNITY_EDITOR
+        [Conditional("UNITY_EDITOR")]
+        public static void Record(RenderGraph renderGraph, Camera camera, CullingResults cullingResults)
+        {
+#if UNITY_EDITOR
 
 
             using RenderGraphBuilder builder = renderGraph.AddRenderPass(sampler.name, out UnsupportedShadersPass pass, sampler);
@@ -63,6 +65,7 @@ public class UnsupportedShadersPass
 
             builder.SetRenderFunc<UnsupportedShadersPass>(static (pass, context) => pass.Render(context));
 
-        #endif
+#endif
+        }
     }
 }

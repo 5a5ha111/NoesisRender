@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
-using static UnityEngine.UI.Image;
 
-namespace PortalsUnity
+namespace NoesisRender.Portals
 {
     public static class PortalCameraUtility
     {

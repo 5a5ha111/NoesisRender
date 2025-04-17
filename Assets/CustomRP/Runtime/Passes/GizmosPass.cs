@@ -3,9 +3,14 @@ using UnityEditor;
 using UnityEngine.Experimental.Rendering.RenderGraphModule;
 using UnityEngine.Rendering;
 
-public class GizmosPass
+
+namespace NoesisRender.Passes
 {
-    #if UNITY_EDITOR
+    using NoesisRender.ResourcesHolders;
+
+    public class GizmosPass
+    {
+#if UNITY_EDITOR
         static readonly ProfilingSampler sampler = new("Gizmos");
 
         //CameraRenderer renderer;
@@ -27,18 +32,18 @@ public class GizmosPass
             renderContext.DrawGizmos(copier.Camera, GizmoSubset.PreImageEffects);
             renderContext.DrawGizmos(copier.Camera, GizmoSubset.PostImageEffects);
         }
-    #endif
+#endif
 
-    [Conditional("UNITY_EDITOR")]
-    public static void Record
-    (
-        RenderGraph renderGraph, bool useIntermediateBuffer,
-        CameraRendererCopier copier,
-        in CameraRendererTextures textures
-    )
-    {
-        #if UNITY_EDITOR
-            if (Handles.ShouldRenderGizmos()) 
+        [Conditional("UNITY_EDITOR")]
+        public static void Record
+        (
+            RenderGraph renderGraph, bool useIntermediateBuffer,
+            CameraRendererCopier copier,
+            in CameraRendererTextures textures
+        )
+        {
+#if UNITY_EDITOR
+            if (Handles.ShouldRenderGizmos())
             {
                 using RenderGraphBuilder builder = renderGraph.AddRenderPass
                 (
@@ -53,6 +58,7 @@ public class GizmosPass
                 }
                 builder.SetRenderFunc<GizmosPass>(static (pass, context) => pass.Render(context));
             }
-        #endif
+#endif
+        }
     }
 }

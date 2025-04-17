@@ -10,7 +10,7 @@ using NVIDIA = UnityEngine.NVIDIA;
 #endif
 
 
-namespace UnityDLSS 
+namespace NoesisRender.UnityDLSS
 {
     public class UnityDlssCommon 
     {

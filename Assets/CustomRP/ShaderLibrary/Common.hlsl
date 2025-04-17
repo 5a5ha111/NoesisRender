@@ -227,7 +227,7 @@ float PointInBounds(float3 minBounds, float3 maxBounds, float3 _point)
 }
 float Equal(float3 a, float3 b)
 {
-	if (a.x == b.x || a.y == b.y || a.z == b.z)
+	if (a.x == b.x && a.y == b.y && a.z == b.z)
 	{
 		return 1;
 	}

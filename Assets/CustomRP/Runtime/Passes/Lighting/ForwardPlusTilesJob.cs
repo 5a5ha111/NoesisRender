@@ -5,51 +5,55 @@ using Unity.Mathematics;
 
 using static Unity.Mathematics.math;
 
-[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
-public struct ForwardPlusTilesJob : IJobFor
+
+namespace NoesisRender
 {
-    /// <summary>
-    /// Input: Array of light bounds in screen space.
-    /// </summary>
-    [ReadOnly] public NativeArray<float4> lightBounds;
-
-    /// <summary>
-    /// Output: Data array for each tile, storing indices of overlapping lights.
-    /// </summary>
-    [WriteOnly, NativeDisableParallelForRestriction] public NativeArray<int> tileData;
-
-    public int otherLightCount;
-    public float2 tileScreenUVSize;
-    public int maxLightsPerTile;
-    public int tilesPerRow;
-    public int tileDataSize;
-
-    /// <summary>
-    /// Loop through all lights and check if the bounds overlap. If so add the light index to the tile's list and stop if the maximum amount of lights is reached
-    /// </summary>
-    /// <param name="tileIndex"></param>
-    public void Execute(int tileIndex)
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+    public struct ForwardPlusTilesJob : IJobFor
     {
-        int y = tileIndex / tilesPerRow;
-        int x = tileIndex - y * tilesPerRow;
-        var bounds = float4(x, y, x + 1, y + 1) * tileScreenUVSize.xyxy;
+        /// <summary>
+        /// Input: Array of light bounds in screen space.
+        /// </summary>
+        [ReadOnly] public NativeArray<float4> lightBounds;
 
-        int headerIndex = tileIndex * tileDataSize;
-        int dataIndex = headerIndex;
-        int lightsInTileCount = 0;
+        /// <summary>
+        /// Output: Data array for each tile, storing indices of overlapping lights.
+        /// </summary>
+        [WriteOnly, NativeDisableParallelForRestriction] public NativeArray<int> tileData;
 
-        for (int i = 0; i < otherLightCount; i++)
+        public int otherLightCount;
+        public float2 tileScreenUVSize;
+        public int maxLightsPerTile;
+        public int tilesPerRow;
+        public int tileDataSize;
+
+        /// <summary>
+        /// Loop through all lights and check if the bounds overlap. If so add the light index to the tile's list and stop if the maximum amount of lights is reached
+        /// </summary>
+        /// <param name="tileIndex"></param>
+        public void Execute(int tileIndex)
         {
-            float4 b = lightBounds[i];
-            if (all(float4(b.xy, bounds.xy) <= float4(bounds.zw, b.zw)))
+            int y = tileIndex / tilesPerRow;
+            int x = tileIndex - y * tilesPerRow;
+            var bounds = float4(x, y, x + 1, y + 1) * tileScreenUVSize.xyxy;
+
+            int headerIndex = tileIndex * tileDataSize;
+            int dataIndex = headerIndex;
+            int lightsInTileCount = 0;
+
+            for (int i = 0; i < otherLightCount; i++)
             {
-                tileData[++dataIndex] = i;
-                if (++lightsInTileCount >= maxLightsPerTile)
+                float4 b = lightBounds[i];
+                if (all(float4(b.xy, bounds.xy) <= float4(bounds.zw, b.zw)))
                 {
-                    break;
+                    tileData[++dataIndex] = i;
+                    if (++lightsInTileCount >= maxLightsPerTile)
+                    {
+                        break;
+                    }
                 }
             }
+            tileData[headerIndex] = lightsInTileCount;
         }
-        tileData[headerIndex] = lightsInTileCount;
     }
 }

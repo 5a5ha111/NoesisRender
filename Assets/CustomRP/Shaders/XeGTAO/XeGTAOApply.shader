@@ -304,6 +304,37 @@ Shader "Hidden/Custom RP/XeGTAOApply"
             ENDHLSL
         }
 
+        Pass
+        {
+            Name "Bicubic Rescale"
+
+            Blend SrcAlpha OneMinusSrcAlpha
+
+            HLSLPROGRAM
+
+
+                #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Filtering.hlsl"
+
+                #pragma target 4.5
+                #pragma vertex DefaultPassVertex
+                #pragma fragment BlitFragment
+
+
+                TEXTURE2D(_SourceTexture);
+                float4 _SourceTexture_TexelSize;
+                //SAMPLER(sampler_CameraDepthTexture);
+
+
+                float4 BlitFragment (Varyings input) : SV_TARGET 
+                {
+                    return SampleTexture2DBicubic(
+                        TEXTURE2D_ARGS(_SourceTexture, sampler_linear_clamp), input.screenUV,
+                        _SourceTexture_TexelSize.zwxy, 1.0, 0.0
+                    );
+                }
+            ENDHLSL
+        }
+
         
     }
     FallBack "Diffuse"
