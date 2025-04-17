@@ -236,7 +236,8 @@ namespace NoesisRender.Passes
             cmd.DispatchCompute(vaXeGTAO, depthFilterKernel, numTheadsX, numTheadsY, 1);
 
 
-            cmd.Blit(depthfilteredMip0, depthWithPackedMips);
+            cmd.SetRenderTarget(depthWithPackedMips);
+            cmd.ClearRenderTarget(RTClearFlags.Color, Color.white, 0, 0);
             //depthWithPackedMips.GenerateMips();
             /*cmd.SetGlobalTexture(_SourceTexture, depthfilteredMip0);
             cmd.SetRenderTarget(depthWithPackedMips, 0);

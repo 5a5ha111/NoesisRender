@@ -91,6 +91,7 @@ namespace NoesisRender.ResourcesHolders
                 depthbufferDesc.useMipMap = true;
                 depthbufferDesc.depthBufferBits = gBufferDepth;
                 depthbufferDesc.enableRandomWrite = true;
+                //depthbufferDesc.memoryless = RenderTextureMemoryless.Color;
                 //depthbufferDesc.useDynamicScale = true;
 
                 this.tempTexs[0] = new RenderTexture(depthbufferDesc);

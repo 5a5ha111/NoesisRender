@@ -12,6 +12,7 @@ namespace NoesisRender.Portals
         public float smoothMoveTime = 0.1f;
         public float jumpForce = 8;
         public float gravity = 18;
+        public float flySpeed = 4;
 
         public bool lockCursor;
         public float mouseSensitivity = 10;
@@ -35,7 +36,8 @@ namespace NoesisRender.Portals
 
         bool jumping;
         float lastGroundedTime;
-        bool disabled;
+        bool disabled; 
+        bool isFlying;
 
         void Start()
         {
@@ -68,6 +70,12 @@ namespace NoesisRender.Portals
                 Cursor.visible = true;
                 disabled = !disabled;
             }
+            if (Input.GetKeyDown(KeyCode.L))
+            {
+                Cursor.lockState = CursorLockMode.Confined;
+                Cursor.visible = false;
+                disabled = !disabled;
+            }
 
             if (disabled)
             {
@@ -83,7 +91,10 @@ namespace NoesisRender.Portals
             Vector3 targetVelocity = worldInputDir * currentSpeed;
             velocity = Vector3.SmoothDamp(velocity, targetVelocity, ref smoothV, smoothMoveTime);
 
-            verticalVelocity -= gravity * Time.deltaTime;
+            if (!isFlying)
+            {
+                verticalVelocity -= gravity * Time.deltaTime;
+            }
             velocity = new Vector3(velocity.x, verticalVelocity, velocity.z);
 
             var flags = controller.Move(velocity * Time.deltaTime);
@@ -91,6 +102,27 @@ namespace NoesisRender.Portals
             {
                 jumping = false;
                 lastGroundedTime = Time.time;
+                verticalVelocity = 0;
+            }
+
+            if (Input.GetKeyDown(KeyCode.Space) && isFlying)
+            {
+                isFlying = false;
+                verticalVelocity = 0; // Reset vertical velocity when stopping flight
+            }
+            // Handle flying up/down
+            if (Input.GetKey(KeyCode.E))
+            {
+                isFlying = true;
+                verticalVelocity = flySpeed;
+            }
+            else if (Input.GetKey(KeyCode.Q))
+            {
+                isFlying = true;
+                verticalVelocity = -flySpeed;
+            }
+            else if (isFlying)
+            {
                 verticalVelocity = 0;
             }
 
