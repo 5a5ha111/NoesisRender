@@ -351,7 +351,7 @@ namespace NoesisRender
                                         "Renderer textures can be uninitialized. Render loop can be broken there. It can happend after you switch scenes with scene camera."
                                         , "OK");
 
-                        EditorUtility.RequestScriptReload();
+                        EditorUtility.RequestScriptReload(); 
 
                         /*SceneView[] openSceneViews = Resources.FindObjectsOfTypeAll<SceneView>();
 

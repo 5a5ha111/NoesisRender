@@ -1,0 +1,248 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!200 &20000000
+ShaderVariantCollection:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: SponzaShaderVariants
+  m_Shaders:
+  - first: {fileID: 66, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 46, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 8
+  - first: {fileID: 6, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 8
+  - first: {fileID: 103, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 106, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: _SUNDISK_SIMPLE
+        passType: 0
+  - first: {fileID: 9000, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 9001, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 9002, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 9003, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 9004, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 9007, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 9101, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 9103, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 76d40f853cf6d434ab46aaf3227d3cf3, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: LIGHTMAP_ON
+        passType: 0
+      - keywords: LIGHTMAP_ON _AO
+        passType: 0
+      - keywords: LIGHTMAP_ON _AO _LIGHTS_PER_OBJECT
+        passType: 0
+      - keywords: LIGHTMAP_ON _AO _OTHER_PCF3
+        passType: 0
+      - keywords: LIGHTMAP_ON _AO _OTHER_PCF5
+        passType: 0
+      - keywords: LIGHTMAP_ON _AO _OTHER_PCF7
+        passType: 0
+      - keywords: LIGHTMAP_ON _LIGHTS_PER_OBJECT
+        passType: 0
+      - keywords: LIGHTMAP_ON _OTHER_PCF3
+        passType: 0
+      - keywords: LIGHTMAP_ON _OTHER_PCF5
+        passType: 0
+      - keywords: LIGHTMAP_ON _OTHER_PCF7
+        passType: 0
+      - keywords: _AO
+        passType: 0
+      - keywords: _AO _CASCADE_BLEND_SOFT _DIRECTIONAL_PCF7 _OTHER_PCF7
+        passType: 0
+      - keywords: _AO _LIGHTS_PER_OBJECT
+        passType: 0
+      - keywords: _AO _LIGHTS_PER_OBJECT _OTHER_PCF3
+        passType: 0
+      - keywords: _AO _LIGHTS_PER_OBJECT _OTHER_PCF3 _SHADOW_MASK_ALWAYS
+        passType: 0
+      - keywords: _AO _LIGHTS_PER_OBJECT _OTHER_PCF3 _SHADOW_MASK_DISTANCE
+        passType: 0
+      - keywords: _AO _LIGHTS_PER_OBJECT _OTHER_PCF5
+        passType: 0
+      - keywords: _AO _LIGHTS_PER_OBJECT _OTHER_PCF5 _SHADOW_MASK_ALWAYS
+        passType: 0
+      - keywords: _AO _LIGHTS_PER_OBJECT _OTHER_PCF5 _SHADOW_MASK_DISTANCE
+        passType: 0
+      - keywords: _AO _LIGHTS_PER_OBJECT _OTHER_PCF7
+        passType: 0
+      - keywords: _AO _LIGHTS_PER_OBJECT _OTHER_PCF7 _SHADOW_MASK_ALWAYS
+        passType: 0
+      - keywords: _AO _LIGHTS_PER_OBJECT _OTHER_PCF7 _SHADOW_MASK_DISTANCE
+        passType: 0
+      - keywords: _AO _LIGHTS_PER_OBJECT _SHADOW_MASK_ALWAYS
+        passType: 0
+      - keywords: _AO _LIGHTS_PER_OBJECT _SHADOW_MASK_DISTANCE
+        passType: 0
+      - keywords: _AO _OTHER_PCF3
+        passType: 0
+      - keywords: _AO _OTHER_PCF3 _SHADOW_MASK_ALWAYS
+        passType: 0
+      - keywords: _AO _OTHER_PCF3 _SHADOW_MASK_DISTANCE
+        passType: 0
+      - keywords: _AO _OTHER_PCF5
+        passType: 0
+      - keywords: _AO _OTHER_PCF5 _SHADOW_MASK_ALWAYS
+        passType: 0
+      - keywords: _AO _OTHER_PCF5 _SHADOW_MASK_DISTANCE
+        passType: 0
+      - keywords: _AO _OTHER_PCF7
+        passType: 0
+      - keywords: _AO _OTHER_PCF7 _SHADOW_MASK_ALWAYS
+        passType: 0
+      - keywords: _AO _OTHER_PCF7 _SHADOW_MASK_DISTANCE
+        passType: 0
+      - keywords: _AO _SHADOW_MASK_ALWAYS
+        passType: 0
+      - keywords: _AO _SHADOW_MASK_DISTANCE
+        passType: 0
+      - keywords: _CASCADE_BLEND_SOFT _DIRECTIONAL_PCF7 _OTHER_PCF7
+        passType: 0
+      - keywords: _LIGHTS_PER_OBJECT
+        passType: 0
+      - keywords: _LIGHTS_PER_OBJECT _OTHER_PCF3
+        passType: 0
+      - keywords: _LIGHTS_PER_OBJECT _OTHER_PCF3 _SHADOW_MASK_ALWAYS
+        passType: 0
+      - keywords: _LIGHTS_PER_OBJECT _OTHER_PCF3 _SHADOW_MASK_DISTANCE
+        passType: 0
+      - keywords: _LIGHTS_PER_OBJECT _OTHER_PCF5
+        passType: 0
+      - keywords: _LIGHTS_PER_OBJECT _OTHER_PCF5 _SHADOW_MASK_ALWAYS
+        passType: 0
+      - keywords: _LIGHTS_PER_OBJECT _OTHER_PCF5 _SHADOW_MASK_DISTANCE
+        passType: 0
+      - keywords: _LIGHTS_PER_OBJECT _OTHER_PCF7
+        passType: 0
+      - keywords: _LIGHTS_PER_OBJECT _OTHER_PCF7 _SHADOW_MASK_ALWAYS
+        passType: 0
+      - keywords: _LIGHTS_PER_OBJECT _OTHER_PCF7 _SHADOW_MASK_DISTANCE
+        passType: 0
+      - keywords: _LIGHTS_PER_OBJECT _SHADOW_MASK_ALWAYS
+        passType: 0
+      - keywords: _LIGHTS_PER_OBJECT _SHADOW_MASK_DISTANCE
+        passType: 0
+      - keywords: _OTHER_PCF3
+        passType: 0
+      - keywords: _OTHER_PCF3 _SHADOW_MASK_ALWAYS
+        passType: 0
+      - keywords: _OTHER_PCF3 _SHADOW_MASK_DISTANCE
+        passType: 0
+      - keywords: _OTHER_PCF5
+        passType: 0
+      - keywords: _OTHER_PCF5 _SHADOW_MASK_ALWAYS
+        passType: 0
+      - keywords: _OTHER_PCF5 _SHADOW_MASK_DISTANCE
+        passType: 0
+      - keywords: _OTHER_PCF7
+        passType: 0
+      - keywords: _OTHER_PCF7 _SHADOW_MASK_ALWAYS
+        passType: 0
+      - keywords: _OTHER_PCF7 _SHADOW_MASK_DISTANCE
+        passType: 0
+      - keywords: _SHADOW_MASK_ALWAYS
+        passType: 0
+  - first: {fileID: 4800000, guid: e55a176c11dcef341959e09b286d2d94, type: 3}
+    second:
+      variants:
+      - keywords: _DITHER _DITHER_HIGH_QUALITY
+        passType: 0
+      - keywords: _DITHER_HIGH_QUALITY
+        passType: 0
+  - first: {fileID: 4800000, guid: 2429861690df26846a5e1d3855663095, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 8
+      - keywords: INSTANCING_ON
+        passType: 8
+      - keywords: INSTANCING_ON _CASCADE_BLEND_SOFT _DIRECTIONAL_PCF7 _OTHER_PCF7
+          _RECEIVE_SHADOWS
+        passType: 13
+      - keywords: _CASCADE_BLEND_SOFT _DIRECTIONAL_PCF7 _OTHER_PCF7 _RECEIVE_SHADOWS
+        passType: 13
+  - first: {fileID: 4800000, guid: a86020bc1fae4b14ea4994308efc619c, type: 3}
+    second:
+      variants:
+      - keywords: _RECEIVE_SHADOWS
+        passType: 0
+  - first: {fileID: 4800000, guid: 6d338f7af88d137439842ee66e7ae787, type: 3}
+    second:
+      variants:
+      - keywords: _RECEIVE_SHADOWS
+        passType: 0
+      - keywords: 
+        passType: 8
+  - first: {fileID: 4800000, guid: 9599961e6e539cc4ba6544b6e5025a7b, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: _HalfRes
+        passType: 0
+  - first: {fileID: 4800000, guid: f7d6b29de074caf489cfb5f6373bf2b1, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 8
+      - keywords: 
+        passType: 13
+      - keywords: _CASCADE_BLEND_SOFT _DIRECTIONAL_PCF7 _OTHER_PCF7
+        passType: 13
+  - first: {fileID: 4800000, guid: 47076bc6b042d8845afcc738ee629c80, type: 3}
+    second:
+      variants:
+      - keywords: VERTICAL_FLIP
+        passType: 0

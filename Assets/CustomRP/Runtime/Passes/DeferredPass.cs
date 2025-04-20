@@ -110,6 +110,17 @@ namespace NoesisRender.Passes
 
             LocalKeyword useXeGTAO = new LocalKeyword(deferredMat.shader, "_AO");
             deferredMat.SetKeyword(useXeGTAO, xeGTAOEnabled);
+            if (xeGTAOEnabled)
+            {
+                Shader.EnableKeyword("_AO");
+            }
+            else
+            {
+                Shader.DisableKeyword("_AO");
+            }
+
+            GlobalKeyword useAO = new GlobalKeyword("_AO");
+            cmd.SetKeyword(useAO, xeGTAOEnabled);
 
             if (xeGTAOEnabled)
             {

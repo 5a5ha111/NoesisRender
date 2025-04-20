@@ -112,7 +112,7 @@ Shader "Hidden/Custom RP/Deferred Calculate"
 
                 #ifdef _AO
                     gi.ao = SAMPLE_TEXTURE2D_LOD(_XeGTAOValue, sampler_linear_clamp, uv, 0).r;
-                    gi.ao = pow(gi.ao, 1.5);
+                    gi.ao = pow(abs(gi.ao), 1.5);
                     //gi.ao = gi.ao;
                 #endif
 

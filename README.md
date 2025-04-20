@@ -1,4 +1,5 @@
-# NoesisRender  
+# NoesisRender
+
 NoesisRender is a unity Custom Render Pipeline. (Noesis translated from Greek language mean "i understand") It has all main URP features and easy maintained.  
 
 Project written using Unity 2022.3 and use RenderGraph (see https://docs.unity3d.com/Packages/com.unity.render-pipelines.core@14.0/manual/render-graph-system.html ).  
@@ -10,88 +11,115 @@ Shader library for these paths is fully handwritten, expect the code from com.un
 ![SponzaWithAO](ImagesDemo/SponzaWithAO.png)  
 At Sponza test scene (1.1m tris, around 100 materials), with XeHGBAO enabled (high) and deferred path, i get around 400fps using RTX 3060 with native 1920x1080. I can consider it as pretty fast render.  
 
-## Basic materials  
+## Basic materials
+
 Lit, unlit, metallic and dielectric, translucent and opaque, clip, off course Noesis support them all. Support baked and dynamic lights. Support LOD crossfade. 
 
-### Particles  
-The project contains unlit materials (lit is the same, with minor changes) fully compatible with standard unity particle system.  
-![ParticlesSoft](ImagesDemo/ParticlesSoft.png)  
-![ParticlesWithDistortion](ImagesDemo/ParticlesWithDistortion.png)  
+### Particles
 
-### Decals  
+The project contains unlit materials (lit is the same, with minor changes) fully compatible with standard unity particle system. 
+
+| Soft Particles                                 | Particles with Distortion                                          |
+| ---------------------------------------------- | ------------------------------------------------------------------ |
+| ![ParticlesSoft](ImagesDemo/ParticlesSoft.png) | ![ParticlesWithDistortion](ImagesDemo/ParticlesWithDistortion.png) |
+
+### Decals
+
 It has decal shader, compatible with Forwards and Deferred paths. If used forward path, decal shader can reconstruct surface normals (and positions) from depth.  
 ![DecalWithSoftNormalFade](ImagesDemo/DecalWithSoftNormalFade.png)  
 
-## PostFX  
+## PostFX
 
-### Bloom  
+### Bloom
+
 Simulates light bleeding from bright areas. Have additive and scattering modes, and also can fade fireflies (reduces flickering from extremely bright pixels). And several more settings.  
 
-### Color Adjustments  
+### Color Adjustments
+
 Fine-tune overall color balance.  
-Post Exposure: Brightness adjustment (HDR-friendly).  
-Contrast: Expand or compress tonal range (-100 to 100).  
-Color Filter: Tints the output (HDR color, no alpha).  
-Hue Shift: Rotates the hue of all colors (-180° to 180°).  
-Saturation: Increases or decreases color intensity (-100 to 100).  
 
-### White Balance  
-Temperature: Warm (positive) or cool (negative) tones (-100 to 100).  
-Tint: Compensate for green/magante shifts (-100 to 100).  
+- Post Exposure: Brightness adjustment.  
+- Contrast: Expand or compress tonal range.  
+- Color Filter: Tints the output.  
+- Hue Shift: Rotates the hue of all colors.  
+- Saturation: Increases or decreases color intensity.  
 
-### Split Toning  
+### White Balance
+
+Temperature: Warm (positive) or cool (negative) tones.  
+Tint: Compensate for green/magante shifts.  
+
+### Split Toning
+
 Colorize shadows and highlights separately.  
 
-### Channel Mixer  
+### Channel Mixer
+
 Remap RGB channels for creative color grading.  
 
-### Shadows/Midtones/Highlights  
+### Shadows/Midtones/Highlights
+
 Targeted adjustments for specific luminance ranges.  
 Shadows/Midtones/Highlights: HDR color tints for each range.  
 Range Controls: Define start/end points for shadows and highlights.  
 
-### Tone Mapping  
+### Tone Mapping
+
 Convert HDR to LDR values. Have all URP + GranTurismo and Uncharted2 tonemapping modes.  
 Modes:  
-None  
-Neutral  
-Reinhard  
-ACES  
-GranTurismo  
-Uncharted2  
 
-### Dithering  
+- None  
+- Neutral  
+- Reinhard  
+- ACES  
+- GranTurismo  
+- Uncharted2  
+
+### Dithering
+
 Reduce banding artifacts in gradients.  
 
 Also support LUT textures for postFX. So instead calculating all these transformations for each pixel individually (1920 * 1080 = 2073600 pixels), we make 32x32x32 (or 16 or 64, based on your needs) texture with all rgb values and calculate transformations only for 32768 pixels.  
 
-![ToneMappingACES](ImagesDemo/ToneMappingACES.png)  
-![ToneMappingGT](ImagesDemo/ToneMappingGT.png)  
+| ACES Tone Mapping                                  | GT Tone Mapping                                |
+| -------------------------------------------------- | ---------------------------------------------- |
+| ![ToneMappingACES](ImagesDemo/ToneMappingACES.png) | ![ToneMappingGT](ImagesDemo/ToneMappingGT.png) |
 
-## Antialiasing  
+## Antialiasing
+
 Noesis support:  
-SMAA2x  
-FXAA with 3 quality preset  
-DLSS with Maximum Quality, Balanced, Maximum performance and Ultra performance.  
-DLAA  
 
-## Ambient Occlusion  
+- SMAA2x  
+- FXAA with 3 quality preset  
+- DLSS with several automatic presets and manual parameters.  
+- DLAA  
+
+## Ambient Occlusion
+
 Intel XeGTAO implementation. See https://github.com/GameTechDev/XeGTAO  
 Currently supported only in Deferred path (since it main development path), but can be ported to Forward path.  
 
-![AO Comparison 1](ImagesDemo/SponzaWithAO1.png)  
-![AO Comparison 2](ImagesDemo/SponzaWithAO2.png)  
-![Without AO 1](ImagesDemo/SponzaWothoutAO1.png)  
-![Without AO 2](ImagesDemo/SponzaWithoutAO2.png)  
+| With AO                                            | Without AO                                               |
+| -------------------------------------------------- | -------------------------------------------------------- |
+| ![With AO - Scene 1](ImagesDemo/SponzaWithAO1.png) | ![Without AO - Scene 1](ImagesDemo/SponzaWothoutAO1.png) |
 
-## Portal rendering  
+| With AO                                            | Without AO                                               |
+| -------------------------------------------------- | -------------------------------------------------------- |
+| ![With AO - Scene 2](ImagesDemo/SponzaWithAO2.png) | ![Without AO - Scene 2](ImagesDemo/SponzaWithoutAO2.png) |
+
+![AO Debug](ImagesDemo/AO.png) 
+
+## Portal rendering
+
 If you dream about that your game will have portals, so you will not be restricted by euclidean space, that is what you need. Now they are fully worked in forward path, since not so many game developers dream about portals. But i can extend their support if your project needs them.  
-![Portal example](ImagesDemo/PortalExample.png)  
+![Portal example](ImagesDemo/PortalsExample.png)  
 
-## Known issue  
+## Known issue
+
 If your game have split screen or any other multi camera setup with individual post effects, DLSS work incorrectly, data leak from one part of the screen to another. It possible to fix this, but require to split postFX pass into several paths. I want to keep things simple for normal games, so leave it be for now.  
 
-## References  
+## References
+
 Unity SRP Core https://docs.unity3d.com/Packages/com.unity.render-pipelines.core@14.0/manual/index.html  
 Intel XeGTAO https://github.com/GameTechDev/XeGTAO  
 The Unreasonable Effectiveness of Quasirandom Sequences: Martin Roberts 2018, https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/  
