@@ -121,6 +121,7 @@ If your game have split screen or any other multi camera setup with individual p
 ## References
 
 Unity SRP Core https://docs.unity3d.com/Packages/com.unity.render-pipelines.core@14.0/manual/index.html  
+Custom SRP, Jasper Flick https://catlikecoding.com/unity/tutorials/custom-srp/
 Intel XeGTAO https://github.com/GameTechDev/XeGTAO  
 The Unreasonable Effectiveness of Quasirandom Sequences: Martin Roberts 2018, https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/  
 Tone Mapping, Bruno Opsenica https://bruop.github.io/tonemapping/  
