@@ -25,6 +25,7 @@ namespace NoesisRender.Passes
 
         int renderingLayerMask;
         RenderTargetIdentifier[] gBuffersTarget;
+        RTHandle[] gBuffersTargetHandle;
         TextureHandle depthTex;
 
         void Render(RenderGraphContext context)
@@ -45,7 +46,7 @@ namespace NoesisRender.Passes
         (
             RenderGraph renderGraph, Camera camera, CullingResults cullingResults,
             int renderingLayerMask,
-            in CameraRendererTextures textures, in RenderTargetIdentifier[] renderTargets, bool useLightsPerObject
+            in CameraRendererTextures textures, in RTHandle[] renderTargets, bool useLightsPerObject
         )
         {
             ProfilingSampler sampler = samplerGbuffer;
@@ -53,6 +54,11 @@ namespace NoesisRender.Passes
             using RenderGraphBuilder builder = renderGraph.AddRenderPass
                 (sampler.name, out GBufferPass pass, sampler);
             pass.renderingLayerMask = renderingLayerMask;
+            pass.gBuffersTarget = new RenderTargetIdentifier[renderTargets.Length];
+            for ( int i = 0; i < renderTargets.Length; i++)
+            {
+                pass.gBuffersTarget[i] = renderTargets[i];
+            }
 
             pass.list = builder.UseRendererList
             (
@@ -71,7 +77,7 @@ namespace NoesisRender.Passes
             builder.ReadWriteTexture(textures.colorAttachment);
             builder.ReadWriteTexture(textures.depthAttachment);
             pass.depthTex = textures.depthAttachment;
-            pass.gBuffersTarget = renderTargets;
+            //pass.gBuffersTarget = renderTargets;
 
             builder.AllowPassCulling(false);
             builder.SetRenderFunc<GBufferPass>(static (pass, context) => pass.Render(context));

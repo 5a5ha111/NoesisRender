@@ -16,7 +16,7 @@ MonoBehaviour:
   enabled: 1
   bloom:
     ignoreRenderScale: 0
-    maxIterations: 0
+    maxIterations: 4
     downscaleLimit: 1
     bicubicUpsampling: 1
     threshold: 1.1
@@ -26,14 +26,14 @@ MonoBehaviour:
     mode: 1
     scatter: 0.05
   colorAdjustments:
-    postExposure: 0.1
-    contrast: 10
+    postExposure: 0
+    contrast: 10.2
     colorFilter: {r: 1, g: 1, b: 1, a: 1}
     hueShift: 0
-    saturation: 5
+    saturation: 0
   whiteBalance:
-    temperature: -15
-    tint: 10
+    temperature: -15.2
+    tint: 0
   splitToning:
     shadows: {r: 0.5019608, g: 0.5019608, b: 0.5019608, a: 1}
     highlights: {r: 0.5, g: 0.5, b: 0.5, a: 1}
@@ -51,7 +51,7 @@ MonoBehaviour:
     highlightsStart: 0.55
     highLightsEnd: 1
   toneMapping:
-    mode: 0
+    mode: 4
   dither:
     mode: 2
     useInScene: 0

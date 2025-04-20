@@ -51,8 +51,10 @@ namespace NoesisRender
         // Temp variables which created and destroyed with CameraRenderer class
         Material material;
         Material materialMotion, depthOnlyMaterial, motionVectorDebugMaterial, materialXeGTAO;
+        Material deferredMat;
         Texture2D missingTexture;
         PostFXStack postFXStack = new PostFXStack();
+        RTHandleSystem m_RTHandleSystem = new RTHandleSystem();
 
 
         // Cached NVIDIA variabled
@@ -70,7 +72,6 @@ namespace NoesisRender
         RenderTexture[] tempTexs = new RenderTexture[amountOfGTempTex];
         RenderTargetIdentifier[] gbufferID = new RenderTargetIdentifier[amountOfGTempTex];*/
 
-        Material deferredMat;
 
 
         public CameraRenderer(Shader shader, Shader cameraDebuggerShader, Shader cameraMotionShader, Shader depthOnlyShader, Shader motionDebug, Shader deferredShader, Shader xeGTAOApply)
@@ -102,6 +103,8 @@ namespace NoesisRender
             gbufferID[1] = tempTexs[1];*/
 
             deferredMat = CoreUtils.CreateEngineMaterial(deferredShader);
+
+            m_RTHandleSystem.Initialize(Screen.width, Screen.height);
 
 
             CameraDebugger.Initialize(cameraDebuggerShader);
@@ -184,14 +187,7 @@ namespace NoesisRender
                 bufferSize.x = (int)(camera.pixelWidth * renderScale);
                 bufferSize.y = (int)(camera.pixelHeight * renderScale);
 
-                if (bufferSize.x < 1)
-                {
-                    bufferSize.x = 1;
-                }
-                if (bufferSize.y < 1)
-                {
-                    bufferSize.y = 1;
-                }
+                bufferSize = Vector2Int.Max(bufferSize, Vector2Int.one);
             }
             else
             {
@@ -243,6 +239,7 @@ namespace NoesisRender
                 bufferSize = Vector2Int.Max(bufferSize, Vector2Int.one);
             }
 #endif
+            m_RTHandleSystem.SetReferenceSize(bufferSize.x, bufferSize.y);
 
             if (camera.cameraType == CameraType.SceneView)
             {
@@ -336,15 +333,16 @@ namespace NoesisRender
 
                 if (settings.deferredSettings.enabled)
                 {
-                    var gbResources = GBufferResources.GetGBResources(camera, bufferSize);
+                    var gbResources = GBufferResources.GetGBResources(camera, bufferSize, m_RTHandleSystem);
                     var gbufferID = gbResources._getTargets;
                     var gbufferTexs = gbResources._getTextures;
+                    var gbufferRTHandles = gbResources._getRTHandles;
 #if UNITY_EDITOR
                     // When switching unity scenes with scene camera active, we can get invalid renderer textures.
                     if (gbufferTexs[0] == null)
                     {
-                        GBufferResources._instance.Dispose();
-                        gbResources = GBufferResources.GetGBResources(camera, bufferSize);
+                        GBufferResources._instance.Dispose(m_RTHandleSystem);
+                        gbResources = GBufferResources.GetGBResources(camera, bufferSize, m_RTHandleSystem);
                         gbufferID = gbResources._getTargets;
                         gbufferTexs = gbResources._getTextures;
                         //EditorApplication.ExecuteMenuItem("Window/General/Game");
@@ -364,7 +362,7 @@ namespace NoesisRender
                         Debug.Log("Closed all Scene Views.");*/
                     }
 #endif
-                    GBufferPass.Record(renderGraph, camera, cullingResults, cameraSettings.renderingLayerMask, textures, gbufferID, useLightsPerObject);
+                    GBufferPass.Record(renderGraph, camera, cullingResults, cameraSettings.renderingLayerMask, textures, gbufferRTHandles, useLightsPerObject);
 
                     bool xeGTAOEnabled = XeGTAO.CanRender(settings.xeGTAOsettings, materialXeGTAO) && gbufferTexs.Length > 1 && gbufferTexs[1] != null;
 
@@ -405,7 +403,7 @@ namespace NoesisRender
 
                 if (settings.deferredSettings.enabled)
                 {
-                    var gbResources = GBufferResources.GetGBResources(camera, bufferSize);
+                    var gbResources = GBufferResources.GetGBResources(camera, bufferSize, m_RTHandleSystem);
                     var normalBuffer = gbResources.GetNormalBuffer();
                     DecalPass.Record(renderGraph, camera, cullingResults, cameraSettings.renderingLayerMask, textures, settings.decalsSettings, true, normalBuffer);
                 }
@@ -482,7 +480,7 @@ namespace NoesisRender
             /*CoreUtils.Destroy(tempTexs[0]);
             CoreUtils.Destroy(tempTexs[1]);*/
             //Debug.Log("================Global dispose==============");
-            GBufferResources._instance.Dispose();
+            GBufferResources._instance.Dispose(m_RTHandleSystem);
             XeGTAOResources._instance.Dispose();
 
             CameraDebugger.Cleanup();

@@ -58,6 +58,10 @@ namespace NoesisRender.Portals
 
         void Update()
         {
+            if (!gameObject.activeSelf)
+            {
+                return;
+            }
             if (Input.GetKeyDown(KeyCode.P))
             {
                 Cursor.lockState = CursorLockMode.None;

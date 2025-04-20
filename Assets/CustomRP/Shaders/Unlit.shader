@@ -71,6 +71,30 @@ Shader "Custom RP/Unlit"
 			#include "ShadowCasterPass.hlsl"
 			ENDHLSL
 		}
+
+		Pass 
+		{
+			Tags 
+			{
+				"LightMode" = "CustomGBuffer"
+			}
+			Name "GBuffer pass"
+
+			ColorMask 0
+
+			HLSLPROGRAM
+			#pragma target 3.5
+			//#pragma shader_feature _CLIPPING
+			#pragma shader_feature _VERTEX_COLORS
+			#pragma multi_compile_instancing
+
+			#define Gbuffer
+
+			#pragma vertex UnlitPassVertex
+			#pragma fragment GBufferFragment
+			#include "UnlitPass.hlsl"
+			ENDHLSL
+		}
 	}
 
 
