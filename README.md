@@ -112,7 +112,7 @@ Currently supported only in Deferred path (since it main development path), but 
 ## Portal rendering
 
 If you dream about that your game will have portals, so you will not be restricted by euclidean space, that is what you need. Now they are fully worked in forward path, since not so many game developers dream about portals. But i can extend their support if your project needs them.  
-![Portal example](ImagesDemo/PortalsExample.png)  
+![Portal example](ImagesDemo/PortalExample.png)  
 
 ## Known issue
 
