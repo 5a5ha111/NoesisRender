@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/SPR/Scenes/Sponza/SponzaScene.unity
+    path: Assets/Examples/Scenes/Sponza/SponzaScene.unity
     guid: cf67be8fe2fa4b24b905ef3e66a92246
   m_configObjects: {}
