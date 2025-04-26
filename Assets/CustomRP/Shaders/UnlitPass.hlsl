@@ -5,18 +5,6 @@
 #include "../ShaderLibrary/Common.hlsl"
 
 
-//CBUFFER_START(UnityPerMaterial)
-//	float4 _BaseColor;
-//CBUFFER_END
-
-/*TEXTURE2D(_BaseMap);
-SAMPLER(sampler_BaseMap);
-
-UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
-	UNITY_DEFINE_INSTANCED_PROP(float4, _BaseMap_ST)
-	UNITY_DEFINE_INSTANCED_PROP(float4, _BaseColor)
-	UNITY_DEFINE_INSTANCED_PROP(float, _Cutoff)
-UNITY_INSTANCING_BUFFER_END(UnityPerMaterial)*/
 
 
 struct Attributes 
@@ -49,13 +37,6 @@ struct Varyings
 };
 
 
-
-//float4 UnlitPassVertex(Attributes input) : SV_POSITION
-//{
-//	UNITY_SETUP_INSTANCE_ID(input);
-//	float3 positionWS = TransformObjectToWorld(input.positionOS);
-//	return TransformWorldToHClip(positionWS);
-//}
 
 
 Varyings UnlitPassVertex(Attributes input) 
@@ -151,7 +132,6 @@ void GBufferFragment(Varyings input, out float4 gBuffer0 : SV_Target0, out float
 	float4 packedGB0 = float4(base.rgb, metallic);
 
 	#if defined(LOD_FADE_CROSSFADE)
-		//ClipLOD(input.positionCS.xy, unity_LODFade.x);
 		ClipLOD(config.fragment, unity_LODFade.x);
 	#endif
 

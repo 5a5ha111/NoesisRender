@@ -16,17 +16,6 @@
 
 
 
-//CBUFFER_START(UnityPerMaterial)
-//	float4 _BaseColor;
-//CBUFFER_END
-
-/*UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
-	UNITY_DEFINE_INSTANCED_PROP(float4, _BaseMap_ST)
-	UNITY_DEFINE_INSTANCED_PROP(float4, _BaseColor)
-	UNITY_DEFINE_INSTANCED_PROP(float, _Cutoff)
-	UNITY_DEFINE_INSTANCED_PROP(float, _Metallic)
-	UNITY_DEFINE_INSTANCED_PROP(float, _Smoothness)
-UNITY_INSTANCING_BUFFER_END(UnityPerMaterial)*/
 
 
 struct Attributes 
@@ -57,13 +46,6 @@ struct Varyings
 
 
 
-//float4 UnlitPassVertex(Attributes input) : SV_POSITION
-//{
-//	UNITY_SETUP_INSTANCE_ID(input);
-//	float3 positionWS = TransformObjectToWorld(input.positionOS);
-//	return TransformWorldToHClip(positionWS);
-//}
-
 
 Varyings LitPassVertex(Attributes input)
 {
@@ -75,7 +57,6 @@ Varyings LitPassVertex(Attributes input)
 	output.positionCS_SS = TransformWorldToHClip(output.positionWS);
 
 	float4 baseST = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseMap_ST);
-	//output.baseUV = input.baseUV * baseST.xy + baseST.zw;
 	output.baseUV = TransformBaseUV(input.baseUV);
 	#if defined(_DETAIL_MAP)
 		output.detailUV = TransformDetailUV(input.baseUV);
@@ -91,9 +72,6 @@ Varyings LitPassVertex(Attributes input)
 float4 LitPassFragment(Varyings input) : SV_TARGET
 {
 	UNITY_SETUP_INSTANCE_ID(input);
-	/*float4 baseMap = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.baseUV);
-	float4 baseColor = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor);
-	float4 base = baseMap * baseColor;*/
 
 	InputConfig config = GetInputConfig(input.positionCS_SS, input.baseUV);
 	#if defined(_MASK_MAP)
@@ -112,28 +90,21 @@ float4 LitPassFragment(Varyings input) : SV_TARGET
 	#endif
 
 	#if defined(LOD_FADE_CROSSFADE)
-		//ClipLOD(input.positionCS.xy, unity_LODFade.x);
 		ClipLOD(config.fragment, unity_LODFade.x);
 	#endif
 
-	//base.rgb = normalize(input.normalWS);
-	//return base;
-
 	Surface surface = (Surface)0;
 	surface.position = input.positionWS;
-	//surface.position = float3(0,0,0);
 	#if defined(_NORMAL_MAP)
 		surface.normal = NormalTangentToWorld(
 			GetNormalTS(config),
 			input.normalWS, input.tangentWS
 		);
-		//surface.interpolatedNormal = input.normalWS;
 	#else
 		surface.normal = normalize(input.normalWS);
 		surface.interpolatedNormal = surface.normal;
 	#endif
 	surface.interpolatedNormal = surface.normal;
-	//surface.normal = surface.interpolatedNormal;
 	surface.viewDirection = normalize(_WorldSpaceCameraPos - input.positionWS);
 	surface.depth = -TransformWorldToView(input.positionWS).z;
 	surface.color = base.rgb;
@@ -159,13 +130,10 @@ float4 LitPassFragment(Varyings input) : SV_TARGET
 	float3 normals = TransformWorldToView(surface.interpolatedNormal);
 
 	return float4(color, GetFinalAlpha(surface.alpha));
-	//return float4(surface.metallic,0,0, GetFinalAlpha(surface.alpha));
-	//return float4(gi.diffuse, 1);
 }
 
 
-// gBuffer0 RGB color, A metallic
-// gBuffer1 R smoothness, GB normals, A occlusion
+
 void GBufferFragment(Varyings input, out float4 gBuffer0 : SV_Target0, out float4 gBuffer1 : SV_Target1, out float4 gBuffer2 : SV_Target2, out float4 gBuffer3 : SV_Target3)
 {
 	InputConfig config = GetInputConfig(input.positionCS_SS, input.baseUV, 0);
@@ -187,7 +155,6 @@ void GBufferFragment(Varyings input, out float4 gBuffer0 : SV_Target0, out float
 	#endif
 
 	#if defined(LOD_FADE_CROSSFADE)
-		//ClipLOD(input.positionCS.xy, unity_LODFade.x);
 		ClipLOD(config.fragment, unity_LODFade.x);
 	#endif
 
@@ -208,7 +175,6 @@ void GBufferFragment(Varyings input, out float4 gBuffer0 : SV_Target0, out float
 	float2 lightmapUV = GI_FRAGMENT_DATA(input);
 	float3 positionWS = input.positionWS - _WorldSpaceCameraPos;
 	float4 packedGB2 = float4(positionWS, occlusion);
-	//packedGB2.rgb = lightColor;
 
 	float3 emission = GetEmission(config);
 	float4 packedGB3 = float4(emission, metallic);
