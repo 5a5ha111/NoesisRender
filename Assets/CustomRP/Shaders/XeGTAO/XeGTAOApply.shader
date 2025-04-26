@@ -67,6 +67,7 @@ Shader "Hidden/Custom RP/XeGTAOApply"
 
                 //TEXTURE2D(_SourceTexture);
                 Texture2D<uint> _UintTexture;
+                int2 _ScreenBufferSize;
 
                 
                 float3 Uint3ToNormalizedFloat3(uint3 value, uint maxValue)
@@ -96,10 +97,11 @@ Shader "Hidden/Custom RP/XeGTAOApply"
                 float4 RemapPassFragment (Varyings input) : SV_TARGET 
                 {
                     //uint3 inValue = SAMPLE_TEXTURE2D_LOD(_UintTexture, sampler_linear_clamp, input.screenUV, 0);
+                    // _ScreenParams _ScreenBufferSize
                     #if defined(_HalfRes)
-                        uint3 inValue = _UintTexture[(input.screenUV * (_ScreenParams.xy / 2))];
+                        uint3 inValue = _UintTexture[(input.screenUV * (_ScreenBufferSize.xy / 2))];
                     #else
-                        uint3 inValue = _UintTexture[(input.screenUV * _ScreenParams.xy)];
+                        uint3 inValue = _UintTexture[(input.screenUV * _ScreenBufferSize.xy)];
                     #endif
                     //float3 res = RemapUintToFloat(inValue);
                     uint upperValue = 255;

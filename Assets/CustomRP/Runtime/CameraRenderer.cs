@@ -373,7 +373,9 @@ namespace NoesisRender
                     TextureHandle xeHBAO = renderGraph.CreateTexture(whiteDesc);
                     if (xeGTAOEnabled)
                     {
+                        // Prevent AO for being to high res
                         Vector2Int xeGTAOSize = renderScale <= 1 ? bufferSize : new Vector2Int(camera.pixelWidth, camera.pixelHeight);
+                        xeGTAOSize = bufferSize;
                         var xeGTAOResources = XeGTAOResources.GetGTAOesources(camera, !settings.xeGTAOsettings.HalfRes ? xeGTAOSize : xeGTAOSize / 2);
                         xeHBAO = XeGTAO.Record(renderGraph, camera, in textures, settings.xeGTAOsettings, xeGTAOResources, xeGTAOSize, materialXeGTAO, !settings.deferredSettings.enabled, gbufferTexs[1]);
                     }

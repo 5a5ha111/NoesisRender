@@ -38,7 +38,7 @@ MonoBehaviour:
         useJitter: 1
         jitterScale: 1
         jitterRand: 0.05
-    useSRPBatcher: 0
+    useSRPBatcher: 1
     useLightsPerObject: 0
     shadows:
       maxDistance: 40
@@ -75,11 +75,11 @@ MonoBehaviour:
       enabled: 1
       computeShader: {fileID: 7200000, guid: f9866655892b7814f8bffb1bdbf3b61c, type: 3}
       XeGTAOApply: {fileID: 4800000, guid: 9599961e6e539cc4ba6544b6e5025a7b, type: 3}
-      HalfRes: 0
-      BicubicRescale: 0
-      TemporalStable: 1
+      HalfRes: 1
+      BicubicRescale: 1
+      TemporalStable: 0
       QualityLevel: 3
-      DenoisePasses: 2
+      DenoisePasses: 3
       Radius: 0.5
       FinalValuePower: 6
   cameraBufferSettings:

@@ -61,6 +61,7 @@ namespace NoesisRender.Passes
         readonly static int _UintTexture = Shader.PropertyToID("_UintTexture");
         readonly static int _UintTextureNormals = Shader.PropertyToID("_UintTextureNormals");
         readonly static int _SourceTexture = Shader.PropertyToID("_SourceTexture");
+        readonly static int _ScreenBufferSize = Shader.PropertyToID("_ScreenBufferSize");
 
 
         // GTAO Textures id depthPrefilter
@@ -305,6 +306,8 @@ namespace NoesisRender.Passes
             cmd.SetRenderTarget(OutXeHBAO);
             LocalKeyword halfResKeyword = new LocalKeyword(materialXeGTAOApply.shader, "_HalfRes");
             materialXeGTAOApply.SetKeyword(halfResKeyword, xeGTAOSettings.HalfRes);
+            Vector2Int resSize = xeGTAOSettings.HalfRes ? attachmentSize * 2 : attachmentSize;
+            cmd.SetGlobalVector(_ScreenBufferSize, new Vector4(resSize.x, resSize.y));
             cmd.DrawProcedural(Matrix4x4.identity, materialXeGTAOApply, _RemapUintToFloatPass, MeshTopology.Triangles, 3);
 
             if (xeGTAOSettings.BicubicRescale)

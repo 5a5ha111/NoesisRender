@@ -235,7 +235,7 @@ namespace NoesisRender.ResourcesHolders
                 this.gbufferID[3] = gbuffers[3];
                 gbuffersRtHandle[3] = rTHandleSystem.Alloc(this.gbuffers[3]);
 
-                Debug.Log("New resources in rTHandleSystem " + camera.name + " " + bufferSize);
+                //Debug.Log("New resources in rTHandleSystem " + camera.name + " " + bufferSize);
             }
 
             public RenderTexture GetNormalBuffer()

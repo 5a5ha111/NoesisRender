@@ -347,7 +347,7 @@ MonoBehaviour:
       source: 1
       destination: 0
     allowFXAA: 1
-    allowDLSS: 0
+    allowDLSS: 1
     keepAlpha: 0
 --- !u!1001 &508236329
 PrefabInstance:

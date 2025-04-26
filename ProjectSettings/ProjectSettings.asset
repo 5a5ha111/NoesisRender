@@ -650,7 +650,7 @@ PlayerSettings:
   webGLMemoryGeometricGrowthCap: 96
   webGLPowerPreference: 2
   scriptingDefineSymbols:
-    Standalone: ENABLE_NVIDIA_MODULE
+    Standalone: ENABLE_NVIDIA_MODULE;ENABLE_NVIDIA
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend: {}
