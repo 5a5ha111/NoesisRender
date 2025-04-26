@@ -173,10 +173,6 @@ namespace NoesisRender.ResourcesHolders
             {
                 this.bufferSize = bufferSize;
 
-                //TextureFormat format = TextureFormat.RGBAHalf;
-                //var support = SystemInfo.SupportsTextureFormat(format);
-                //Debug.Log("support " + support);
-
                 // By some reson, Unity dont want use multiple TextureHandle in cmd.SetRenderTarget(RenderTargetIdentifier[])
                 // So, if we want in one drawCall fill all GBuffers, we must stick to RenderTexture
                 this.gbuffers[0] = new RenderTexture(bufferSize.x, bufferSize.y, gBufferDepth, RenderTextureFormat.RGB565, RenderTextureReadWrite.Linear);
@@ -199,8 +195,6 @@ namespace NoesisRender.ResourcesHolders
                 this.gbuffers[3].name = "GBuffer3 RGB emission A metallic";
                 this.gbuffers[3].Create();
                 this.gbufferID[3] = gbuffers[3];
-
-                //Debug.Log("New resources " + camera.name + " " + bufferSize);
             }
 
             public RenderTexture GetNormalBuffer()
@@ -216,7 +210,6 @@ namespace NoesisRender.ResourcesHolders
             {
                 if (this.bufferSize != bufferSize || gbuffers.Length == 0)
                 {
-                    //Debug.Log("this.bufferSize " + this.bufferSize + " valid " + bufferSize);
                     return false;
                 }
                 return true;
@@ -228,7 +221,6 @@ namespace NoesisRender.ResourcesHolders
                     CoreUtils.Destroy(gbuffers[i]);
                 }
                 gbuffers = new RenderTexture[0];
-                //Debug.Log("Dispose " + this.bufferSize);
             }
 
             #if RtHandleGbuffer

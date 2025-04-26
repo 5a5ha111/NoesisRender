@@ -343,12 +343,12 @@ namespace NoesisRender
                 {
                     #if RtHandleGbuffer
                         var gbResources = GBufferResources.GetGBResources(camera, bufferSize, m_RTHandleSystem);
+                        var gbufferRTHandles = gbResources._getRTHandles;
                     #else
                         var gbResources = GBufferResources.GetGBResources(camera, bufferSize);
                     #endif
                     var gbufferID = gbResources._getTargets;
                     var gbufferTexs = gbResources._getTextures;
-                    var gbufferRTHandles = gbResources._getRTHandles;
                     #if UNITY_EDITOR
                         // When switching unity scenes with scene camera active, we can get invalid renderer textures.
                         if (gbufferTexs[0] == null)
@@ -379,7 +379,7 @@ namespace NoesisRender
                             Debug.Log("Closed all Scene Views.");*/
                         }
                     #endif
-                    GBufferPass.Record(renderGraph, camera, cullingResults, cameraSettings.renderingLayerMask, textures, gbufferRTHandles, useLightsPerObject);
+                    GBufferPass.Record(renderGraph, camera, cullingResults, cameraSettings.renderingLayerMask, textures, gbufferID, useLightsPerObject);
 
                     bool xeGTAOEnabled = XeGTAO.CanRender(settings.xeGTAOsettings, materialXeGTAO) && gbufferTexs.Length > 1 && gbufferTexs[1] != null;
 

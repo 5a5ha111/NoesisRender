@@ -23,13 +23,7 @@ namespace NoesisRender.Passes
             new("CustomLit")
         };
 
-
-
-        CameraRenderer renderer;
-
-        bool useDynamicBatching, useGPUInstancing;
-
-        int renderingLayerMask;
+        // Main var
         TextureHandle[] gBufferTexs;
         RenderTexture[] gBuffersTarget;
         TextureHandle depthTex;
@@ -41,9 +35,12 @@ namespace NoesisRender.Passes
         Camera camera;
 
         Material deferredMat;
+        Cubemap reflCubemap;
 
+
+
+        // Buffers
         ComputeBufferHandle tilesBuffer;
-
         ComputeBufferHandle directionalLightDataBuffer;
         ComputeBufferHandle otherLightDataBuffer;
         TextureHandle directionalAtlas;
@@ -52,6 +49,7 @@ namespace NoesisRender.Passes
         ComputeBufferHandle directionalShadowMatricesBuffer;
         ComputeBufferHandle otherShadowDataBuffer;
 
+        // Property id
         readonly int _vpMatrixInv = Shader.PropertyToID("_vpMatrixInv");
         readonly int _lightsPerObj = Shader.PropertyToID("_LIGHTS_PER_OBJECT");
 
@@ -62,14 +60,14 @@ namespace NoesisRender.Passes
 
         readonly int _XeGTAOValue = Shader.PropertyToID("_XeGTAOValue");
 
-
         readonly int _ReflectinSkybox = Shader.PropertyToID("_BaseRefl");
         readonly int _ReciveShadows = Shader.PropertyToID("_RECEIVE_SHADOWS");
 
         readonly int _DirectionalShadowAtlas = Shader.PropertyToID("_DirectionalShadowAtlas");
         readonly int _OtherShadowAtlas = Shader.PropertyToID("_OtherShadowAtlas");
         readonly int _DeferredEnvParams = Shader.PropertyToID("_DeferredEnvParams");
-        Cubemap reflCubemap;
+
+
 
         private static readonly Mesh triangleMesh = new Mesh
         {
@@ -113,18 +111,11 @@ namespace NoesisRender.Passes
             if (xeGTAOEnabled)
             {
                 Shader.EnableKeyword("_AO");
+                cmd.SetGlobalTexture(_XeGTAOValue, xeGTAOValue);
             }
             else
             {
                 Shader.DisableKeyword("_AO");
-            }
-
-            GlobalKeyword useAO = new GlobalKeyword("_AO");
-            cmd.SetKeyword(useAO, xeGTAOEnabled);
-
-            if (xeGTAOEnabled)
-            {
-                cmd.SetGlobalTexture(_XeGTAOValue, xeGTAOValue);
             }
 
             cmd.SetRenderTarget
@@ -184,8 +175,6 @@ namespace NoesisRender.Passes
 
             // Readwrite not change renderTarget. Also allow RenderBufferLoadAction.DontCare
             pass.colorHandle = builder.ReadWriteTexture(textures.colorAttachment);
-            //builder.ReadWriteTexture(textures.depthAttachment);
-            //pass.colorTex = textures.colorAttachment;
             pass.depthTex = builder.ReadWriteTexture(textures.depthAttachment);
             pass.gBuffersTarget = renderTargets;
             pass.camera = camera;
