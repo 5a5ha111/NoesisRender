@@ -172,7 +172,7 @@ void GBufferFragment(Varyings input, out float4 gBuffer0 : SV_Target0, out float
 	float4 packedGB2 = float4(positionWS, occlusion);
 	//packedGB2.rgb = lightColor;
 
-	float3 emission = float3(0,0,0);
+	float3 emission = base;
 	float4 packedGB3 = float4(emission, metallic);
 
 

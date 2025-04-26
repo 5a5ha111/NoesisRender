@@ -80,13 +80,14 @@ Shader "Custom RP/Unlit"
 			}
 			Name "GBuffer pass"
 
-			ColorMask 0
-
 			HLSLPROGRAM
-			#pragma target 3.5
+			#pragma target 4.5
+
+			#pragma multi_compile_instancing
+			
 			//#pragma shader_feature _CLIPPING
 			#pragma shader_feature _VERTEX_COLORS
-			#pragma multi_compile_instancing
+			#pragma multi_compile _ LOD_FADE_CROSSFADE
 
 			#define Gbuffer
 

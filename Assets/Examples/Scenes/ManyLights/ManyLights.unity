@@ -1116,7 +1116,7 @@ MeshRenderer:
   m_GameObject: {fileID: 436579917}
   m_Enabled: 1
   m_CastShadows: 0
-  m_ReceiveShadows: 1
+  m_ReceiveShadows: 0
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
@@ -1263,18 +1263,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settings:
+    CameraType: 0
     copyColor: 1
-    copyDepth: 1
+    copyDepth: 0
+    renderMotionVectors: 1
     renderingLayerMask: -1
     maskLights: 0
-    overridePostFX: 1
-    postFXSettings: {fileID: 11400000, guid: 5438fdf505f63f84da9897c0110af93d, type: 2}
+    overridePostFX: 0
+    postFXSettings: {fileID: 0}
     renderScaleMode: 0
     renderScale: 1
     finalBlendMode:
       source: 1
       destination: 0
-    allowFXAA: 0
+    allowFXAA: 1
+    allowDLSS: 0
     keepAlpha: 0
 --- !u!1 &499680382
 GameObject:

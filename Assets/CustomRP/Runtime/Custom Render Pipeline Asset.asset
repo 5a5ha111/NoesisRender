@@ -38,7 +38,7 @@ MonoBehaviour:
         useJitter: 1
         jitterScale: 1
         jitterRand: 0.05
-    useSRPBatcher: 1
+    useSRPBatcher: 0
     useLightsPerObject: 0
     shadows:
       maxDistance: 40
