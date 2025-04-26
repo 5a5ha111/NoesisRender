@@ -7,6 +7,9 @@ using UnityEngine.Rendering;
 
 namespace NoesisRender.ResourcesHolders
 {
+
+    // Currently RtHandle system tested to work, but not fully implemented. So it disabled using RtHandleGbuffer define
+
     public class GBufferResources : IDisposable
     {
         public static GBufferResources _instance = new();
@@ -51,6 +54,27 @@ namespace NoesisRender.ResourcesHolders
                 return resource;
             }
         }
+
+        public void Dispose()
+        {
+            if (keyValuePairs == null)
+            {
+                return;
+            }
+            foreach (var key in keyValuePairs.Keys)
+            {
+                GBufferTextures resource = keyValuePairs[key];
+                if (resource != null)
+                {
+                    resource.Dispose();
+                    resource = null;
+                }
+            }
+            keyValuePairs = null;
+        }
+
+
+#if RtHandleGbuffer
         public static GBufferTextures GetGBResources(Camera camera, Vector2Int bufferSize, RTHandleSystem m_RTHandleSystem)
         {
             if (keyValuePairs == null)
@@ -89,25 +113,6 @@ namespace NoesisRender.ResourcesHolders
                 return resource;
             }
         }
-
-
-        public void Dispose()
-        {
-            if (keyValuePairs == null)
-            {
-                return;
-            }
-            foreach (var key in keyValuePairs.Keys)
-            {
-                GBufferTextures resource = keyValuePairs[key];
-                if (resource != null)
-                {
-                    resource.Dispose();
-                    resource = null;
-                }
-            }
-            keyValuePairs = null;
-        }
         public void Dispose(RTHandleSystem m_RTHandleSystem)
         {
             if (keyValuePairs == null)
@@ -125,6 +130,8 @@ namespace NoesisRender.ResourcesHolders
             }
             keyValuePairs = null;
         }
+#endif
+
 
         public class GBufferTextures : IDisposable
         {
@@ -196,6 +203,35 @@ namespace NoesisRender.ResourcesHolders
                 //Debug.Log("New resources " + camera.name + " " + bufferSize);
             }
 
+            public RenderTexture GetNormalBuffer()
+            {
+                if (gbuffers == null || gbuffers.Length == 0)
+                {
+                    return null;
+                }
+                return this.gbuffers[1];
+            }
+
+            public bool ValideBuffer(Vector2Int bufferSize)
+            {
+                if (this.bufferSize != bufferSize || gbuffers.Length == 0)
+                {
+                    //Debug.Log("this.bufferSize " + this.bufferSize + " valid " + bufferSize);
+                    return false;
+                }
+                return true;
+            }
+            public void Dispose()
+            {
+                for (int i = 0; i < gbuffers.Length; i++)
+                {
+                    CoreUtils.Destroy(gbuffers[i]);
+                }
+                gbuffers = new RenderTexture[0];
+                //Debug.Log("Dispose " + this.bufferSize);
+            }
+
+            #if RtHandleGbuffer
             public GBufferTextures(Camera camera, Vector2Int bufferSize, RTHandleSystem rTHandleSystem)
             {
                 this.bufferSize = bufferSize;
@@ -238,34 +274,7 @@ namespace NoesisRender.ResourcesHolders
                 //Debug.Log("New resources in rTHandleSystem " + camera.name + " " + bufferSize);
             }
 
-            public RenderTexture GetNormalBuffer()
-            {
-                if (gbuffers == null || gbuffers.Length == 0)
-                {
-                    return null;
-                }
-                return this.gbuffers[1];
-            }
-
-            public bool ValideBuffer(Vector2Int bufferSize)
-            {
-                if (this.bufferSize != bufferSize || gbuffers.Length == 0)
-                {
-                    //Debug.Log("this.bufferSize " + this.bufferSize + " valid " + bufferSize);
-                    return false;
-                }
-                return true;
-            }
-
-            public void Dispose()
-            {
-                for (int i = 0; i < gbuffers.Length; i++)
-                {
-                    CoreUtils.Destroy(gbuffers[i]);
-                }
-                gbuffers = new RenderTexture[0];
-                //Debug.Log("Dispose " + this.bufferSize);
-            }
+            
             public void Dispose(RTHandleSystem m_RTHandleSystem)
             {
                 for (int i = 0; i < gbuffers.Length; i++)
@@ -276,6 +285,7 @@ namespace NoesisRender.ResourcesHolders
                 gbuffers = new RenderTexture[0];
                 //Debug.Log("Dispose " + this.bufferSize);
             }
+            #endif
         }
     }
 

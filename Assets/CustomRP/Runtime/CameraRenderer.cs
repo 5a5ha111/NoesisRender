@@ -54,17 +54,19 @@ namespace NoesisRender
         Material deferredMat;
         Texture2D missingTexture;
         PostFXStack postFXStack = new PostFXStack();
-        RTHandleSystem m_RTHandleSystem = new RTHandleSystem();
+        #if RtHandleGbuffer
+            RTHandleSystem m_RTHandleSystem = new RTHandleSystem();
+        #endif
 
 
         // Cached NVIDIA variabled
-#if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
-        bool? cachedDeviceAviable;
-        int cachedDLSSQuality = -1;
-        Vector2Int cachedDLSSResolution;
-        float cachedDLSSSharpness;
-        float cachedDLSSJitterScale;
-#endif
+        #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+            bool? cachedDeviceAviable;
+            int cachedDLSSQuality = -1;
+            Vector2Int cachedDLSSResolution;
+            float cachedDLSSSharpness;
+            float cachedDLSSJitterScale;
+        #endif
 
 
         // GBuffer textures
@@ -88,9 +90,9 @@ namespace NoesisRender
             };
             missingTexture.SetPixel(0, 0, Color.white * 0.5f);
             missingTexture.Apply(true, true);
-#if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
-            cachedDLSSQuality = -1;
-#endif
+            #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+                cachedDLSSQuality = -1;
+            #endif
 
 
             // GBuffer setup
@@ -104,7 +106,9 @@ namespace NoesisRender
 
             deferredMat = CoreUtils.CreateEngineMaterial(deferredShader);
 
-            m_RTHandleSystem.Initialize(Screen.width, Screen.height);
+            #if RtHandleGbuffer
+                m_RTHandleSystem.Initialize(Screen.width, Screen.height);
+            #endif
 
 
             CameraDebugger.Initialize(cameraDebuggerShader);
@@ -194,83 +198,87 @@ namespace NoesisRender
                 bufferSize.x = camera.pixelWidth;
                 bufferSize.y = camera.pixelHeight;
             }
-#if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
-            if (!cachedDeviceAviable.HasValue)
-            {
-                cachedDeviceAviable = UnityDLSS.UnityDlssCommon.device != null;
-            }
-            cameraBufferSettings.dlss.enabled &= cameraSettings.allowDLSS && cachedDeviceAviable.Value;
-            if (cameraBufferSettings.dlss.enabled)
-            {
-                // Dlss is upscaler, not downscaler
-                renderScale = Mathf.Clamp01(renderScale);
+            #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+                if (!cachedDeviceAviable.HasValue)
+                {
+                    cachedDeviceAviable = UnityDLSS.UnityDlssCommon.device != null;
+                }
+                cameraBufferSettings.dlss.enabled &= cameraSettings.allowDLSS && cachedDeviceAviable.Value;
+                if (cameraBufferSettings.dlss.enabled)
+                {
+                    // Dlss is upscaler, not downscaler
+                    renderScale = Mathf.Clamp01(renderScale);
 
-                // We cache results, because its unnecessary spam request if they results are same. Not catch screen size change in current state
-                if ((cameraBufferSettings.dlss.useOptimalSettings && !cameraBufferSettings.dlss.useDLAA) && (int)cameraBufferSettings.dlss.dlssQuality != cachedDLSSQuality)
-                {
-                    cachedDLSSQuality = (int)cameraBufferSettings.dlss.dlssQuality;
-                    bufferSize = GetScaledBufferSize(renderScale, camera);
-                    UnityEngine.NVIDIA.OptimalDLSSSettingsData optimalDLSSSettingsData;
-                    bool fit = UnityDLSS.UnityDlssCommon.device.GetOptimalSettings((uint)bufferSize.x, (uint)bufferSize.y, cameraBufferSettings.dlss.dlssQuality, out optimalDLSSSettingsData);
-                    bufferSize.x = (int)((float)optimalDLSSSettingsData.outRenderWidth * camera.rect.width);
-                    bufferSize.y = (int)((float)optimalDLSSSettingsData.outRenderHeight * camera.rect.height);
-                    float multJitter = 1.5f; // 2.254698f
-                    float relation = Mathf.Clamp01((float)bufferSize.y * multJitter / GetCameraPixelSize(camera).y);
-                    cameraBufferSettings.dlss.jitterScale *= relation;
-                    cameraBufferSettings.dlss.sharpness = optimalDLSSSettingsData.sharpness;
-                    Vector2 minRec = new Vector2(optimalDLSSSettingsData.minWidth, optimalDLSSSettingsData.minHeight);
+                    // We cache results, because its unnecessary spam request if they results are same. Not catch screen size change in current state
+                    if ((cameraBufferSettings.dlss.useOptimalSettings && !cameraBufferSettings.dlss.useDLAA) && (int)cameraBufferSettings.dlss.dlssQuality != cachedDLSSQuality)
+                    {
+                        cachedDLSSQuality = (int)cameraBufferSettings.dlss.dlssQuality;
+                        bufferSize = GetScaledBufferSize(renderScale, camera);
+                        UnityEngine.NVIDIA.OptimalDLSSSettingsData optimalDLSSSettingsData;
+                        bool fit = UnityDLSS.UnityDlssCommon.device.GetOptimalSettings((uint)bufferSize.x, (uint)bufferSize.y, cameraBufferSettings.dlss.dlssQuality, out optimalDLSSSettingsData);
+                        bufferSize.x = (int)((float)optimalDLSSSettingsData.outRenderWidth * camera.rect.width);
+                        bufferSize.y = (int)((float)optimalDLSSSettingsData.outRenderHeight * camera.rect.height);
+                        float multJitter = 1.5f; // 2.254698f
+                        float relation = Mathf.Clamp01((float)bufferSize.y * multJitter / GetCameraPixelSize(camera).y);
+                        cameraBufferSettings.dlss.jitterScale *= relation;
+                        cameraBufferSettings.dlss.sharpness = optimalDLSSSettingsData.sharpness;
+                        Vector2 minRec = new Vector2(optimalDLSSSettingsData.minWidth, optimalDLSSSettingsData.minHeight);
 
-                    cachedDLSSResolution = bufferSize;
-                    cachedDLSSJitterScale = relation;
-                    cachedDLSSSharpness = optimalDLSSSettingsData.sharpness;
+                        cachedDLSSResolution = bufferSize;
+                        cachedDLSSJitterScale = relation;
+                        cachedDLSSSharpness = optimalDLSSSettingsData.sharpness;
+                    }
+                    else if (cameraBufferSettings.dlss.useOptimalSettings && !cameraBufferSettings.dlss.useDLAA)
+                    {
+                        bufferSize = cachedDLSSResolution;
+                        cameraBufferSettings.dlss.jitterScale *= cachedDLSSJitterScale;
+                        cameraBufferSettings.dlss.sharpness = cachedDLSSSharpness;
+                        //Debug.Log("bufferSize " + cachedDLSSResolution);
+                    }
+                    else if (cameraBufferSettings.dlss.useDLAA)
+                    {
+                        renderScale = 1;
+                        bufferSize = GetScaledBufferSize(renderScale, camera);
+                    }
+                    bufferSize = Vector2Int.Max(bufferSize, Vector2Int.one);
                 }
-                else if (cameraBufferSettings.dlss.useOptimalSettings && !cameraBufferSettings.dlss.useDLAA)
-                {
-                    bufferSize = cachedDLSSResolution;
-                    cameraBufferSettings.dlss.jitterScale *= cachedDLSSJitterScale;
-                    cameraBufferSettings.dlss.sharpness = cachedDLSSSharpness;
-                    //Debug.Log("bufferSize " + cachedDLSSResolution);
-                }
-                else if (cameraBufferSettings.dlss.useDLAA)
-                {
-                    renderScale = 1;
-                    bufferSize = GetScaledBufferSize(renderScale, camera);
-                }
-                bufferSize = Vector2Int.Max(bufferSize, Vector2Int.one);
-            }
-#endif
-            m_RTHandleSystem.SetReferenceSize(bufferSize.x, bufferSize.y);
+            #endif
+
+
+            #if RtHandleGbuffer
+                m_RTHandleSystem.SetReferenceSize(bufferSize.x, bufferSize.y);
+            #endif
 
             if (camera.cameraType == CameraType.SceneView)
             {
                 useDepthTexture = cameraBufferSettings.copyDepth;
-#if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
-                cameraBufferSettings.dlss.useJitter = false;
-#endif
+                #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+                    cameraBufferSettings.dlss.useJitter = false;
+                #endif
             }
             else
             {
                 // We can directly modify the buffer settings struct field because it contains a copy of the RP settings struct, not a reference to the original.
                 cameraBufferSettings.fxaa.enabled &= cameraSettings.allowFXAA;
-#if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
-                if (cameraBufferSettings.dlss.enabled)
-                {
-                    // FXAA will be overwritten anyway, so disable it
-                    cameraBufferSettings.fxaa.enabled = false;
-                }
-#endif
+                #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+                    if (cameraBufferSettings.dlss.enabled)
+                    {
+                        // FXAA will be overwritten anyway, so disable it
+                        cameraBufferSettings.fxaa.enabled = false;
+                    }
+                #endif
             }
             cameraBufferSettings.allowHDR &= camera.allowHDR;
             bool hasActivePostFX = postFXSettings != null && PostFXSettings.AreApplicableTo(camera);
 
             /// DLSS upscale image before PostFXStack
             Vector2Int postFXBufferSize = bufferSize;
-#if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
-            if (cameraBufferSettings.dlss.enabled)
-            {
-                postFXBufferSize = GetCameraPixelSize(camera);
-            }
-#endif
+            #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+                if (cameraBufferSettings.dlss.enabled)
+                {
+                    postFXBufferSize = GetCameraPixelSize(camera);
+                }
+            #endif
 
             postFXStack.Setup
             (
@@ -333,35 +341,44 @@ namespace NoesisRender
 
                 if (settings.deferredSettings.enabled)
                 {
-                    var gbResources = GBufferResources.GetGBResources(camera, bufferSize, m_RTHandleSystem);
+                    #if RtHandleGbuffer
+                        var gbResources = GBufferResources.GetGBResources(camera, bufferSize, m_RTHandleSystem);
+                    #else
+                        var gbResources = GBufferResources.GetGBResources(camera, bufferSize);
+                    #endif
                     var gbufferID = gbResources._getTargets;
                     var gbufferTexs = gbResources._getTextures;
                     var gbufferRTHandles = gbResources._getRTHandles;
-#if UNITY_EDITOR
-                    // When switching unity scenes with scene camera active, we can get invalid renderer textures.
-                    if (gbufferTexs[0] == null)
-                    {
-                        GBufferResources._instance.Dispose(m_RTHandleSystem);
-                        gbResources = GBufferResources.GetGBResources(camera, bufferSize, m_RTHandleSystem);
-                        gbufferID = gbResources._getTargets;
-                        gbufferTexs = gbResources._getTextures;
-                        //EditorApplication.ExecuteMenuItem("Window/General/Game");
-
-                        UnityEditor.EditorUtility.DisplayDialog("Scene camera can be invalid.",
-                                        "Renderer textures can be uninitialized. Render loop can be broken there. It can happend after you switch scenes with scene camera."
-                                        , "OK");
-
-                        EditorUtility.RequestScriptReload(); 
-
-                        /*SceneView[] openSceneViews = Resources.FindObjectsOfTypeAll<SceneView>();
-
-                        foreach (SceneView sceneView in openSceneViews)
+                    #if UNITY_EDITOR
+                        // When switching unity scenes with scene camera active, we can get invalid renderer textures.
+                        if (gbufferTexs[0] == null)
                         {
-                            sceneView.Close();
+                            #if RtHandleGbuffer
+                                GBufferResources._instance.Dispose(m_RTHandleSystem);
+                                gbResources = GBufferResources.GetGBResources(camera, bufferSize, m_RTHandleSystem);
+                            #else
+                                GBufferResources._instance.Dispose();
+                                gbResources = GBufferResources.GetGBResources(camera, bufferSize);
+                            #endif
+                            gbufferID = gbResources._getTargets;
+                            gbufferTexs = gbResources._getTextures;
+                            //EditorApplication.ExecuteMenuItem("Window/General/Game");
+
+                            UnityEditor.EditorUtility.DisplayDialog("Scene camera can be invalid.",
+                                            "Renderer textures can be uninitialized. Render loop can be broken there. It can happend after you switch scenes with scene camera."
+                                            , "OK");
+
+                            EditorUtility.RequestScriptReload(); 
+
+                            /*SceneView[] openSceneViews = Resources.FindObjectsOfTypeAll<SceneView>();
+
+                            foreach (SceneView sceneView in openSceneViews)
+                            {
+                                sceneView.Close();
+                            }
+                            Debug.Log("Closed all Scene Views.");*/
                         }
-                        Debug.Log("Closed all Scene Views.");*/
-                    }
-#endif
+                    #endif
                     GBufferPass.Record(renderGraph, camera, cullingResults, cameraSettings.renderingLayerMask, textures, gbufferRTHandles, useLightsPerObject);
 
                     bool xeGTAOEnabled = XeGTAO.CanRender(settings.xeGTAOsettings, materialXeGTAO) && gbufferTexs.Length > 1 && gbufferTexs[1] != null;
@@ -406,8 +423,13 @@ namespace NoesisRender
 
                 if (settings.deferredSettings.enabled)
                 {
-                    var gbResources = GBufferResources.GetGBResources(camera, bufferSize, m_RTHandleSystem);
-                    var normalBuffer = gbResources.GetNormalBuffer();
+                    #if RtHandleGbuffer
+                        var gbResources = GBufferResources.GetGBResources(camera, bufferSize, m_RTHandleSystem);
+                        var normalBuffer = gbResources.GetNormalBuffer();
+                    #else
+                        var gbResources = GBufferResources.GetGBResources(camera, bufferSize);
+                        var normalBuffer = gbResources.GetNormalBuffer();
+                    #endif
                     DecalPass.Record(renderGraph, camera, cullingResults, cameraSettings.renderingLayerMask, textures, settings.decalsSettings, true, normalBuffer);
                 }
                 else
@@ -423,9 +445,9 @@ namespace NoesisRender
                     textures, lightResources
                 );
 
-#if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
-                DLSSPass.Record(renderGraph, camera, textures, cameraBufferSettings, bufferSize, useHDR);
-#endif
+                #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
+                    DLSSPass.Record(renderGraph, camera, textures, cameraBufferSettings, bufferSize, useHDR);
+                #endif
 
                 if (hasActivePostFX)
                 {
@@ -483,7 +505,11 @@ namespace NoesisRender
             /*CoreUtils.Destroy(tempTexs[0]);
             CoreUtils.Destroy(tempTexs[1]);*/
             //Debug.Log("================Global dispose==============");
-            GBufferResources._instance.Dispose(m_RTHandleSystem);
+            #if RtHandleGbuffer
+                GBufferResources._instance.Dispose(m_RTHandleSystem);
+            #else
+                GBufferResources._instance.Dispose();
+            #endif
             XeGTAOResources._instance.Dispose();
 
             CameraDebugger.Cleanup();
