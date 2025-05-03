@@ -1,3 +1,5 @@
+#define RtHandleGbuffer
+
 using System;
 using System.Collections.Generic;
 using UnityEditor;
@@ -393,7 +395,7 @@ namespace NoesisRender
                         // Prevent AO for being to high res
                         Vector2Int xeGTAOSize = renderScale <= 1 ? bufferSize : new Vector2Int(camera.pixelWidth, camera.pixelHeight);
                         xeGTAOSize = bufferSize;
-                        var xeGTAOResources = XeGTAOResources.GetGTAOesources(camera, !settings.xeGTAOsettings.HalfRes ? xeGTAOSize : xeGTAOSize / 2);
+                        var xeGTAOResources = XeGTAOResources.GetGTAOesources(camera, !settings.xeGTAOsettings.HalfRes ? xeGTAOSize : xeGTAOSize / 2, m_RTHandleSystem);
                         xeHBAO = XeGTAO.Record(renderGraph, camera, in textures, settings.xeGTAOsettings, xeGTAOResources, xeGTAOSize, materialXeGTAO, !settings.deferredSettings.enabled, gbufferTexs[1]);
                     }
 
@@ -510,7 +512,7 @@ namespace NoesisRender
             #else
                 GBufferResources._instance.Dispose();
             #endif
-            XeGTAOResources._instance.Dispose();
+            XeGTAOResources._instance.Dispose(m_RTHandleSystem);
 
             CameraDebugger.Cleanup();
         }

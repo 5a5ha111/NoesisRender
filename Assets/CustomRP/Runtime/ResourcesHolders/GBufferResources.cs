@@ -1,9 +1,11 @@
+#define RtHandleGbuffer
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
-
 
 namespace NoesisRender.ResourcesHolders
 {
@@ -16,6 +18,7 @@ namespace NoesisRender.ResourcesHolders
 
         private static Dictionary<Camera, GBufferTextures> keyValuePairs = new();
 
+        #if !RtHandleGbuffer
         public static GBufferTextures GetGBResources(Camera camera, Vector2Int bufferSize)
         {
             if (keyValuePairs == null)
@@ -72,6 +75,7 @@ namespace NoesisRender.ResourcesHolders
             }
             keyValuePairs = null;
         }
+        #endif
 
 
 #if RtHandleGbuffer
@@ -94,7 +98,7 @@ namespace NoesisRender.ResourcesHolders
                     }
                     else
                     {
-                        resource.Dispose();
+                        resource.Dispose(m_RTHandleSystem);
                         resource = new GBufferTextures(camera, bufferSize, m_RTHandleSystem);
                         return resource;
                     }
@@ -113,6 +117,12 @@ namespace NoesisRender.ResourcesHolders
                 return resource;
             }
         }
+        [Obsolete]
+        public void Dispose()
+        {
+            Debug.LogWarning("This is incorrect dispose! Dispose object using Dispose(RTHandleSystem m_RTHandleSystem)");
+        }
+
         public void Dispose(RTHandleSystem m_RTHandleSystem)
         {
             if (keyValuePairs == null)
@@ -169,6 +179,7 @@ namespace NoesisRender.ResourcesHolders
             public RenderTexture[] _getTextures { get { return gbuffers; } }
             public RTHandle[] _getRTHandles { get { return gbuffersRtHandle; } }
 
+            #if !RtHandleGbuffer
             public GBufferTextures(Camera camera, Vector2Int bufferSize)
             {
                 this.bufferSize = bufferSize;
@@ -196,7 +207,7 @@ namespace NoesisRender.ResourcesHolders
                 this.gbuffers[3].Create();
                 this.gbufferID[3] = gbuffers[3];
             }
-
+            #endif
             public RenderTexture GetNormalBuffer()
             {
                 if (gbuffers == null || gbuffers.Length == 0)
@@ -214,6 +225,7 @@ namespace NoesisRender.ResourcesHolders
                 }
                 return true;
             }
+            #if !RtHandleGbuffer
             public void Dispose()
             {
                 for (int i = 0; i < gbuffers.Length; i++)
@@ -222,8 +234,9 @@ namespace NoesisRender.ResourcesHolders
                 }
                 gbuffers = new RenderTexture[0];
             }
+            #endif
 
-            #if RtHandleGbuffer
+#if RtHandleGbuffer
             public GBufferTextures(Camera camera, Vector2Int bufferSize, RTHandleSystem rTHandleSystem)
             {
                 this.bufferSize = bufferSize;
@@ -239,34 +252,42 @@ namespace NoesisRender.ResourcesHolders
                 this.gbuffers[0].Create();
                 this.gbufferID[0] = gbuffers[0];*/
                 //gbuffersRtHandle[0] = rTHandleSystem.Alloc(this.gbuffers[0]);
-                gbuffersRtHandle[0] = rTHandleSystem.Alloc(bufferSize.x, bufferSize.y, 1, DepthBits.None, UnityEngine.Experimental.Rendering.GraphicsFormat.R8G8B8A8_SRGB, name: "GBuffer0 RTHandle (RGB color)");
-                this.gbuffers[0] = gbuffersRtHandle[0].rt;
+
+                GraphicsFormat colorFormat;
+                DepthBits depth = DepthBits.None;
+                if (SystemInfo.IsFormatSupported(GraphicsFormat.B5G6R5_UNormPack16, FormatUsage.Render))
+                {
+                    colorFormat = GraphicsFormat.B5G6R5_UNormPack16;
+                }
+                else
+                {
+                    colorFormat = GraphicsFormat.R8G8B8A8_SRGB;
+                }
+
+                gbuffersRtHandle[0] = rTHandleSystem.Alloc(bufferSize.x, bufferSize.y, 1, depth, colorFormat, name: "GBuffer0 RTHandle (RGB color)");
                 this.gbuffers[0] = gbuffersRtHandle[0].rt;
                 this.gbufferID[0] = gbuffersRtHandle[0].rt;
 
-                this.gbuffers[1] = new RenderTexture(bufferSize.x, bufferSize.y, gBufferDepth, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
-                this.gbuffers[1].name = "GBuffer1 RGB normal A smoothness";
-                this.gbuffers[1].Create();
+                gbuffersRtHandle[1] = rTHandleSystem.Alloc(bufferSize.x, bufferSize.y, 1, depth, GraphicsFormat.R16G16B16A16_SFloat, name: "GBuffer1 RGB normal A smoothness");
+                this.gbuffers[1] = gbuffersRtHandle[1].rt;
                 this.gbufferID[1] = gbuffers[1];
-                gbuffersRtHandle[1] = rTHandleSystem.Alloc(this.gbuffers[1]);
 
-                this.gbuffers[2] = new RenderTexture(bufferSize.x, bufferSize.y, gBufferDepth, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
-                // We want to pack positionWS relative to camera, bocause we want to avoid precission errors of 16 bit float
-                this.gbuffers[2].name = "GBuffer2 RGB positionWS relative to camera A occlusion";
-                this.gbuffers[2].Create();
+                gbuffersRtHandle[2] = rTHandleSystem.Alloc(bufferSize.x, bufferSize.y, 1, depth, GraphicsFormat.R16G16B16A16_SFloat, name: "GBuffer2 RGB posWS rel cam A occlusion");
+                this.gbuffers[2] = gbuffersRtHandle[2];
                 this.gbufferID[2] = gbuffers[2];
-                gbuffersRtHandle[2] = rTHandleSystem.Alloc(this.gbuffers[2]);
 
-                this.gbuffers[3] = new RenderTexture(bufferSize.x, bufferSize.y, gBufferDepth, RenderTextureFormat.DefaultHDR, RenderTextureReadWrite.Linear);
-                this.gbuffers[3].name = "GBuffer3 RGB emission A metallic";
-                this.gbuffers[3].Create();
+                gbuffersRtHandle[3] = rTHandleSystem.Alloc(bufferSize.x, bufferSize.y, 1, depth, GraphicsFormat.R16G16B16A16_SFloat, name: "GBuffer3 RGB emission A metallic");
+                this.gbuffers[3] = gbuffersRtHandle[3].rt;
                 this.gbufferID[3] = gbuffers[3];
-                gbuffersRtHandle[3] = rTHandleSystem.Alloc(this.gbuffers[3]);
 
                 //Debug.Log("New resources in rTHandleSystem " + camera.name + " " + bufferSize);
             }
 
-            
+            [Obsolete]
+            public void Dispose()
+            {
+                Debug.LogWarning("This is incorrect dispose! Dispose object using Dispose(RTHandleSystem m_RTHandleSystem)");
+            }
             public void Dispose(RTHandleSystem m_RTHandleSystem)
             {
                 for (int i = 0; i < gbuffers.Length; i++)
@@ -277,7 +298,7 @@ namespace NoesisRender.ResourcesHolders
                 gbuffers = new RenderTexture[0];
                 //Debug.Log("Dispose " + this.bufferSize);
             }
-            #endif
+#endif
         }
     }
 

@@ -22,7 +22,7 @@ MonoBehaviour:
       renderScale: 1
       bicubicRescaling: 0
       fxaa:
-        enabled: 1
+        enabled: 0
         fixedThreshold: 0.0312
         relativeThreshold: 0.063
         subpixelBlending: 1
@@ -72,7 +72,7 @@ MonoBehaviour:
     depthOnlyShader: {fileID: 4800000, guid: 5df1e3b7d59fd934f829cb8d0f029df8, type: 3}
     motionVectorDebug: {fileID: 4800000, guid: 023a4501ca74f9f4d97bb8baeae9fda8, type: 3}
     xeGTAOsettings:
-      enabled: 0
+      enabled: 1
       computeShader: {fileID: 7200000, guid: f9866655892b7814f8bffb1bdbf3b61c, type: 3}
       XeGTAOApply: {fileID: 4800000, guid: 9599961e6e539cc4ba6544b6e5025a7b, type: 3}
       HalfRes: 1
