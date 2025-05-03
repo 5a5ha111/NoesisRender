@@ -2,7 +2,7 @@
 #define PROCEDURAL_UB
 
 
-// Smaller maskSize, bigger edge transition
+// Smaller maskSize, bigger edge transition. start from maskSize = 20
 float UvMaskSquere(float2 uv, float maskSize)
 {
 	float2 scaledUv = saturate(uv * maskSize);

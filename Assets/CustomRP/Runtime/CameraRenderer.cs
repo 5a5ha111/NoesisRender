@@ -51,9 +51,10 @@ namespace NoesisRender
 
 
         // Temp variables which created and destroyed with CameraRenderer class
-        Material material;
+        Material materialCopy;
         Material materialMotion, depthOnlyMaterial, motionVectorDebugMaterial, materialXeGTAO;
         Material deferredMat;
+        Material materialSSR;
         Texture2D missingTexture;
         PostFXStack postFXStack = new PostFXStack();
         #if RtHandleGbuffer
@@ -71,20 +72,17 @@ namespace NoesisRender
         #endif
 
 
-        // GBuffer textures
-        /*private const int amountOfGTempTex = 2;
-        RenderTexture[] tempTexs = new RenderTexture[amountOfGTempTex];
-        RenderTargetIdentifier[] gbufferID = new RenderTargetIdentifier[amountOfGTempTex];*/
 
 
 
-        public CameraRenderer(Shader shader, Shader cameraDebuggerShader, Shader cameraMotionShader, Shader depthOnlyShader, Shader motionDebug, Shader deferredShader, Shader xeGTAOApply)
+        public CameraRenderer(Shader shader, Shader cameraDebuggerShader, Shader cameraMotionShader, Shader depthOnlyShader, Shader motionDebug, Shader deferredShader, Shader xeGTAOApply, Shader ssrShader)
         {
-            material = CoreUtils.CreateEngineMaterial(shader);
-            materialMotion = CoreUtils.CreateEngineMaterial(cameraMotionShader);
-            depthOnlyMaterial = CoreUtils.CreateEngineMaterial(depthOnlyShader);
-            motionVectorDebugMaterial = CoreUtils.CreateEngineMaterial(motionDebug);
-            materialXeGTAO = CoreUtils.CreateEngineMaterial(xeGTAOApply);
+            materialCopy = CreateMatIfShaderExist(shader);
+            materialMotion = CreateMatIfShaderExist(cameraMotionShader);
+            depthOnlyMaterial = CreateMatIfShaderExist(depthOnlyShader);
+            motionVectorDebugMaterial = CreateMatIfShaderExist(motionDebug);
+            materialXeGTAO = CreateMatIfShaderExist(xeGTAOApply);
+            materialSSR = CreateMatIfShaderExist(ssrShader);
             missingTexture = new Texture2D(1, 1)
             {
                 hideFlags = HideFlags.HideAndDontSave,
@@ -97,16 +95,7 @@ namespace NoesisRender
             #endif
 
 
-            // GBuffer setup
-            /*int gBufferDepth = (int)DepthBits.None;
-            tempTexs[0] = new RenderTexture(Screen.width, Screen.height, gBufferDepth, RenderTextureFormat.DefaultHDR, RenderTextureReadWrite.Linear);
-            tempTexs[0].name = "GBuffer1 (RGB color A metallic)";
-            gbufferID[0] = tempTexs[0];
-            tempTexs[1] = new RenderTexture(Screen.width, Screen.height, gBufferDepth, RenderTextureFormat.Default, RenderTextureReadWrite.Linear);
-            tempTexs[1].name = "GBuffer2 R smoothness GB normal A occlustion";
-            gbufferID[1] = tempTexs[1];*/
-
-            deferredMat = CoreUtils.CreateEngineMaterial(deferredShader);
+            deferredMat = CreateMatIfShaderExist(deferredShader);
 
             #if RtHandleGbuffer
                 m_RTHandleSystem.Initialize(Screen.width, Screen.height);
@@ -417,7 +406,7 @@ namespace NoesisRender
                 {
                     SkyboxPass.Record(renderGraph, camera, textures);
                 }
-                var copier = new CameraRendererCopier(material, camera, cameraSettings.finalBlendMode);
+                var copier = new CameraRendererCopier(materialCopy, camera, cameraSettings.finalBlendMode);
                 CopyAttachmentsPass.Record
                 (
                     renderGraph, useColorTexture, useDepthTexture, copier, textures
@@ -446,6 +435,13 @@ namespace NoesisRender
                     opaque: false, setTarget: false,
                     textures, lightResources
                 );
+
+                if (settings.deferredSettings.enabled)
+                {
+                    var gbResources = GBufferResources.GetGBResources(camera, bufferSize, m_RTHandleSystem);
+                    var gbufferTexs = gbResources._getTextures;
+                    SSRPass.Record(renderGraph, camera, textures, materialSSR, ref gbufferTexs, settings.SSRsettings);
+                }
 
                 #if ENABLE_NVIDIA && ENABLE_NVIDIA_MODULE
                     DLSSPass.Record(renderGraph, camera, textures, cameraBufferSettings, bufferSize, useHDR);
@@ -497,12 +493,13 @@ namespace NoesisRender
 
         public void Dispose()
         {
-            CoreUtils.Destroy(material);
-            CoreUtils.Destroy(motionVectorDebugMaterial);
-            CoreUtils.Destroy(materialMotion);
-            CoreUtils.Destroy(depthOnlyMaterial);
-            CoreUtils.Destroy(materialXeGTAO);
-            CoreUtils.Destroy(deferredMat);
+            DestroyMat(materialCopy);
+            DestroyMat(motionVectorDebugMaterial);
+            DestroyMat(materialMotion);
+            DestroyMat(depthOnlyMaterial);
+            DestroyMat(deferredMat);
+            DestroyMat(materialXeGTAO);
+            DestroyMat(materialSSR);
 
             /*CoreUtils.Destroy(tempTexs[0]);
             CoreUtils.Destroy(tempTexs[1]);*/
@@ -517,6 +514,23 @@ namespace NoesisRender
             CameraDebugger.Cleanup();
         }
 
+
+        static Material CreateMatIfShaderExist(Shader shader)
+        {
+            if (shader != null)
+            {
+                return CoreUtils.CreateEngineMaterial(shader);
+            }
+            return null;
+        }
+        static void DestroyMat(Material mat)
+        {
+            if (mat != null)
+            {
+                CoreUtils.Destroy(mat);
+            }
+        }
+
         /// <summary>
         /// Draw fullscreen buffer and change renderTarget to RenderTargetIdentifier to
         /// </summary>
@@ -527,7 +541,7 @@ namespace NoesisRender
         {
             buffer.SetGlobalTexture(sourceTextureId, from);
             buffer.SetRenderTarget(to, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
-            buffer.DrawProcedural(Matrix4x4.identity, material, isDepth ? 1 : 0, MeshTopology.Triangles, 3);
+            buffer.DrawProcedural(Matrix4x4.identity, materialCopy, isDepth ? 1 : 0, MeshTopology.Triangles, 3);
         }
 
         public void ExecuteBuffer()

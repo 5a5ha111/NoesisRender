@@ -84,7 +84,7 @@ float3 NormalTangentToWorld (float3 normalTS, float3 normalWS, float4 tangentWS)
 
 float3 TrasformViewToWorld(float3 view)
 {
-	float3 _Transform_Out = mul(UNITY_MATRIX_I_V, float4(view, 1)).xyz;
+	float3 _Transform_Out = mul((float3x3)UNITY_MATRIX_I_V, view).xyz;
 	return _Transform_Out;
 }
 float4 WorldToViewSpace(float4 worldPos)

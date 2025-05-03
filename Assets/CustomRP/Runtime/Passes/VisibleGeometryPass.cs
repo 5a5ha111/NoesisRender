@@ -16,9 +16,9 @@ namespace NoesisRender.Passes
 
         static readonly ShaderTagId[] shaderTagIds =
         {
-        new("SRPDefaultUnlit"),
-        new("CustomLit")
-    };
+            new("SRPDefaultUnlit"),
+            new("CustomLit")
+        };
 
         RendererListHandle list;
         CameraRenderer renderer;

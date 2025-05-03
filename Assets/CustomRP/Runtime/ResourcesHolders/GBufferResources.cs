@@ -145,28 +145,6 @@ namespace NoesisRender.ResourcesHolders
 
         public class GBufferTextures : IDisposable
         {
-            // Current GBuffer alligment:
-            /*
-            GB0
-                rgb color
-                a metallic
-
-            GB1
-                r smoothness
-                g normalX
-                b normalY
-                a occlusion
-
-            GB2
-                rg positionWS
-                b fresnelStrength
-                a renderingLayerMask asuint(unity_RenderingLayer.x)
-
-            DepthAttach (in setupPass)
-                r depth(posZ in view space)
-            * 
-            * 
-            */
 
             public const int amountOfGBuffers = 4;
             private const int gBufferDepth = (int)DepthBits.None;

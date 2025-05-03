@@ -72,16 +72,19 @@ MonoBehaviour:
     depthOnlyShader: {fileID: 4800000, guid: 5df1e3b7d59fd934f829cb8d0f029df8, type: 3}
     motionVectorDebug: {fileID: 4800000, guid: 023a4501ca74f9f4d97bb8baeae9fda8, type: 3}
     xeGTAOsettings:
-      enabled: 1
+      enabled: 0
       computeShader: {fileID: 7200000, guid: f9866655892b7814f8bffb1bdbf3b61c, type: 3}
       XeGTAOApply: {fileID: 4800000, guid: 9599961e6e539cc4ba6544b6e5025a7b, type: 3}
       HalfRes: 1
       BicubicRescale: 1
       TemporalStable: 0
-      QualityLevel: 3
-      DenoisePasses: 3
+      QualityLevel: 2
+      DenoisePasses: 5
       Radius: 0.5
-      FinalValuePower: 6
+      FinalValuePower: 3
+    SSRsettings:
+      enabled: 1
+      shader: {fileID: 4800000, guid: 0453aaf7d1d520b40bf1a8da1a3cb077, type: 3}
   cameraBufferSettings:
     allowHDR: 1
     copyColor: 1

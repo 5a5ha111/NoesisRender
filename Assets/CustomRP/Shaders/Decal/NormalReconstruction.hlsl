@@ -1,7 +1,7 @@
 #ifndef UNIVERSAL_NORMAL_RECONSTRUCTION
 #define UNIVERSAL_NORMAL_RECONSTRUCTION
 
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+//#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
 #if defined(USING_STEREO_MATRICES)
     #define unity_eyeIndex unity_StereoEyeIndex

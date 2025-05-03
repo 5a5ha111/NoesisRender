@@ -30,7 +30,7 @@ namespace NoesisRender
                 settings.useSRPBatcher;
             GraphicsSettings.lightsUseLinearIntensity = true;
             InitializeForEditor();
-            renderer = new(settings.cameraRendererShader, settings.cameraDebuggerShader, settings.cameraMotionShader, settings.depthOnlyShader, settings.motionVectorDebug, settings.deferredSettings.deferredShader, settings.xeGTAOsettings.XeGTAOApply);
+            renderer = new(settings.cameraRendererShader, settings.cameraDebuggerShader, settings.cameraMotionShader, settings.depthOnlyShader, settings.motionVectorDebug, settings.deferredSettings.deferredShader, settings.xeGTAOsettings.XeGTAOApply, settings.SSRsettings.shader);
         }
 
 

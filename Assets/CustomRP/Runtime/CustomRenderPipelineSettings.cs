@@ -103,6 +103,15 @@ namespace NoesisRender
         }
 
         [Space] public XeGTAOSettings xeGTAOsettings;
+
+        [System.Serializable]
+        public class SSRSettings
+        {
+            public bool enabled = false;
+            public Shader shader;
+        }
+
+        [Space] public SSRSettings SSRsettings;
     }
 
 
