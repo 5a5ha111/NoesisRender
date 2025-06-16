@@ -22,7 +22,7 @@ MonoBehaviour:
       renderScale: 1
       bicubicRescaling: 0
       fxaa:
-        enabled: 0
+        enabled: 1
         fixedThreshold: 0.0312
         relativeThreshold: 0.063
         subpixelBlending: 1
@@ -61,7 +61,7 @@ MonoBehaviour:
       tileSize: 64
       maxLightsPerTile: 31
     deferredSettings:
-      enabled: 1
+      enabled: 0
       deferredShader: {fileID: 4800000, guid: 76d40f853cf6d434ab46aaf3227d3cf3, type: 3}
       reflectionCubemap: {fileID: 8900000, guid: ef8d8fbf4a226c14486fe5a02493549e, type: 3}
     decalsSettings:

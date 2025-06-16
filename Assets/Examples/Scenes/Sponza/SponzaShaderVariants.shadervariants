@@ -246,3 +246,38 @@ ShaderVariantCollection:
       variants:
       - keywords: VERTICAL_FLIP
         passType: 0
+  - first: {fileID: 4800000, guid: 11d9a3d2169999c47b150f4ba7ae8d37, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: _CONSTANT_FLOW_DISABLE
+        passType: 0
+      - keywords: _CONSTANT_FLOW_DISABLE _CUSTOM_TIME
+        passType: 0
+      - keywords: _CONSTANT_FLOW_DISABLE _CUSTOM_TIME _TIME_BOUND_X
+        passType: 0
+      - keywords: _CONSTANT_FLOW_DISABLE _CUSTOM_TIME _TIME_BOUND_X _TIME_BOUND_Y
+        passType: 0
+      - keywords: _CONSTANT_FLOW_DISABLE _CUSTOM_TIME _TIME_BOUND_Y
+        passType: 0
+      - keywords: _CONSTANT_FLOW_DISABLE _TIME_BOUND_X
+        passType: 0
+      - keywords: _CONSTANT_FLOW_DISABLE _TIME_BOUND_X _TIME_BOUND_Y
+        passType: 0
+      - keywords: _CONSTANT_FLOW_DISABLE _TIME_BOUND_Y
+        passType: 0
+      - keywords: _CUSTOM_TIME
+        passType: 0
+      - keywords: _CUSTOM_TIME _TIME_BOUND_X
+        passType: 0
+      - keywords: _CUSTOM_TIME _TIME_BOUND_X _TIME_BOUND_Y
+        passType: 0
+      - keywords: _CUSTOM_TIME _TIME_BOUND_Y
+        passType: 0
+      - keywords: _TIME_BOUND_X
+        passType: 0
+      - keywords: _TIME_BOUND_X _TIME_BOUND_Y
+        passType: 0
+      - keywords: _TIME_BOUND_Y
+        passType: 0

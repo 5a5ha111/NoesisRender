@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: M_CustomVFX
+  m_Shader: {fileID: 4800000, guid: 11d9a3d2169999c47b150f4ba7ae8d37, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 1
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _FlipBook:
+        m_Texture: {fileID: 2800000, guid: 1ecd9381863a2ac4297e2c4a5907622a, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _DebugTime: 1
+    - _DummyValue: 0
+    - _FadeInPower: 0.7
+    - _FadeOutPower: 4
+    - _FlipBookSpeed: 0.6
+    - _FlipX: 0
+    - _FlipY: 0
+    - _ManualTime: 0
+    - _MatchParticlePhase: 1
+    - _Opacity: 1
+    - _ParticleEndSize: 1
+    - _ParticleSpead: 0
+    - _ParticleSpeed: 0.7
+    - _ParticleSpread: 0
+    - _ParticleStartSize: 0.5
+    - _ParticleVelocityEnd: 1.2
+    - _ParticleVelocityStart: 2
+    - _QueueControl: -1
+    - _QueueOffset: 0
+    - _RandomizeRotationDirection: 0
+    - _Rotation: 90
+    - _RotationRandomOffset: 1
+    - _RotationSpeed: 0
+    - _TextureAlphaSmoothstep: 0.21
+    - _UseTextureAlpha: 0
+    - _UseTextureRGBAlpha: 0
+    m_Colors:
+    - _EmitterDimensions: {r: 0, g: 0, b: 0, a: 0}
+    - _EndColor: {r: 1, g: 1, b: 1, a: 0}
+    - _FlipBookDimenions: {r: 13, g: 13, b: 0, a: 0}
+    - _Gravityy: {r: 0, g: -2, b: 0, a: 0}
+    - _ParticleDirectional: {r: 0, g: 0, b: 1, a: 0}
+    - _StartColor: {r: 0.5129143, g: 0.7127509, b: 0.816, a: 1}
+    - _Wind: {r: 0, g: 0, b: 0, a: 0}
+  m_BuildTextureStacks: []

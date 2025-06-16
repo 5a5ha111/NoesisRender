@@ -26,11 +26,11 @@ MonoBehaviour:
     mode: 1
     scatter: 0.05
   colorAdjustments:
-    postExposure: 1
-    contrast: 0
+    postExposure: 2.5
+    contrast: -16.2
     colorFilter: {r: 1, g: 1, b: 1, a: 1}
     hueShift: 0
-    saturation: 0
+    saturation: 19.2
   whiteBalance:
     temperature: -3.7
     tint: 0
