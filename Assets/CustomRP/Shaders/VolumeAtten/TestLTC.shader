@@ -25,6 +25,7 @@ Shader "Custom/TestLTC"
                 // Another approach for clipping light surface. Less effective than new one
                 //#define QuadClipping
 
+                // Vertices pos in ws + light forward direction
                 float3 PolygonWS[4];
                 float3 lightForward;
                 float _Smoothness;
@@ -419,7 +420,7 @@ Shader "Custom/TestLTC"
                     float3 T1, T2;
                     T1 = normalize(V - N*dot(V, N));
                     T2 = cross(N, T1);
-                    
+
                     float3x3 identityBrdf = float3x3(float3(T1), float3(T2), float3(N));
                     Minv = mul(Minv, identityBrdf);
 

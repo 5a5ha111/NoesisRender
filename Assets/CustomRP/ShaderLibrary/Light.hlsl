@@ -99,7 +99,17 @@ Light GetOtherLight (int index, Surface surfaceWS, ShadowData shadowData)
 	float3 position = data.position.xyz;
 	float3 ray = position - surfaceWS.position;
 	light.direction = normalize(ray);
-	float distanceSqr = max(dot(ray, ray), 0.00001); // if closer than 1m, light become brighter. use max 1 to avoid this 
+	float distanceSqr = dot(ray, ray);
+	const float c = 0.00001;
+	const float r = 1;
+	float rSqr = r * r;
+	float d = length(ray);
+	float sqrtTerm = sqrt(distanceSqr + rSqr);
+	//float coreAtten = 1.0 / distanceSqr; // correct for point light, but go to infinity at close distance
+	//float coreAtten = max(1.0 / distanceSqr, c); // ad hoc
+	//float coreAtten = 1.0 / (distanceSqr + c); // ad hoc 2
+	//float coreAtten = 2.0 / (distanceSqr + 0.5 * rSqr); // much better ad hoc, but decay too slow 
+	float coreAtten = 2.0 / (distanceSqr + rSqr + d * sqrtTerm); // just best solution
 	
 	float rangeAttenuation = Square(
 		saturate(1.0 - Square(distanceSqr * data.position.w))
@@ -118,7 +128,7 @@ Light GetOtherLight (int index, Surface surfaceWS, ShadowData shadowData)
 	otherShadowData.spotDirectionWS = spotDirection;
 	light.attenuation = 
 	GetOtherShadowAttenuation(otherShadowData, shadowData, surfaceWS) *
-		spotAttenuation * rangeAttenuation / distanceSqr;
+		spotAttenuation * rangeAttenuation * coreAtten;;
 	return light;
 }
 
