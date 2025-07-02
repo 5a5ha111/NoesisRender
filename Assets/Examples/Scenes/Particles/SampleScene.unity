@@ -2574,7 +2574,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0bc810f5be3d724dbdeb72bb007cf37, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  linkedPortal: {fileID: 1125399854}
+  linkedPortal: {fileID: 763948073}
   screen: {fileID: 3438419960327085348}
   portalCam: {fileID: 3743597650880535001}
   recursionLimit: 5
@@ -2929,8 +2929,8 @@ Transform:
   m_GameObject: {fileID: 575563202}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.889, y: 0.682, z: -10.061}
-  m_LocalScale: {x: 1, y: 1.5, z: 1}
+  m_LocalPosition: {x: 2.96, y: 0.494, z: -9.916}
+  m_LocalScale: {x: 1, y: 1.1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -2947,9 +2947,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ff0cc17eaf840e409247d44f1b46b6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  position: {x: 2.889, y: 0.682, z: -10.061}
+  positionWS: {x: 2.96, y: 0.494, z: -9.916}
   rotation: {x: -0, y: 0, z: 0}
-  scale: {x: 1, y: 1.5, z: 1}
+  scale: {x: 1, y: 1.1, z: 1}
   pivotPoint: {x: 0, y: 0, z: 0}
   targetCamera: {fileID: 963194227}
 --- !u!1 &601399965

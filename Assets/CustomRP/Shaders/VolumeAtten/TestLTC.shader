@@ -433,5 +433,4 @@ Shader "Custom/TestLTC"
             ENDHLSL
         }
     }
-    FallBack "Diffuse"
 }

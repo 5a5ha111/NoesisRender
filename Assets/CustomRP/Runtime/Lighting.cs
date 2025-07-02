@@ -82,7 +82,7 @@ namespace NoesisRender
         void SetupPointLight(int index, int visibleIndex, ref VisibleLight visibleLight, Light light)
         {
             otherLightColors[index] = visibleLight.finalColor;
-            Vector4 position = visibleLight.localToWorldMatrix.GetColumn(3); // position
+            Vector4 position = visibleLight.localToWorldMatrix.GetColumn(3); // positionWS
             position.w = 1f / Mathf.Max(visibleLight.range * visibleLight.range, 0.00001f); // store the (1 / r^2) of the light in w
             otherLightPositions[index] = position;
             otherLightSpotAngles[index] = new Vector4(0f, 1f);
@@ -96,7 +96,7 @@ namespace NoesisRender
         void SetupSpotLight(int index, int visibleIndex, ref VisibleLight visibleLight, Light light)
         {
             otherLightColors[index] = visibleLight.finalColor;
-            Vector4 position = visibleLight.localToWorldMatrix.GetColumn(3); // position
+            Vector4 position = visibleLight.localToWorldMatrix.GetColumn(3); // positionWS
             position.w = 1f / Mathf.Max(visibleLight.range * visibleLight.range, 0.00001f); // store the (1 / r^2) of the light in w
             otherLightPositions[index] = position;
             Vector4 dirAndMask = -visibleLight.localToWorldMatrix.GetColumn(2); // negate rotation

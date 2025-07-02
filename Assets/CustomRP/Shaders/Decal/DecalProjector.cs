@@ -12,7 +12,7 @@ using UnityEngine;
 public class DecalProjector : MonoBehaviour
 {
     [Header("Transform Settings")]
-    public Vector3 position = Vector3.zero;
+    public Vector3 positionWS = Vector3.zero;
     public Vector3 rotation = Vector3.zero; // Euler angles (degrees)
     public Vector3 scale = Vector3.one;     // Scale values (1 by default)
 
@@ -51,7 +51,7 @@ public class DecalProjector : MonoBehaviour
         Component[] components = GetComponents<Component>();
         int currentIndex = System.Array.IndexOf(components, this);
 
-        // Move up until we're in position 1 (right after Transform)
+        // Move up until we're in positionWS 1 (right after Transform)
         while (currentIndex > 1)
         {
             // Move component up and check if successful
@@ -87,8 +87,8 @@ public class DecalProjector : MonoBehaviour
                     if (scene.camera != null)
                     {
                         float dist = scene.cameraDistance;
-                        Debug.Log("Scene.camera pos " + camRef.transform.position + " dist " + dist);
-                        // Unity dont properly update scene.camera.transform.position, so i need to pass position somehow else.
+                        Debug.Log("Scene.camera pos " + camRef.transform.positionWS + " dist " + dist);
+                        // Unity dont properly update scene.camera.transform.positionWS, so i need to pass positionWS somehow else.
                     }
                 }
             }
@@ -165,13 +165,25 @@ public class DecalProjector : MonoBehaviour
                 0.05f, // Radius
                 EventType.Repaint // Ensure rendering during repaint
             );
+
+            // Save original Gizmos state
+            Color prevColor = Gizmos.color;
+            Matrix4x4 prevMatrix = Gizmos.matrix;
+            Matrix4x4 boxTransform = Matrix4x4.TRS(
+                positionWS,
+                Quaternion.Euler(rotation),
+                scale
+            );
+            Gizmos.matrix = boxTransform;
+            Gizmos.DrawWireCube(Vector3.zero, Vector3.one);
+            Gizmos.matrix = prevMatrix;
         }
     }
 #endif
 
     public void SetPosition(Vector3 position)
     {
-        this.position = position;
+        this.positionWS = position;
     }
 
     void RestoreScale()
@@ -188,7 +200,7 @@ public class DecalProjector : MonoBehaviour
 
         referenceScale = transform.localScale;
 
-        /*lastPosition = position;
+        /*lastPosition = positionWS;
         lastRotation = rotation;
         lastScale = scale;*/
     }
@@ -204,22 +216,22 @@ public class DecalProjector : MonoBehaviour
     }
     bool InternalValuesHaveChanged()
     {
-        return position != lastPosition ||
+        return positionWS != lastPosition ||
                rotation != lastRotation ||
                scale != lastScale;
     }
     void UpdatePivotTransformFromTransform()
     {
         // Convert Transform state to PivotTransform values
-        position = transform.TransformPoint(pivotPoint);
+        positionWS = transform.TransformPoint(pivotPoint);
         rotation = transform.rotation.eulerAngles;
         scale = transform.localScale;
     }
     void ApplyTransformation()
     {
-        PivotTransform.ApplyTransformation(this.transform, pivotPoint, position, rotation, scale);
+        PivotTransform.ApplyTransformation(this.transform, pivotPoint, positionWS, rotation, scale);
 
-        lastPosition = position;
+        lastPosition = positionWS;
         lastRotation = rotation;
         lastScale = scale;
         lastPivotPoint = pivotPoint;
@@ -251,7 +263,7 @@ public class DecalProjector : MonoBehaviour
     }
     public Vector3 InverseTransformPointIgnoringScale(Vector3 worldPoint)
     {
-        // Remove position offset and apply inverse rotation
+        // Remove positionWS offset and apply inverse rotation
         Vector3 positionDifference = worldPoint - transform.position;
         return Quaternion.Inverse(transform.rotation) * positionDifference;
     }

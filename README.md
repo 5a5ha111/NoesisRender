@@ -29,7 +29,7 @@ The project contains unlit materials (lit is the same, with minor changes) fully
 ### Decals
 
 It has decal shader, compatible with Forwards and Deferred paths. If used forward path, decal shader can reconstruct surface normals (and positions) from depth.  
-![DecalWithSoftNormalFade](ImagesDemo/DecalWithSoftNormalFade.png)  
+![DecalWithSoftNormalFade](ImagesDemo/DecalWithGizmo.PNG)  
 
 ## PostFX
 
@@ -114,10 +114,28 @@ Currently supported only in Deferred path (since it main development path), but 
 
 ## Portal rendering
 
-If you dream about that your game will have portals, so you will not be restricted by euclidean space, that is what you need. Now they are fully worked in forward path, since not so many game developers dream about portals. But i can extend their support if your project needs them.  
+If you dream about that your game will have portals, so you will not be restricted by euclidean space, that is what you need. Now they are fully worked in forward path, since not so many game developers dream about portals. But it possible to extend their support.  
 ![Portal example](ImagesDemo/PortalExample.png)  
 
-## Known issue
+## From where start
+
+If you interested in cs side of render pipeline, go to [CameraRenderer.cs](Assets/CustomRP/Runtime/CameraRenderer.cs) . If you interested in shaders, inspect [Shaders](Assets/CustomRP/Shaders) and [ShaderLibrary](Assets/CustomRP/ShaderLibrary) . If just want to look around, go to Assets/Examples/Scenes. RP settings located at [Custom Render Pipeline Asset](Assets/CustomRP/Runtime/Custom Render Pipeline Asset.asset) and post fx settings at  [Test Post FX Settings](Assets/CustomRP/Runtime/Test Post FX Settings.asset) .
+
+# Update 02.07.2025
+
+## New Particle System
+
+This system provides an efficient alternative to traditional Particle Systems by leveraging GPU capabilities for all calculations and rendering. It can work fully independently in loop, or rely on script for additional features. Check https://github.com/5a5ha111/CustomVFX for more info. Still a lot of settings from standard system is not implemented, im planning to add them at moment when i need them. 
+
+![Particles in shader](ImagesDemo/ParticlesInShader.PNG)
+
+## Real-Time Polygonal-Light Shading with Linearly Transformed Cosines
+
+Add demo with analytically calculated area light with texture. For now it lacks shadows and requires a special shader to work, but will be integrated in render pipeline in the future. And yes, it works fast enough to be used in production.
+
+![Area Light LTC](ImagesDemo/AreaLightLTC.gif)
+
+## Known issues
 
 If your game have split screen or any other multi camera setup with individual post effects, DLSS work incorrectly, data leak from one part of the screen to another. It possible to fix this, but require to split postFX pass into several paths. I want to keep things simple for normal games, so leave it be for now.  
 
@@ -133,3 +151,9 @@ CustomSRP, cinight https://github.com/cinight/CustomSRP
 Improved normal reconstruction from depth, turanszkij https://wickedengine.net/2019/09/improved-normal-reconstruction-from-depth/  
 Introduction to Decal Rendering, samdriver https://samdriver.xyz/article/decal-render-intro  
 Forward vs Deferred vs Forward+ Rendering with DirectX 11, Jeremiah https://web.archive.org/web/20250310064014/https://www.3dgep.com/forward-plus/  
+
+Real-Time Polygonal-Light Shading with Linearly Transformed Cosines , Eric Heitz, Jonathan Dupuy, Stephen Hill and David Neubelt 2016 https://eheitzresearch.wordpress.com/415-2/
+
+### Contacts
+
+Telegram @Toohight , email <5a5ha0rr1ove@gmail.com>

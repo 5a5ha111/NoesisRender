@@ -11,7 +11,7 @@ public class CircularMovementTest : MonoBehaviour
 
     void Update()
     {
-        // Calculate the new position
+        // Calculate the new positionWS
         float x = centerPoint.x + radius * Mathf.Cos(angle);
         float z = centerPoint.z + radius * Mathf.Sin(angle);
         transform.position = new Vector3(x, transform.position.y, z);

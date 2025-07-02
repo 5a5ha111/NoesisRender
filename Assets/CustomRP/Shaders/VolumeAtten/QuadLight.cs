@@ -2,6 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Quad area light
+/// </summary>
 [ExecuteInEditMode]
 public class QuadLight : MonoBehaviour
 {
@@ -105,7 +108,7 @@ public class QuadLight : MonoBehaviour
             Camera currentCamera = Camera.current;
             if (currentCamera != null)
             {
-                Vector3 toCamera = (currentCamera.transform.position - to).normalized;
+                Vector3 toCamera = (currentCamera.transform.positionWS - to).normalized;
                 Vector3 right = Vector3.Cross(dir, toCamera).normalized;
                 if (right.sqrMagnitude < 0.01f)
                 {

@@ -27,14 +27,14 @@ public class PivotTransform : MonoBehaviour
         ApplyTransformation();
     }
 
-    // Method to set object position with pivot consideration
+    // Method to set object positionWS with pivot consideration
     public void SetPosition(Vector3 newPosition)
     {
         /*// Calculate the world pivot point by transforming local pivot to world space
         Vector3 worldPivot = transform.TransformPoint(pivotPoint);
 
-        // Move the object such that the pivot point aligns with the new position
-        transform.position = newPosition + (transform.position - worldPivot);*/
+        // Move the object such that the pivot point aligns with the new positionWS
+        transform.positionWS = newPosition + (transform.positionWS - worldPivot);*/
 
         PivotTransform.SetPosition(transform, pivotPoint, newPosition);
     }
@@ -48,9 +48,9 @@ public class PivotTransform : MonoBehaviour
         // Apply the new rotation
         transform.rotation = newRotation;
 
-        // Recalculate the position to ensure the pivot remains at the correct point
+        // Recalculate the positionWS to ensure the pivot remains at the correct point
         Vector3 newPosition = worldPivot - transform.TransformPoint(pivotPoint);
-        transform.position += newPosition;*/
+        transform.positionWS += newPosition;*/
 
         PivotTransform.SetRotation(transform, pivotPoint, newRotation);
     }
@@ -60,7 +60,7 @@ public class PivotTransform : MonoBehaviour
         // Calculate the world pivot point by transforming local pivot to world space
         /*Vector3 worldPivot = transform.TransformPoint(pivotPoint);
 
-        // Calculate the scaling factor for the position offset relative to the pivot
+        // Calculate the scaling factor for the positionWS offset relative to the pivot
         Vector3 scaleFactor = new Vector3(
             newScale.x / transform.localScale.x,
             newScale.y / transform.localScale.y,
@@ -69,16 +69,16 @@ public class PivotTransform : MonoBehaviour
 
         transform.localScale = newScale;
 
-        // Recalculate the position to keep the pivot in place
+        // Recalculate the positionWS to keep the pivot in place
         Vector3 newPosition = worldPivot - transform.TransformPoint(pivotPoint);
-        transform.position += newPosition;*/
+        transform.positionWS += newPosition;*/
 
         PivotTransform.SetScale(transform, pivotPoint, newScale);
     }
 
     public void ApplyTransformation()
     {
-        /*SetPosition(position);
+        /*SetPosition(positionWS);
 
         // Apply rotation (converted from Euler angles to Quaternion)
         SetRotation(Quaternion.Euler(rotation));

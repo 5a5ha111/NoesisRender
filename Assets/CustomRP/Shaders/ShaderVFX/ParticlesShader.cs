@@ -729,7 +729,7 @@ namespace NoesisRender.Particles
 
         private Bounds GetNewBounds()
         {
-            // Calculate maximum possible position offsets
+            // Calculate maximum possible positionWS offsets
             Vector3 maxSpawnOffset = new Vector3(
                 Mathf.Abs(_EmitterDimensions.x),
                 Mathf.Abs(_EmitterDimensions.y),

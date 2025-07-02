@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
+/// <summary>
+/// Volume binder for LTC area light
+/// </summary>
 public class VolumeBinder : MonoBehaviour
 {
 
