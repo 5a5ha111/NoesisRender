@@ -119,7 +119,7 @@ If you dream about that your game will have portals, so you will not be restrict
 
 ## From where start
 
-If you interested in cs side of render pipeline, go to [CameraRenderer.cs](Assets/CustomRP/Runtime/CameraRenderer.cs) . If you interested in shaders, inspect [Shaders](Assets/CustomRP/Shaders) and [ShaderLibrary](Assets/CustomRP/ShaderLibrary) . If just want to look around, go to Assets/Examples/Scenes. RP settings located at [Custom Render Pipeline Asset](Assets/CustomRP/Runtime/Custom Render Pipeline Asset.asset) and post fx settings at  [Test Post FX Settings](Assets/CustomRP/Runtime/Test Post FX Settings.asset) .
+If you interested in cs side of render pipeline, go to [CameraRenderer.cs](Assets/CustomRP/Runtime/CameraRenderer.cs) . If you interested in shaders, inspect [Shaders](Assets/CustomRP/Shaders) and [ShaderLibrary](Assets/CustomRP/ShaderLibrary) . If just want to look around, go to Assets/Examples/Scenes. RP settings located at [Custom Render Pipeline Asset](Assets/CustomRP/Runtime/Custom%20Render%20Pipeline%20Asset.asset) and post fx settings at  [Test Post FX Settings](Assets/CustomRP/Runtime/Test%20Post%20FX%20Settings.asset) .
 
 # Update 02.07.2025
 
