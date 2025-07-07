@@ -23,6 +23,8 @@ namespace NoesisRender
         // To do: make a setting
         private const float minDistanceToFullRenderPortal = 3f;
 
+        public const string Name = "NoesisRender";
+
         public CustomRenderPipeline(CustomRenderPipelineSettings settings)
         {
             this.settings = settings;

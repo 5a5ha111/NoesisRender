@@ -13,6 +13,7 @@ namespace NoesisRender
 {
     using NoesisRender.ResourcesHolders;
     using NoesisRender.Passes;
+    using UnityEngine.VFX;
 
     /// <summary>
     /// Main render class
@@ -157,6 +158,10 @@ namespace NoesisRender
 
 
             PrepareForSceneWindow(); // Handle Scene camera
+
+            #if HAS_VFX_GRAPH
+                VFXManager.PrepareCamera(camera);
+            #endif
 
 
             float renderScale = cameraSettings.GetRenderScale(cameraBufferSettings.renderScale);
@@ -435,6 +440,8 @@ namespace NoesisRender
                     opaque: false, setTarget: false,
                     textures, lightResources
                 );
+
+                VisualEffectGarphPass.Record(renderGraph, camera, cullingResults, false, textures, lightResources);
 
                 if (settings.deferredSettings.enabled)
                 {
