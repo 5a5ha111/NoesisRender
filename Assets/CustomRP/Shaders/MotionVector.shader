@@ -20,8 +20,8 @@ Shader "Hidden/Custom RP/MotionVector"
 
         float4x4 _NonJitteredViewProjMatrix;
         float4x4 _PrevViewProjMatrix;
-        float4 unity_MotionVectorsParams;
-        float4x4 unity_MatrixPreviousM;
+        //float4 unity_MotionVectorsParams;
+        //float4x4 unity_MatrixPreviousM;
 
         //#endif
         //float4x4 _PreviousM;

@@ -13,6 +13,8 @@ namespace NoesisRender
 
         [NonSerialized, HideInInspector] bool useSRPBatcher = true;
 
+        public const string Name = "UniversalRenderPipelineAsset";
+
 
 
         [Space]

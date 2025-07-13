@@ -4,8 +4,8 @@
 CBUFFER_START(UnityPerDraw)
 	float4x4 unity_ObjectToWorld;
 	float4x4 unity_WorldToObject;
-	float4 unity_LODFade;
-	real4 unity_WorldTransformParams;
+	float4 unity_LODFade; // x is the fade value ranging within [0,1]. y is x quantized into 16 levels
+	real4 unity_WorldTransformParams; // w is usually 1.0, or -1.0 for odd-negative scale transforms
 
 	float4 unity_ProbesOcclusion;
 
@@ -33,6 +33,15 @@ CBUFFER_START(UnityPerDraw)
 	float4 unity_ProbeVolumeMin;
 
 	float4 unity_RenderingLayer; // X asuint rendering layer
+
+	// Velocity
+	float4x4 unity_MatrixPreviousM;
+	float4x4 unity_MatrixPreviousMI;
+	//X : Use last frame positions (right now skinned meshes are the only objects that use this
+	//Y : Force No Motion
+	//Z : Z bias value
+	//W : Camera only
+	float4 unity_MotionVectorsParams;
 CBUFFER_END
 
 float4x4 unity_MatrixVP;
@@ -55,7 +64,40 @@ float4 _Time;
 float4 _ProjectionParams;
 float4 unity_OrthoParams;
 float4 _ZBufferParams;
+float4 unity_FogColor;
 
+float4   _ScreenSize;       // {w, h, 1/w, 1/h}
+float4   _FrustumPlanes[6]; // {(a, b, c) = N, d = -dot(N, P)} [L, R, T, B, N, F]
+float4 _ScaledScreenParams; // It works the same as _ScreenParams but takes pipeline RenderScale into consideration
+
+
+// scaleBias.x = flipSign
+// scaleBias.y = scale
+// scaleBias.z = bias
+// scaleBias.w = unused
+uniform float4 _ScaleBias;
+uniform float4 _ScaleBiasRt;
+
+
+uint _RenderingLayerMaxInt;
+float _RenderingLayerRcpMaxInt;
+
+
+
+float4x4 OptimizeProjectionMatrix(float4x4 M)
+{
+    // Matrix format (x = non-constant value).
+    // Orthographic Perspective  Combined(OR)
+    // | x 0 0 x |  | x 0 x 0 |  | x 0 x x |
+    // | 0 x 0 x |  | 0 x x 0 |  | 0 x x x |
+    // | x x x x |  | x x x x |  | x x x x | <- oblique projection row
+    // | 0 0 0 1 |  | 0 0 x 0 |  | 0 0 x x |
+    // Notice that some values are always 0.
+    // We can avoid loading and doing math with constants.
+    M._21_41 = 0;
+    M._12_42 = 0;
+    return M;
+}
 
 
 #endif

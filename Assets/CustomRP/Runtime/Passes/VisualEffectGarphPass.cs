@@ -13,6 +13,7 @@ namespace NoesisRender.Passes
     {
         static readonly ProfilingSampler samplerVFX = new("Visual Effect Graph Pass");
 
+
         CameraRenderer renderer;
 
         bool useDynamicBatching, useGPUInstancing, useLightsPerObject;

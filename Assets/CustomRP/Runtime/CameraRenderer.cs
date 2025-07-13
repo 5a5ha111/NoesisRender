@@ -326,6 +326,10 @@ namespace NoesisRender
                     useColorTexture, useDepthTexture, useHDR, settings.deferredSettings.enabled, bufferSize, camera
                 );
 
+                #if HAS_VFX_GRAPH
+                    VisualEffectGarphPass.Record(renderGraph, camera, cullingResults, true, textures, lightResources);
+                #endif
+
 
                 // Now motion Vectors required only dlss
                 if (cameraBufferSettings.dlss.enabled)
@@ -441,7 +445,6 @@ namespace NoesisRender
                     textures, lightResources
                 );
 
-                VisualEffectGarphPass.Record(renderGraph, camera, cullingResults, false, textures, lightResources);
 
                 if (settings.deferredSettings.enabled)
                 {

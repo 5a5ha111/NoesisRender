@@ -99,6 +99,17 @@ float Rdither(float2 pos, float t)
 }
 
 
+//Iestyn's RGB dither( 7 asm instructions) from Portal2 X360, slightly modified for VR
+float3 ScreenSpaceDither( float2 vScreenPos, float t )
+{
+    
+    float fDither = dot(float2(171.0,231.0),vScreenPos.xy + t);
+    float3 vDither = float3( fDither, fDither, fDither );
+    vDither.rgb=frac(vDither.rgb/float3(103.0,71.0,97.0))-float3(0.5,0.5,0.5);
+    return( vDither.rgb/255.0)*0.375;
+}
+
+
 
 void ClipLOD (Fragment fragment, float fade) 
 {
