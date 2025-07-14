@@ -291,11 +291,7 @@ float3 VFXGetCameraWorldDirection()
 // One of the most useless functions in VFX source code, but without it not compile 
 float4 VFXTransformFinalColor(float4 color)
 {
-    #if USE_SOFT_PARTICLE && defined(VFX_VARYING_INVSOFTPARTICLEFADEDISTANCE)
-        return color;
-    #else
-        return color;
-    #endif
+    return color;
 }
 
 TEXTURE2D_X_FLOAT(_CameraDepthTexture);
@@ -338,19 +334,95 @@ float OrthographicDepthBufferToLinear (float rawDepth)
     return (_ProjectionParams.z - _ProjectionParams.y) * rawDepth + _ProjectionParams.y;
 }
 
+float VFXLinearEyeDepth2(float depth)
+{
+    return LinearEyeDepth(depth, _ZBufferParams);
+}
+float VFXLinearEyeDepthOrthographic2(float depth)
+{
+    #if UNITY_REVERSED_Z
+        return float(_ProjectionParams.z - (_ProjectionParams.z - _ProjectionParams.y) * depth);
+    #else
+        return float(_ProjectionParams.y + (_ProjectionParams.z - _ProjectionParams.y) * depth);
+    #endif
+}
+
 
 float VFXSampleDepth(float4 posSS)
 {
-    float2 screenUV = GetNormalizedScreenSpaceUV(posSS.xy)  * _ScreenParams.xy;
+    float2 screenUV = GetNormalizedScreenSpaceUV(posSS.xy);
 
-    screenUV = posSS.xy / _ScaledScreenParams.xy;
+    //screenUV = posSS.xy * _ScaledScreenParams.xy;
+    screenUV = posSS.xy / _ScreenParams.xy;
 
     // In URP, the depth texture is optional and could be 4x4 white texture, Load isn't appropriate in that case.
     //float depth = LoadSceneDepth(screenUV * _ScreenParams.xy);
-    float depth = SAMPLE_DEPTH_TEXTURE_LOD(_CameraDepthTexture, sampler_CameraDepthTexture, screenUV, 0);
+    float depth = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, sampler_CameraDepthTexture, screenUV);
     //depth = 0.002;
     //depth = lerp(0.002, 0.002, screenUV.y);
     //depth ;
     //depth = IsOrthographicCamera() ? OrthographicDepthBufferToLinear(depth) : LinearEyeDepth(depth, _ZBufferParams);
     return depth;
 }
+
+
+
+
+// Copy code with modifications from "com.unity.visualeffectgraph/shaders/VFXCommonOutput.hlsl"
+
+//#include "Assets/CustomRP/ShaderLibrary/NormalCalculation.hlsl"
+
+#if defined(VFX_VARYING_PS_INPUTS)
+
+float4 VFXGetCustomParticleColor(VFX_VARYING_PS_INPUTS i)
+{
+    float4 color = 1.0f;
+    #if VFX_NEEDS_COLOR_INTERPOLATOR
+    #ifdef VFX_VARYING_COLOR
+    color.rgb *= i.VFX_VARYING_COLOR;
+    #endif
+    #ifdef VFX_VARYING_ALPHA
+    color.a *= i.VFX_VARYING_ALPHA;
+    #endif
+    #endif
+    return color;
+}
+float VFXGetCustomSoftParticleFade(VFX_VARYING_PS_INPUTS i)
+{
+    float fade = 1.0f;
+    #if USE_SOFT_PARTICLE && defined(VFX_VARYING_INVSOFTPARTICLEFADEDISTANCE)
+        float sceneZ, selfZ;
+        float sampledDepth = VFXSampleDepth(i.VFX_VARYING_POSCS);
+        if(IsPerspectiveProjection())
+        {
+            sceneZ = VFXLinearEyeDepth2(sampledDepth);
+            selfZ = i.VFX_VARYING_POSCS.w;
+        }
+        else
+        {
+            sceneZ = VFXLinearEyeDepthOrthographic2(sampledDepth);
+            selfZ = VFXLinearEyeDepthOrthographic2(i.VFX_VARYING_POSCS.z);
+        }
+        fade = saturate(i.VFX_VARYING_INVSOFTPARTICLEFADEDISTANCE * (sceneZ - selfZ));
+        fade = fade * fade * (3.0 - (2.0 * fade)); // Smoothsteping the fade
+    #endif
+    return fade;
+}
+float4 VFXApplyCustomSoftParticleFade(VFX_VARYING_PS_INPUTS i, float4 color)
+{
+    float fade = VFXGetCustomSoftParticleFade(i);
+    #if VFX_BLENDMODE_PREMULTIPLY
+        color *= fade;
+    #else
+        color.a *= fade;
+    #endif
+    return color;
+}
+float4 VFXGetCustomFragmentColor(VFX_VARYING_PS_INPUTS i)
+{
+    float4 color = VFXGetCustomParticleColor(i);
+    color = VFXApplyCustomSoftParticleFade(i, color);
+    return color;
+}
+// There is no else fallback function, so i will belive, that VFX_VARYING_PS_INPUTS is always true at this stage
+#endif

@@ -1,3 +1,5 @@
+/*
+
 #include "Assets/CustomRP/ShaderLibrary/VFXGraph/VFXLit.hlsl"
 
 #ifndef VFX_SHADERGRAPH
@@ -22,3 +24,4 @@ void VFXGetURPLitData(out SurfaceData surfaceData, out InputData inputData, VFX_
 
 #include "Assets/CustomRP/ShaderLibrary/VFXGraph/VFXLitPixelOutput.hlsl"
 
+*/

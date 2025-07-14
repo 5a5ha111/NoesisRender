@@ -4,7 +4,7 @@
 		Cull Off
 		
 		${VFXInclude("Shaders/VFXParticleHeader.template")}
-		${VFXIncludeRP("Templates/PassCustomForwardUnlit.template")}
+		${VFXInclude("Shaders/ParticlePlanarPrimitives/PassForward.template")}
 		${VFXInclude("Shaders/ParticlePlanarPrimitives/PassSelection.template")}
 	}
 }

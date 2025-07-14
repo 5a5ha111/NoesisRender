@@ -135,6 +135,15 @@ Add demo with analytically calculated area light with texture. For now it lacks 
 
 ![Area Light LTC](ImagesDemo/AreaLightLTC.gif)
 
+# Update 14.07.2025
+
+## VFX Graph support!
+
+It was challenging, a lot of not documented code, no official custom srp support, but at the end I succeeded. Currently properly work only quads. I cannot give you a guarantee that all nodes work, but they seem to. I definitely extend support for other nodes & particles types. 
+
+![ParticlesGif](ImagesDemo/VFXGraph.gif)
+![VFXGraphSnapshot](ImagesDemo/VFXGraphSnapshot.png)
+
 ## Known issues
 
 If your game have split screen or any other multi camera setup with individual post effects, DLSS work incorrectly, data leak from one part of the screen to another. It possible to fix this, but require to split postFX pass into several paths. I want to keep things simple for normal games, so leave it be for now.  
@@ -153,6 +162,8 @@ Introduction to Decal Rendering, samdriver https://samdriver.xyz/article/decal-r
 Forward vs Deferred vs Forward+ Rendering with DirectX 11, Jeremiah https://web.archive.org/web/20250310064014/https://www.3dgep.com/forward-plus/  
 
 Real-Time Polygonal-Light Shading with Linearly Transformed Cosines , Eric Heitz, Jonathan Dupuy, Stephen Hill and David Neubelt 2016 https://eheitzresearch.wordpress.com/415-2/
+
+VFX Graph + SRP [[Unity]VFX Graphを自作レンダーパイプラインに導入する](https://zenn.dev/nithink/articles/3875574342765a) . A lot of useful info about topic. Leave a like there from me.
 
 ### Contacts
 

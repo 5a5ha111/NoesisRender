@@ -12,7 +12,6 @@ float GetRawDepth(float2 uv)
     //depth = IsOrthographicCamera() ? OrthographicDepthBufferToLinear(depth) : LinearEyeDepth(depth, _ZBufferParams);
     //depth = LinearEyeDepth(depth, _ZBufferParams);
     return depth;
-    //return SampleSceneDepth(uv.xy).r;
 }
 // inspired by keijiro's depth inverse projection
 // https://github.com/keijiro/DepthInverseProjection

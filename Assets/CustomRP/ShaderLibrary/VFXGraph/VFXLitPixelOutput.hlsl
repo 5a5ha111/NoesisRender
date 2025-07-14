@@ -1,4 +1,4 @@
-#ifndef SHADERPASS
+/*#ifndef SHADERPASS
 #error SHADERPASS must be defined
 #endif
 
@@ -84,3 +84,4 @@ void VFXComputePixelOutputToGBufferShaderGraph(const VFX_VARYING_PS_INPUTS i, Su
 
 #endif
 #endif
+*/

@@ -1,4 +1,4 @@
-// Upgrade NOTE: replaced 'defined at' with 'defined (at)'
+/*// Upgrade NOTE: replaced 'defined at' with 'defined (at)'
 #ifndef SHADERPASS
 #error SHADERPASS must be defined (at) this point
 #endif
@@ -152,3 +152,4 @@ SurfaceData VFXGetSurfaceData(const VFX_VARYING_PS_INPUTS i, float3 normalWS, co
 
 
 #endif
+*/

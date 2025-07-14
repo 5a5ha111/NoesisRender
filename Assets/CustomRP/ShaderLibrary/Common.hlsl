@@ -123,13 +123,13 @@ float4 ComputeClipSpacePositionCom(float2 positionNDC, float deviceDepth)
 {
     float4 positionCS = float4(positionNDC * 2.0 - 1.0, deviceDepth, 1.0);
 
-#if UNITY_UV_STARTS_AT_TOP
-    // Our world space, view space, screen space and NDC space are Y-up.
-    // Our clip space is flipped upside-down due to poor legacy Unity design.
-    // The flip is baked into the projection matrix, so we only have to flip
-    // manually when going from CS to NDC and back.
-    positionCS.y = -positionCS.y;
-#endif
+    #if UNITY_UV_STARTS_AT_TOP
+        // Our world space, view space, screen space and NDC space are Y-up.
+        // Our clip space is flipped upside-down due to poor legacy Unity design.
+        // The flip is baked into the projection matrix, so we only have to flip
+        // manually when going from CS to NDC and back.
+        positionCS.y = -positionCS.y;
+    #endif
 
     return positionCS;
 }

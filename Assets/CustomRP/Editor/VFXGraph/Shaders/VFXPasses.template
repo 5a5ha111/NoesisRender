@@ -7,24 +7,21 @@ ${VFXBegin:VFXPassDepthNormal}"DepthNormalsOnly"${VFXEnd}
 
 
 ${VFXBegin:VFXPassForwardAdditionalPragma}
-//#pragma multi_compile_fog
+#pragma multi_compile_fog
 ${VFXEnd}
 
 
-
+/*
 ${VFXBegin:VFXShaderGraphFunctionsInclude}
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Packing.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
-#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/EntityLighting.hlsl"/*
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
-#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"*/
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/EntityLighting.hlsl"
 ${VFXEnd}
+*/
 
 
-
-
+/*
 ${VFXBegin:VFXPassDepthCommonFragmentURPLit}
 #if VFX_PASSDEPTH == VFX_PASSDEPTH_MOTION_VECTOR
 ${VFXPassVelocityDefine}
@@ -114,3 +111,4 @@ void frag(ps_input i
     #endif
 }
 ${VFXEnd}
+*/
