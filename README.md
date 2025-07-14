@@ -92,7 +92,6 @@ Also support LUT textures for postFX. So instead calculating all these transform
 
 Noesis support:  
 
-- SMAA2x  
 - FXAA with 3 quality preset  
 - DLSS with several automatic presets and manual parameters.  
 - DLAA  
