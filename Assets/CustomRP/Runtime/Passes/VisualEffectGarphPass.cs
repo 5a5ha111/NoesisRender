@@ -7,7 +7,6 @@ using UnityEngine.VFX;
 namespace NoesisRender.Passes
 {
     using NoesisRender.ResourcesHolders;
-    using static UnityEditor.SceneView;
 
     public class VisualEffectGarphPass
     {

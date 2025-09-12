@@ -70,6 +70,8 @@ float4   _ScreenSize;       // {w, h, 1/w, 1/h}
 float4   _FrustumPlanes[6]; // {(a, b, c) = N, d = -dot(N, P)} [L, R, T, B, N, F]
 float4 _ScaledScreenParams; // It works the same as _ScreenParams but takes pipeline RenderScale into consideration
 
+float4x4 unity_MatrixInvVP;
+
 
 // scaleBias.x = flipSign
 // scaleBias.y = scale

@@ -288,9 +288,9 @@ float3 VFXGetCameraWorldDirection()
 
 
 
-// One of the most useless functions in VFX source code, but without it not compile 
 float4 VFXTransformFinalColor(float4 color)
 {
+    //color.rgb = (color.r + color.g + color.b) / 3; 
     return color;
 }
 

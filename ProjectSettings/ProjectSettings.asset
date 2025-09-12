@@ -78,7 +78,7 @@ PlayerSettings:
   androidFullscreenMode: 1
   androidAutoRotationBehavior: 1
   defaultIsNativeResolution: 1
-  macRetinaSupport: 1
+  macRetinaSupport: 0
   runInBackground: 0
   captureSingleScreen: 0
   muteOtherAudioSources: 0
@@ -103,7 +103,7 @@ PlayerSettings:
   xboxEnableFitness: 0
   visibleInBackground: 1
   allowFullscreenSwitch: 1
-  fullscreenMode: 1
+  fullscreenMode: 3
   xboxSpeechDB: 0
   xboxEnableHeadOrientation: 0
   xboxEnableGuest: 0

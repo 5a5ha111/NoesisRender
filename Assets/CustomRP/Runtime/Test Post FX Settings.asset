@@ -26,7 +26,7 @@ MonoBehaviour:
     mode: 1
     scatter: 0.05
   colorAdjustments:
-    postExposure: 1
+    postExposure: 1.28
     contrast: -8.8
     colorFilter: {r: 1, g: 1, b: 1, a: 1}
     hueShift: 0

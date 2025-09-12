@@ -1,0 +1,18 @@
+{
+    "name": "ParticlesEditor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:4e7effcb0bd02af40911198006777d6d"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
