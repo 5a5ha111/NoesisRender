@@ -26,17 +26,17 @@ MonoBehaviour:
     mode: 1
     scatter: 0.05
   colorAdjustments:
-    postExposure: 1.28
-    contrast: -8.8
+    postExposure: 1
+    contrast: 0
     colorFilter: {r: 1, g: 1, b: 1, a: 1}
     hueShift: 0
-    saturation: 19.2
+    saturation: 0
   whiteBalance:
-    temperature: -3.7
+    temperature: 0
     tint: 0
   splitToning:
     shadows: {r: 0.5019608, g: 0.5019608, b: 0.5019608, a: 1}
-    highlights: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    highlights: {r: 0.5019608, g: 0.5019608, b: 0.5019608, a: 1}
     balance: 0
   channelMixer:
     red: {x: 1, y: 0, z: 0}
@@ -51,7 +51,7 @@ MonoBehaviour:
     highlightsStart: 0.55
     highLightsEnd: 1
   toneMapping:
-    mode: 4
+    mode: 3
   dither:
     mode: 2
     useInScene: 0

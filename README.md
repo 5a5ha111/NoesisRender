@@ -116,36 +116,27 @@ Currently supported only in Deferred path (since it main development path), but 
 If you dream about that your game will have portals, so you will not be restricted by euclidean space, that is what you need. Now they are fully worked in forward path, since not so many game developers dream about portals. But it possible to extend their support.  
 ![Portal example](ImagesDemo/PortalExample.png)  
 
-## From where start
+## VFX Graph
 
-If you interested in cs side of render pipeline, go to [CameraRenderer.cs](Assets/CustomRP/Runtime/CameraRenderer.cs) . If you interested in shaders, inspect [Shaders](Assets/CustomRP/Shaders) and [ShaderLibrary](Assets/CustomRP/ShaderLibrary) . If just want to look around, go to Assets/Examples/Scenes. RP settings located at [Custom Render Pipeline Asset](Assets/CustomRP/Runtime/Custom%20Render%20Pipeline%20Asset.asset) and post fx settings at  [Test Post FX Settings](Assets/CustomRP/Runtime/Test%20Post%20FX%20Settings.asset) .
-
-# Update 02.07.2025
-
-## New Particle System
-
-This system provides an efficient alternative to traditional Particle Systems by leveraging GPU capabilities for all calculations and rendering. It can work fully independently in loop, or rely on script for additional features. Check https://github.com/5a5ha111/CustomVFX for more info. Still a lot of settings from standard system is not implemented, im planning to add them at moment when i need them. 
-
-![Particles in shader](ImagesDemo/ParticlesInShader.PNG)
-
-## Real-Time Polygonal-Light Shading with Linearly Transformed Cosines
-
-Add demo with analytically calculated area light with texture. For now it lacks shadows and requires a special shader to work, but will be integrated in render pipeline in the future. And yes, it works fast enough to be used in production.
-
-![Area Light LTC](ImagesDemo/AreaLightLTC.gif)
-
-# Update 14.07.2025
-
-## VFX Graph support!
-
-It was challenging, a lot of not documented code, no official custom srp support, but at the end I succeeded. Currently properly work only quads. I cannot give you a guarantee that all nodes work, but they seem to. I definitely extend support for other nodes & particles types. 
+Noesis has VFX Graph support. No official custom SRP support exists, so the integration was reverse-engineered from undocumented code.
 
 ![ParticlesGif](ImagesDemo/VFXGraph.gif)
-![VFXGraphSnapshot](ImagesDemo/VFXGraphSnapshot.png)
+
+## Shader Graph
+
+Essential Shader Graph support via custom UnityEditor.ShaderGraph.Target . 
+
+![ShaderGraphSupport](ImagesDemo/ShaderGraphSupport.png)
+
+## From where start
+
+If you interested in cs side of render pipeline, go to [CameraRenderer.cs](Assets/CustomRP/Runtime/CameraRenderer.cs) . If you interested in shaders, inspect [Shaders](Assets/CustomRP/Shaders) and [ShaderLibrary](Assets/CustomRP/ShaderLibrary) . If just want to look around, go to Assets/Examples/Scenes. RP settings located at [Custom Render Pipeline Asset](Assets/CustomRP/Runtime/Custom%20Render%20Pipeline%20Asset.asset) and post fx settings at  [Test Post FX Settings](Assets/CustomRP/Runtime/Test%20Post%20FX%20Settings.asset) . If you interested in Graph support with srp, check [EditorFolder](Assets/CustomRP/Editor) .
 
 ## Known issues
 
 If your game have split screen or any other multi camera setup with individual post effects, DLSS work incorrectly, data leak from one part of the screen to another. It possible to fix this, but require to split postFX pass into several paths. I want to keep things simple for normal games, so leave it be for now.  
+
+## [Changelog](CHANGELOG.md)
 
 ## References
 

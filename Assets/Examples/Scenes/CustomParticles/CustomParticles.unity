@@ -307,7 +307,7 @@ Transform:
   m_GameObject: {fileID: 234450483}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.996, y: 1.658, z: -1.567}
+  m_LocalPosition: {x: 0.996, y: 1.658, z: -1.882}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -355,7 +355,7 @@ MonoBehaviour:
   _ParticleStartSize: 0.5
   _ParticleEndSize: 1
   _DebugTime: 0
-  _ManualTime: 0
+  _ManualTime: -0.38
   _ParticleLifetime: 1
   _ParticleSpeed: 0.5
   _ParticleDirectional: {x: 0, y: 0, z: 1}
@@ -385,7 +385,7 @@ MonoBehaviour:
   tempFilter: {fileID: 234450486}
   tempRenderer: {fileID: 234450485}
   playbackTime: 0
-  tempTime: 95.09328240000002
+  tempTime: 1273.6125447999998
   _UseCustomTime: 0
 --- !u!43 &867908165
 Mesh:
@@ -539,7 +539,7 @@ Mesh:
     m_UVInfo: 0
   m_LocalAABB:
     m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 1, y: 2.5, z: 2}
+    m_Extent: {x: 1, y: 1.5, z: 2}
   m_MeshUsageFlags: 0
   m_CookingOptions: 30
   m_BakedConvexCollisionMesh: 
@@ -5581,6 +5581,165 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 80, y: -30, z: 0}
+--- !u!1 &1281819594
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1281819599}
+  - component: {fileID: 1281819598}
+  - component: {fileID: 1281819597}
+  - component: {fileID: 1281819596}
+  - component: {fileID: 1281819595}
+  m_Layer: 0
+  m_Name: ShaderParticles (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1281819595
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1281819594}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73d9129a93ee5884fb70e337318e1894, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baseMesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+  particlesCount: 30
+  pathToSave: Assets/CustomRP/Shaders/ShaderVFX/Resources
+  assetName: ParticlesStack30
+  meshFilter: {fileID: 1281819598}
+--- !u!114 &1281819596
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1281819594}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16861f06af41144acb77907721e58a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  particleSystem: {fileID: 0}
+  _EmitterDimensions: {x: 0, y: 0, z: 0}
+  _StartColor: {r: 0.9433962, g: 0.7698469, b: 0.7698469, a: 1}
+  _EndColor: {r: 0.504, g: 0.40989214, b: 0.40989214, a: 0}
+  _Opacity: 1
+  _FadeInPower: 0.7
+  _FadeOutPower: 4
+  _UseTextureRGBAlpha: 0
+  _TextureAlphaSmoothstep: 0.21
+  _UseTextureAlpha: 0
+  _ParticleStartSize: 0.5
+  _ParticleEndSize: 1
+  _DebugTime: 0
+  _ManualTime: -0.38
+  _ParticleLifetime: 1
+  _ParticleSpeed: 0.5
+  _ParticleDirectional: {x: 0, y: 0, z: 1}
+  _ParticleSpead: 78
+  _ParticleVelocityStart: 0
+  _ParticleVelocityEnd: 0
+  _Rotation: 0
+  _RotationRandomOffset: 0
+  _RotationSpeed: 0
+  _RandomizeRotationDirection: 0
+  _Wind: {x: 0, y: 0.5, z: 0}
+  _Gravityy: {x: 0, y: 0, z: 0}
+  _FlipBookDimenions: {x: 6, y: 6}
+  _FlipBook: {fileID: 2800000, guid: 6ac8c8be31159c9438d638714291fbda, type: 3}
+  _FlipX: 0
+  _FlipY: 0
+  _MatchParticlePhase: 0
+  _FlipbookFPS: 2
+  _FlipBookSpeed: 0.16666667
+  _FlipbookMode: 0
+  _Loop: 1
+  _Prewarn: 0
+  _PlayOnAwake: 1
+  _Duration: 2
+  _StartDelay: 0
+  _ConstantFlow: 1
+  tempFilter: {fileID: 1281819598}
+  tempRenderer: {fileID: 1281819597}
+  playbackTime: 0
+  tempTime: 3200.2730949
+  _UseCustomTime: 0
+--- !u!23 &1281819597
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1281819594}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: e30c2477da2124240ab3a4b20680ff5a, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1281819598
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1281819594}
+  m_Mesh: {fileID: 867908165}
+--- !u!4 &1281819599
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1281819594}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.996, y: 0.55, z: -2.346}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1588180569
 GameObject:
   m_ObjectHideFlags: 0
@@ -5722,7 +5881,7 @@ Material:
     - _FlipBookSpeed: 0.7692308
     - _FlipX: 0
     - _FlipY: 0
-    - _ManualTime: 0
+    - _ManualTime: -0.38
     - _MatchParticlePhase: 1
     - _Opacity: 1
     - _ParticleEndSize: 1
@@ -5992,4 +6151,5 @@ SceneRoots:
   - {fileID: 1191634134}
   - {fileID: 1815198771}
   - {fileID: 234450487}
+  - {fileID: 1281819599}
   - {fileID: 1017684284}
